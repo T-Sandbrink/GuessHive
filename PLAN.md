@@ -36,16 +36,36 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Platform | Web eerst, als PWA. Native apps later |
 | Geld | Nooit echt geld. Punten, XP en reputatie |
 | Privacy | EU-hosting, stemmen standaard privé, geen uitsplitsing bij < 10 stemmers |
+| Vragen maken | Admins (startcontent) + gebruikers vanaf dag 1 via moderatie. Vertrouwde gebruikers later direct. Fase 9 blijft vóór lancering |
+| Git | Branch per fase + per taak (AGENTS.md §5). Agent commit, merget en pusht zelf. `main` alleen na een afgeronde fase |
+
+### UX-beslissingen
+
+| Onderwerp | Beslissing |
+|---|---|
+| Account | **Eerst stemmen, dan account.** Gasten zien alle vragen en kunnen tikken. Een tik op een optie of op "overslaan" opent een aanmeldsheet (Google/Apple bovenaan). De keuze wordt bewaard en na aanmelden automatisch ingediend, daarna verschijnt de uitslag |
+| Feed | **Kaartenlijst** op home (tabs Trending / Lokaal / Nieuw, stemmen direct in de kaart) + aparte **"⚡ Snel stemmen"**-modus: één vraag per scherm, swipen |
+| Uitslag | Pas zichtbaar **na stemmen of "overslaan"**. Wie overslaat ziet de uitslag, maar kan daarna niet meer stemmen (server registreert de skip). Uitzondering: deelkaarten (OG-plaatjes) tonen de uitslag, omdat delen de groeimotor is |
+| Voorspellen | **Ja/Nee + zekerheid**: tik Ja of Nee, kies dan "Beetje zeker" (60%), "Vrij zeker" (75%) of "Heel zeker" (90%). Precieze slider (1–99%) onder "⚙ Precies instellen". Meerkeuze: optie kiezen + zelfde zekerheidskeuze |
+| Stem wijzigen | **Ja, zolang de vraag open is**, voor polls én voorspellingen (voorspellingen tellen tijdgewogen). Geen XP voor wijzigen |
+| Stijl | **Speels & warm**: honinggeel als hoofdkleur, ronde vormen, zachte schaduwen, emoji, kleine animaties bij stemmen. Light + dark mode (standaard: systeem) |
+| Mascotte | **Een bij**: juicht bij een goede voorspelling, troost bij een foute, verschijnt in lege schermen, onboarding en meldingen |
+| Onboarding | **Kort**: alleen username + land (+ interesses). Geboortejaar, geslacht en regio worden **later op een slim moment** gevraagd, bijv. na 5 stemmen: "Wil je zien hoe jouw leeftijdsgroep stemt?" |
+| Profiel | **Publiek, stemmen privé**: username, avatar, level, badges en voorspelscore zichtbaar. Een stem is alleen zichtbaar als de gebruiker hem zelf openbaar maakt |
+| Reacties | Pas zichtbaar **na stemmen of overslaan** |
+| Pushmeldingen | **Actief**: vraag van de dag, trending vragen, vrienden die stemmen, wekelijkse recap, voorspelling opgelost, reacties, streak in gevaar. Alles per type uit te zetten. Harde limiet: max 3 per dag, geen pushes tussen 22:00 en 08:00 lokale tijd |
 
 ## Open vragen
 
 Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze hier neer.
 
-- [ ] **Productie-hosting**: (a) Hetzner VPS + Coolify/Docker (goedkoop, EU, meer zelf beheren), (b) Railway/Render EU-regio (simpel, duurder), of (c) web op Vercel + api/db elders. Beslissen vóór fase 12.
-- [ ] **Wie maakt vragen bij lancering?** Alleen admins (veilig, goede kwaliteit) of meteen ook gebruikers via moderatie (fase 9)?
-- [ ] **Puntensysteem voorspellingen**: voorstel in fase 5 (tijdgewogen Brier-score t.o.v. de massa). Eigenaar keurt het goed.
-- [ ] **Merknaam-check**: GuessHive in het EUIPO-register controleren vóór lancering.
-- [ ] **Domeinen registreren**: `.com`, `.net`, `.eu` en `.nl` (eigenaar doet dit zelf).
+- [ ] **Productie-hosting**: (a) Hetzner VPS + Coolify/Docker (goedkoop, EU, meer zelf beheren), (b) Railway/Render EU-regio (simpel, duurder), of (c) web op Vercel + api/db elders. Beslissen vóór fase 12. Tot die tijd blijft alles Docker-portable.
+- [ ] **Puntensysteem voorspellingen**: de agent schrijft in fase 5 een voorstel (tijdgewogen Brier-score t.o.v. de massa) en bouwt dat alvast. De eigenaar keurt het goed of stuurt bij.
+- [ ] **Designrichting goedkeuren** (taak 3.0): stijl, kleuren en mascotte-concept. Tot de goedkeuring kan de agent doorwerken aan backend-taken.
+- [ ] **Mascotte**: naam voor de bij? Later eventueel een illustrator voor de definitieve versie (de agent maakt een eerste SVG-versie).
+- [ ] **Merknaam-check**: GuessHive in het EUIPO-register controleren vóór lancering (eigenaar).
+- [ ] **Domeinen registreren**: `.com`, `.net`, `.eu` en `.nl` (eigenaar).
+- [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Sentry (fase 11).
 
 ---
 
@@ -55,12 +75,12 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 1. **Poll (één keuze)**: "Wat is het lekkerste avondeten?"
 2. **Poll (meerdere keuzes)**: "Welke 3 snacks zijn het best?" (max N)
 3. **Dit of dat**: snel duel A vs B, swipebaar. Leuk, en levert veel stemmen op.
-4. **Voorspelling ja/nee**: "Wint Ajax de Eredivisie?" De gebruiker geeft een kans van 1–99%.
-5. **Voorspelling meerkeuze**: "Wie wint het WK?" De gebruiker verdeelt kansen over de opties, of kiest er één (MVP: kiezen + zekerheid).
+4. **Voorspelling ja/nee**: "Wint Ajax de Eredivisie?" Ja/Nee + zekerheid (60/75/90%), of precies via een slider (1–99%).
+5. **Voorspelling meerkeuze**: "Wie wint het WK?" Optie kiezen + zekerheid (volledige kansverdeling: backlog).
 
 **Bereik (scope)** van een vraag: `GLOBAL` (hele wereld), `COUNTRY` (één land) of `REGION` (provincie/staat).
 
-**Resultaten**: pas zichtbaar na je stem. Totaal plus uitsplitsing per land (wereldkaart), regio, leeftijdsgroep en "jouw vrienden", altijd met de drempel van 10 stemmers.
+**Resultaten**: pas zichtbaar na je stem of na "overslaan". Totaal plus uitsplitsing per land (wereldkaart), regio, leeftijdsgroep en "jouw vrienden", altijd met de drempel van 10 stemmers.
 
 **Sociaal**: profielen, volgen, overeenkomst-% met anderen, reacties, emoji-reacties, deelkaarten met de uitslag als plaatje, meldingen.
 
@@ -70,7 +90,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 0 — Fundament (monorepo & tooling)
 
-- [ ] 0.1 `.gitignore`, `.editorconfig`, `.nvmrc` (Node 24 LTS) en `packageManager`-veld (pnpm) toevoegen
+- [ ] 0.1 `.gitignore` aanvullen, `.gitattributes` (`* text=auto eol=lf`, tegen CRLF-gedoe op Windows), `.editorconfig`, `.nvmrc` (Node 24 LTS) en `packageManager`-veld (pnpm) toevoegen
 - [ ] 0.2 pnpm workspace (`pnpm-workspace.yaml`) + Turborepo (`turbo.json`) met de taken `dev`, `build`, `lint`, `typecheck`, `test`
 - [ ] 0.3 `packages/config`: gedeelde `tsconfig.base.json` (strict), ESLint flat config en Prettier config
 - [ ] 0.4 `apps/web` aanmaken met `npx sv create` (SvelteKit, TypeScript, Tailwind v4, ESLint, Prettier, Vitest, Playwright)
@@ -119,7 +139,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 2.8 Globale `AuthGuard` (default deny) + `@Public()` + `RolesGuard` met rollen `USER`, `MODERATOR` en `ADMIN`
 - [ ] 2.9 Cloudflare Turnstile op registratie en magic-link-aanvraag (server-side verificatie)
 - [ ] 2.10 Rate limits op login, registratie en magic link
-- [ ] 2.11 Onboarding-gegevens: unieke `username`, `displayName`, `countryCode` (voorstel via IP-geolocatie, gebruiker bevestigt), optioneel regio, geboortejaar en geslacht, plus akkoord voorwaarden + 16+-bevestiging
+- [ ] 2.11 Onboarding-gegevens (kort): unieke `username`, `displayName`, `countryCode` (voorstel via IP-geolocatie, gebruiker bevestigt), interesses, plus akkoord voorwaarden + 16+-bevestiging. Regio, geboortejaar en geslacht zijn optioneel en worden later via `PATCH /me` aangevuld (zie 6.9)
+- [ ] 2.14 Gast-stem afronden: een "pending vote/skip" (vraag-id, optie(s), zekerheid) die vóór aanmelden is gekozen, wordt na aanmelden/onboarding één keer server-side ingediend (gevalideerd alsof de gebruiker het nu doet, de vraag moet nog open zijn)
 - [ ] 2.12 `GET/PATCH /me`, avatar-upload naar S3/MinIO (resize, max-grootte, alleen afbeeldingen)
 - [ ] 2.13 Tests: registratie → verificatie → login, magic link, guard-gedrag en rate limits
 
@@ -129,14 +150,16 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 3 — Web-shell (SvelteKit)
 
-- [ ] 3.1 Tailwind v4-thema: kleuren (honing/geel-accent passend bij "Hive"), typografie, dark mode (systeem + toggle)
+- [ ] 3.0 **Designrichting ter goedkeuring** (eigenaar): stijltegel + klikbare mockup als HTML-pagina met kleuren (honinggeel, warm), typografie, ronde vormen, eerste SVG-versie van de bij-mascotte, en de schermen home-feed, vraagkaart (voor/na stemmen), aanmeldsheet voor gasten, voorspelkaart (Ja/Nee + zekerheid) en Snel stemmen. Light + dark, mobiel + desktop. **Pas na akkoord UI-taken van fase 3 bouwen.** Tot die tijd mag de agent doorwerken aan andere niet-UI-taken
+- [ ] 3.1 Tailwind v4-thema volgens de goedgekeurde designrichting: kleuren (design tokens), typografie, radius, schaduwen, dark mode (systeem + toggle), animatie-tokens (respecteert `prefers-reduced-motion`)
 - [ ] 3.2 shadcn-svelte initialiseren: basiscomponenten (button, card, input, dialog, sheet, tabs, toast, avatar, dropdown)
 - [ ] 3.3 Paraglide: locales `nl` en `en`, routes `/[locale]/...`, taaldetectie (cookie → Accept-Language → `en`), taalwisselaar
 - [ ] 3.4 `hooks.server.ts`: `/api/*` proxyen naar NestJS (cookies doorgeven, origin-check), sessie ophalen naar `event.locals.user`
 - [ ] 3.5 Typed API-client: types genereren uit OpenAPI (`openapi-typescript` + `openapi-fetch`), plus een gedeelde helper voor server- en client-calls
 - [ ] 3.6 App-layout mobile-first: bovenbalk (logo, zoeken, profiel), onderste tabbalk op mobiel (Home, Ontdek, Voorspel, Meldingen, Profiel), zijbalk op desktop
 - [ ] 3.7 Auth-pagina's: inloggen, registreren, magic link verstuurd, wachtwoord vergeten/reset, e-mail geverifieerd
-- [ ] 3.8 Onboarding-flow (stappen): username → land/regio → optionele gegevens → interesses (categorieën)
+- [ ] 3.8 Onboarding-flow (kort, met de bij als gids): username → land → interesses (categorieën). Daarna direct terug naar de vraag waar de gast op tikte (pending vote indienen, uitslag tonen)
+- [ ] 3.8b Aanmeldsheet voor gasten: bottom sheet "Laat je stem tellen!" met Google, Apple en e-mail. Gekozen optie blijft zichtbaar geselecteerd. Pending vote bewaren in sessionStorage + cookie, zodat hij een OAuth-redirect overleeft
 - [ ] 3.9 Routebescherming: ingelogd-only pagina's redirecten naar login met `redirectTo`
 - [ ] 3.10 Foutpagina's (404/500) vertaald, en API-foutcodes gemapt naar vertaalde meldingen
 - [ ] 3.11 SEO-basis: `<SeoHead>`-component (title, description, canonical, hreflang, OG/Twitter), `robots.txt`
@@ -152,17 +175,19 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 4.1 `questions`-module: vraag aanmaken/bewerken (admin) met vertalingen, opties (+ optionele afbeelding), categorie, scope, open- en sluitdatum
 - [ ] 4.2 Vraagstatussen + overgangen: `DRAFT → OPEN → CLOSED` (en `ARCHIVED`). Een scheduled job opent en sluit op tijd
 - [ ] 4.3 Vraag ophalen via slug/id met vertaling in de gevraagde taal (fallback `defaultLocale`)
-- [ ] 4.4 `votes`-module: stem uitbrengen (single/multi met `maxChoices`), DB-unique constraint, transactie, en stem wijzigen zolang de vraag open is (instelbaar per vraag)
+- [ ] 4.4 `votes`-module: stem uitbrengen (single/multi met `maxChoices`), DB-unique constraint, transactie, en stem wijzigen zolang de vraag open is (standaard aan, per vraag uit te zetten). Aggregaten worden bij wijzigen correct bijgewerkt (oude optie −1, nieuwe +1)
+- [ ] 4.4b "Overslaan": `QuestionSkip` registreren. Wie overslaat krijgt de uitslag, maar stemmen daarna geeft `VOTE_AFTER_SKIP_NOT_ALLOWED`
 - [ ] 4.5 Demografische snapshot bij de stem opslaan (land, regio, leeftijdsgroep, geslacht), zodat resultaten kloppen als iemand later verhuist
 - [ ] 4.6 `results`-module: tellingen per optie, aggregaten bijwerken in dezelfde transactie (of via queue) met tabel `ResultAggregate`
 - [ ] 4.7 Uitsplitsingen: per land, regio, leeftijdsgroep en geslacht, met **k-anonimiteit (≥ 10)** afgedwongen in de service + unit tests
-- [ ] 4.8 Resultaten pas teruggeven als de gebruiker gestemd heeft (of de vraag gesloten is)
+- [ ] 4.8 Resultaten (en reacties) pas teruggeven als de gebruiker gestemd of overgeslagen heeft, of als de vraag gesloten is. Gasten krijgen geen resultaten via de API
 - [ ] 4.9 Feed-endpoints (cursor-paginatie): `trending` (stemmen laatste 24 u, tijdsverval), `nieuw`, `lokaal` (scope = jouw land/regio), `per categorie`. Standaard verbergen waar je al op stemde (optioneel tonen)
 - [ ] 4.10 Zoeken op vraagtitel (Postgres full-text, per taal)
 
 ### Web
-- [ ] 4.11 Vraagkaart-component: titel, opties, stemmen in één tap, na stemmen animatie naar resultaatbalken met percentages
-- [ ] 4.12 Home-feed met tabs Trending / Lokaal / Nieuw, infinite scroll
+- [ ] 4.11 Vraagkaart-component: titel, opties, stemmen in één tap, "overslaan"-link, en na stemmen een speelse animatie naar resultaatbalken met percentages. Voor gasten opent een tik de aanmeldsheet (3.8b)
+- [ ] 4.12 Home-feed met tabs Trending / Lokaal / Nieuw, infinite scroll, en een knop "⚡ Snel stemmen"
+- [ ] 4.12b **Snel stemmen**-modus: één vraag per scherm, swipen of tikken naar de volgende, uitslag kort tonen na elke stem. Werkt met toetsenbord en zonder swipe (toegankelijk)
 - [ ] 4.13 Vraagpagina `/[locale]/q/[slug]`: SSR, volledige resultaten, uitsplitsing-tabs, "wat stemde jouw land vs de wereld"
 - [ ] 4.14 Categoriepagina's + Ontdek-pagina (categorieën, zoeken)
 - [ ] 4.15 Admin (minimaal): vragenlijst, vraag aanmaken/bewerken met vertalingen NL+EN, opties sorteren, statusbeheer
@@ -175,14 +200,14 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 5 — Voorspellingen & scoring
 
-- [ ] 5.1 `forecasts`-module: forecast plaatsen/aanpassen. Ja/nee met kans 1–99%, meerkeuze met keuze + zekerheid (MVP). Elke wijziging in `ForecastHistory`
+- [ ] 5.1 `forecasts`-module: forecast plaatsen/aanpassen zolang de vraag open is. Opslag altijd als kans 1–99% (de zekerheidsknoppen zijn 60/75/90% op Ja of Nee, dus Nee + "Heel zeker" = 10% kans op Ja). Meerkeuze: optie + zekerheid. Elke wijziging in `ForecastHistory`
 - [ ] 5.2 Crowd-forecast: gemiddelde/mediaan kans van de massa, als tijdreeks opgeslagen (uurlijkse snapshot-job) voor de grafiek
 - [ ] 5.3 Resolutie door een admin: uitkomst kiezen of `ANNULLED` (bij onduidelijkheid), met verplichte bron-URL en notitie. Status `RESOLVED`
 - [ ] 5.4 **Scoringvoorstel uitwerken** in een ADR, ter goedkeuring van de eigenaar: tijdgewogen Brier-score (je forecast telt voor elke dag dat de vraag open was, zodat last-minute instappen niet loont), punten t.o.v. de crowd (`punten = schaal × (crowdBrier − jouwBrier)`), en een kleine meedoe-bonus
 - [ ] 5.5 `scoring`-module: scores berekenen in een BullMQ-job na resolutie, idempotent (opnieuw draaien geeft hetzelfde resultaat), met heldere unit tests op randgevallen
 - [ ] 5.6 Ranglijsten via Redis sorted sets + periodieke persist: wereld, per land, per categorie, vrienden, deze maand en all-time
 - [ ] 5.7 Kalibratie-statistiek per gebruiker ("als je 70% zegt, klopt het 68% van de keren")
-- [ ] 5.8 Web: voorspelkaart met kans-slider, crowd-grafiek over tijd (na je eigen forecast), countdown tot sluiting
+- [ ] 5.8 Web: voorspelkaart met Ja/Nee → zekerheid ("Beetje" 60%, "Vrij zeker" 75%, "Heel zeker" 90%), "⚙ Precies instellen" klapt een slider (1–99%) uit, crowd-grafiek over tijd (na je eigen forecast), countdown tot sluiting. De bij reageert bij resolutie (juichen of troosten)
 - [ ] 5.9 Web: "Voorspel"-tab met open voorspellingen, binnenkort sluitend, en jouw lopende voorspellingen
 - [ ] 5.10 Web: resolutiescherm ("Je zat goed! +42 punten") + ranglijstpagina's
 - [ ] 5.11 Admin: resolutie-wachtrij (vragen voorbij `resolvesAt`), resolutieformulier
@@ -195,6 +220,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ## Fase 6 — Lokale laag (elk land lokaal)
 
 - [ ] 6.1 Landen- en regiodata compleet (ISO 3166-1/2) met namen in NL en EN, in `packages/shared`
+- [ ] 6.9 Progressieve profielvragen: op slimme momenten (bijv. na 5 stemmen, of bij het openen van de uitsplitsing) een kaartje "Wil je zien hoe jouw leeftijdsgroep/provincie stemt?", met geboortejaar, geslacht of regio invullen in één tik. Wegklikbaar, maximaal 1× per week tonen
 - [ ] 6.2 Feed-personalisatie: mix van lokaal (jouw land/regio), globaal en categorieën uit je interesses
 - [ ] 6.3 Landpagina `/[locale]/land/[cc]`: "Wat denkt Nederland?" met top-vragen, recente uitslagen, lokale ranglijst
 - [ ] 6.4 Wereldkaart-component (d3-geo + world-atlas TopoJSON): kleur per land = meest gekozen optie of % voor optie X, met tooltip. Landen onder de drempel grijs
@@ -230,7 +256,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 8.2 Streaks: dagen op rij actief (in de tijdzone van de gebruiker), met een "streak freeze" (1× per week)
 - [ ] 8.3 Badges: definities + automatische toekenning via events (eerste stem, 7-daagse streak, 10 goede voorspellingen, top 10 in je land, …)
 - [ ] 8.4 Vraag van de dag: per land en globaal, gekozen door een admin of automatisch (trending), uitgelicht bovenaan
-- [ ] 8.5 "Dit of dat"-modus: swipe-interface voor snelle duels (veel stemmen in korte tijd)
+- [ ] 8.5 "Dit of dat"-duels in de Snel stemmen-modus (4.12b): A vs B, swipe links/rechts, met reeksen ("10 snelle duels over eten")
+- [ ] 8.9 De bij-mascotte overal inzetten: lege staten, onboarding, streak-mijlpalen, badges, resolutie (juichen of troosten), foutpagina's
 - [ ] 8.6 Wekelijkse recap: "Deze week stemde je 34×, je zat 5× goed, je bent #120 in Nederland"
 - [ ] 8.7 Anti-farming: XP-plafond per dag, geen XP voor stem wijzigen, alleen gelikete reacties tellen
 
@@ -260,7 +287,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 10.2 Service worker (SvelteKit `service-worker.ts` of `@vite-pwa/sveltekit`): app-shell cachen, offline-pagina
 - [ ] 10.3 Installatie-prompt op een slim moment (na 3 stemmen), met iOS-instructie ("Zet op beginscherm")
 - [ ] 10.4 Web Push (VAPID): opt-in na een waardevol moment, abonnementen opslaan, versturen via BullMQ
-- [ ] 10.5 Pushtypes + instellingen per type: vraag van de dag, voorspelling opgelost, streak in gevaar, iemand reageert
+- [ ] 10.5 Pushtypes (standaard **actief**) + instellingen per type: vraag van de dag, trending vragen, vrienden die stemmen, wekelijkse recap, voorspelling opgelost, iemand reageert, streak in gevaar
+- [ ] 10.5b Push-limieten: max 3 per dag per gebruiker (prioriteit: opgelost > reactie > streak > vraag van de dag > vrienden > trending), stille uren 22:00–08:00 in de tijdzone van de gebruiker, bundelen ("3 vrienden stemden op …")
 - [ ] 10.6 Lighthouse-check: PWA installable, performance ≥ 90 op mobiel
 
 **Acceptatie:** de site is installeerbaar op Android en iOS, opent standalone, en gebruikers krijgen pushmeldingen die ze per type kunnen uitzetten.
@@ -348,6 +376,7 @@ OptionTranslation    optionId + locale (PK), label
 Vote            id, questionId, optionId, userId, createdAt,
                 snapCountry, snapRegion?, snapAgeBucket?, snapGender?
                 UNIQUE(questionId, userId, optionId)
+QuestionSkip    questionId + userId (PK), createdAt
 Forecast        id, questionId, userId, optionId?, probability (1-99), updatedAt
                 UNIQUE(questionId, userId)
 ForecastHistory id, forecastId, optionId?, probability, createdAt

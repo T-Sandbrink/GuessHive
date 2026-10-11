@@ -14,8 +14,8 @@ Read this file fully before starting any task. `PLAN.md` holds the work to be do
 
 Product principles. Use them to decide when something is unclear:
 
-1. **Vote first, then see results.** Results stay hidden until the user has voted or forecast, so they are not influenced.
-2. **Fast and fun beats complete.** Voting must take one tap. Every extra step costs users.
+1. **Vote first, then see results.** Results and comments stay hidden until the user has voted, forecast, or explicitly skipped. Skipping reveals results but locks out voting on that question. Guests can browse everything, and their first tap opens the sign-up sheet, after which the vote is submitted for them.
+2. **Fast and fun beats complete.** Voting must take one tap. Every extra step costs users. The tone is playful and warm (honey yellow, rounded shapes, a bee mascot). See "UX-beslissingen" in PLAN.md, which is binding for UI work.
 3. **Local feels local.** Country questions are in the local language and about local topics.
 4. **Trustworthy numbers.** One person gets one vote, there are no fake accounts, and small groups are never exposed (see privacy rules).
 5. **No real money, ever.** No betting, no paid points, no crypto.
@@ -109,7 +109,7 @@ pnpm --filter api db:seed      # seed local data
    - UI changes are checked in a browser (desktop and mobile width, light and dark).
    - User-facing strings exist in both `nl` and `en`.
    - PLAN.md is updated (box ticked, notes added if something changed).
-4. **Git**: follow the branch model in "Git workflow" below. You may commit and merge locally on your own. Pushing to GitHub needs the owner's approval.
+4. **Git**: follow the branch model in "Git workflow" below. You may commit, merge and push on your own, within the rules below.
 5. **Ask, don't guess**, when a product decision is not covered by this file or PLAN.md. Note the open question in PLAN.md under "Open questions".
 6. **Record decisions.** Any significant technical choice (new dependency of consequence, architectural change) gets a short ADR in `docs/decisions/`.
 7. **Do not add dependencies casually.** Prefer the platform and existing deps. When adding one, say why in the commit message.
@@ -139,7 +139,7 @@ Rules:
 - Commit messages follow Conventional Commits (`feat(votes): cast single-choice vote`, `fix(web): ...`, `test(api): ...`, `chore: ...`, `docs: ...`) and end with the trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Before every merge, `pnpm lint`, `pnpm typecheck` and `pnpm test` must pass on the source branch.
 - Never force-push, never rewrite history that has been pushed, and never commit secrets or `.env` files.
-- **Pushing** to GitHub happens only once the owner has approved it. When approved, push phase and task branches. Push `main` and tags only after a phase merge.
+- **Pushing** to GitHub (`origin`) is approved by the owner. Push task and phase branches after each merge into them, and push `main` plus the `phase-N-done` tag right after a phase merge. Never push `main` at any other time.
 
 ### Usage limits: pause cleanly, resume automatically
 
@@ -212,7 +212,7 @@ To make sure **only one session works on the repo at a time**, every session use
 
 - **May**: everything in PLAN.md phases 0–11, branches, local commits and merges, `pnpm install`, `docker compose up` / `down`, running tests, and the subagents.
 - **Must not**:
-  - push without the owner's approval;
+  - force-push, or push `main` outside a phase merge;
   - create external accounts or enter credentials;
   - register domains or buy anything;
   - deploy to production;
