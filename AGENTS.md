@@ -373,7 +373,8 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Demographic fields (birth date, gender, region) are **optional** and used only for aggregate breakdowns. Birth date is also used for the 18+ check. Never expose it, only the age bucket.
 - Minimum age is 16. The **Dark Corner is 18+**: invisible to guests, minors and anyone who has not opted in, never indexed, never in share cards or push.
 - Uploaded images are only shown after moderation (automated scan plus a CSAM hash check plus human review for flagged items). Strip EXIF metadata.
-- Users can export all their data and delete their account (hard delete of personal data, anonymised votes kept for aggregates).
+- Users can export all their data and delete their account. The account is hidden immediately, there is a disclosed 14-day grace period (logging in again restores it), and after that personal data is hard-deleted and votes are kept anonymised for aggregates.
+- Comments never reveal the commenter's choice unless they opt in for that comment. Public profiles show the username only, never a real name or city.
 - No third-party tracking cookies, so no cookie wall is needed. Use cookieless analytics only.
 - Store user data in the EU (EU hosting region for DB and api).
 

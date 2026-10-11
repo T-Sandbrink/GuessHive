@@ -90,6 +90,11 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Groepen: uitkomst | De **maker** van een groepsvraag kiest de uitkomst. Leden hebben **24 uur** om bezwaar te maken. Bij bezwaar volgt een **stemming** onder de leden (meerderheid beslist; bij gelijkspel wordt de vraag geannuleerd en gaan de punten terug) |
 | Groepen: privacy | **Binnen een groep zien leden elkaars stemmen en voorspellingen**. Dat staat duidelijk bij het lid worden. Buiten de groep blijft alles privé. De 10-stemmersdrempel geldt niet binnen groepen (bewuste uitzondering met toestemming) |
 | Instellingen | Account (naam, username, e-mail, inlogmethodes, wachtwoord), Profiel en privacy (publiek/privé, stemmen openbaar, land/regio, geboortedatum en geslacht optioneel, Dark Corner aan/uit), Meldingen (per type, stille uren), Weergave (taal NL/EN, thema licht/donker/systeem), Je gegevens (exporteren, account verwijderen), Hulp en juridisch. Mobiel: lijst → subpagina. Desktop: zijbalk met secties |
+| Mobiel menu | Onderbalk: **Home, Ontdek, Voorspel, Groepen, Meldingen**. Profiel via je zeshoek-avatar rechtsboven. Dark Corner is een tegel bovenaan Ontdek, alleen zichtbaar voor 18+ die hem hebben aangezet (nooit in de onderbalk of zijbalk voor anderen) |
+| Groepskaart | Heet **"Groepsweddenschap"**, met een zichtbare inzetregel |
+| Account verwijderen | 14 dagen bedenktijd, daarna definitief |
+| Reacties en privacy | Bij een reactie staat je keuze standaard **niet**. Optie "Laat mijn keuze zien bij deze reactie" per reactie |
+| Publiek profiel | Alleen username, avatar, level, badges, voorspelscore en streak. Geen echte naam of woonplaats |
 
 ## Open vragen
 
@@ -196,7 +201,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 3.3 Paraglide: locales `nl` en `en`, routes `/[locale]/...`, taaldetectie (cookie → Accept-Language → `en`), taalwisselaar
 - [ ] 3.4 `hooks.server.ts`: `/api/*` proxyen naar NestJS (cookies doorgeven, origin-check), sessie ophalen naar `event.locals.user`
 - [ ] 3.5 Typed API-client: types genereren uit OpenAPI (`openapi-typescript` + `openapi-fetch`), plus een gedeelde helper voor server- en client-calls
-- [ ] 3.6 App-layout mobile-first: bovenbalk (logo, zoeken, profiel), onderste tabbalk op mobiel (Home, Ontdek, Voorspel, Meldingen, Profiel), zijbalk op desktop
+- [ ] 3.6 App-layout mobile-first: bovenbalk (logo, zoeken, profiel), onderste tabbalk op mobiel (**Home, Ontdek, Voorspel, Groepen, Meldingen**). Profiel via de zeshoek-avatar rechtsboven. Dark Corner als tegel bovenaan Ontdek, alleen voor 18+ met opt-in. Onder 768px gebruikt ook de desktopsite deze mobiele kop- en tabbalk, zijbalk op desktop
 - [ ] 3.7 Auth-pagina's: inloggen, registreren, magic link verstuurd, wachtwoord vergeten/reset, e-mail geverifieerd
 - [ ] 3.8 Onboarding-flow (kort, met de bij als gids): username → land → interesses (categorieën). Daarna direct terug naar de vraag waar de gast op tikte (pending vote indienen, uitslag tonen)
 - [ ] 3.8b Aanmeldsheet voor gasten: bottom sheet "Laat je stem tellen!" met Google, Apple en e-mail. Gekozen optie blijft zichtbaar geselecteerd. Pending vote bewaren in sessionStorage + cookie, zodat hij een OAuth-redirect overleeft
@@ -228,7 +233,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 4.11 Vraagkaart-component: titel, opties, stemmen in één tap, "overslaan"-link, en na stemmen een speelse animatie naar resultaatbalken met percentages. Voor gasten opent een tik de aanmeldsheet (3.8b)
 - [ ] 4.12 Home-feed met tabs Trending / Lokaal / Nieuw, infinite scroll, en een knop "⚡ Snel stemmen"
 - [ ] 4.12b **Snel stemmen**-modus: één vraag per scherm, swipen of tikken naar de volgende, uitslag kort tonen na elke stem. Knop "Volgende vraag" registreert geen skip. Werkt met toetsenbord en zonder swipe (toegankelijk)
-- [ ] 4.12c **Carrousel "Uitgelicht"** bovenaan de home: vraag van de dag + nieuwste vragen (API: endpoint `featured` met de vraag van de dag + de nieuwste open vragen voor jouw land en globaal, zonder vragen waarop je al stemde). Stemmen in de dia, automatisch wisselen (6 s) met pauzeknop, pauzeren bij hover/focus/aanraken/na stemmen/"minder beweging", volgens het WAI-ARIA carrousel-patroon
+- [ ] 4.12c **Carrousel "Uitgelicht"** bovenaan de home: vraag van de dag + nieuwste vragen (API: endpoint `featured` met de vraag van de dag + de nieuwste open vragen voor jouw land en globaal, zonder vragen waarop je al stemde). Stemmen in de dia, automatisch wisselen (6 s) met pauzeknop, pauzeren bij hover/focus/aanraken/na stemmen/"minder beweging", volgens het WAI-ARIA carrousel-patroon. Bewuste keuze: na aanraken of na een stem blijft de carrousel gepauzeerd tot de gebruiker zelf op afspelen of een puntje tikt
 - [ ] 4.13 Vraagpagina `/[locale]/q/[slug]`: SSR, volledige resultaten, uitsplitsing-tabs, "wat stemde jouw land vs de wereld"
 - [ ] 4.14 Categoriepagina's + Ontdek-pagina (categorieën, zoeken)
 - [ ] 4.15 Admin (minimaal): vragenlijst, vraag aanmaken/bewerken met vertalingen NL+EN, opties sorteren, statusbeheer
@@ -361,7 +366,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 - [ ] 9b.1 Leeftijdspoort: alleen met een geboortedatum (18+) in het profiel + eenmalige bevestiging + schakelaar "Dark Corner tonen" in de instellingen (standaard uit). Nooit voor gasten. Wie onder de 18 is of geen geboortedatum heeft, ziet de hoek niet eens. Bij intrekken van de schakelaar direct onzichtbaar
 - [ ] 9b.2 Vragen met `darkCorner = true`: eigen feed/tab, nooit in publieke feeds, de carrousel, zoekresultaten van niet-ingeschakelde gebruikers, Google (`noindex`), deelkaarten of pushmeldingen
-- [ ] 9b.3 Afbeeldingen bij vragen en opties (ook buiten de Dark Corner bruikbaar): upload, verkleinen, EXIF verwijderen, alleen JPG/PNG/WebP, max-grootte. Status `PENDING → APPROVED/REJECTED`. Pas zichtbaar na goedkeuring
+- [ ] 9b.3 Afbeeldingen bij vragen en opties (ook buiten de Dark Corner bruikbaar): upload met een **verplicht veld "Beschrijf de afbeelding"** (alt-tekst, gecontroleerd bij moderatie), verkleinen, EXIF verwijderen, alleen JPG/PNG/WebP, max-grootte. Status `PENDING → APPROVED/REJECTED`. Pas zichtbaar na goedkeuring
 - [ ] 9b.4 Beeldmoderatie: automatische scan (naakt, geweld, extremistische symbolen) + verplichte hash-check op misbruikmateriaal + menselijke wachtrij (dienst: zie Open vragen). Geblokkeerde symbolen-lijst in `docs/moderation/`
 - [ ] 9b.5 Inhoudsregels Dark Corner (NL+EN), zichtbaar bij het aanzetten en het indienen. Moderatie altijd vooraf (geen direct publiceren, ook niet voor ambassadeurs). Strengere rate limits
 - [ ] 9b.6 Melden met extra redenen (naakt, haat, minderjarig), na 2 meldingen automatisch verbergen. Ernstige overtredingen leiden tot een directe ban en, waar de wet dat vereist, een melding bij de autoriteiten (procedure in `docs/moderation/`)
@@ -389,7 +394,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ## Fase 11 — Privacy, juridisch & security-hardening
 
 - [ ] 11.1 Data-export (`/me/export` → JSON-download met al je gegevens)
-- [ ] 11.2 Account verwijderen: persoonsgegevens hard verwijderen, stemmen geanonimiseerd bewaren voor aggregaten, 14 dagen bedenktijd
+- [ ] 11.2 Account verwijderen: account direct onzichtbaar, **14 dagen bedenktijd** (opnieuw inloggen = terugzetten), daarna persoonsgegevens hard verwijderen en stemmen geanonimiseerd bewaren voor aggregaten. Duidelijk uitgelegd in de verwijderflow
 - [ ] 11.3 Privacyverklaring, gebruiksvoorwaarden en community-richtlijnen (NL+EN). **Eigenaar laat juridisch checken**
 - [ ] 11.4 Cookieloze analytics (Umami/Plausible) + overzicht van welke cookies er zijn (alleen functioneel, geen cookiebanner nodig)
 - [ ] 11.5 Security headers + CSP afstemmen (ook voor OG-afbeeldingen en analytics)
