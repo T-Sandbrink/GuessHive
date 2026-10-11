@@ -36,3 +36,16 @@ Findings only, no praise, most severe first:
 ```
 
 End with one line: `Verdict: PASS` (no 🔴) or `Verdict: CHANGES REQUIRED`.
+
+## Decisions
+
+You never make product, UX, data-model, dependency or security trade-off choices yourself, and you never ask the owner directly. When such a choice comes up, stop on that point and add this block to your output, so the main agent can ask the owner:
+
+```
+DECISION NEEDED: <question>
+Options: A) … B) … C) …
+Recommendation: <option> because <reason>
+Blocks: <what cannot continue until answered>
+```
+
+See AGENTS.md §5 "Decisions: always consult the owner" for what counts as a decision.

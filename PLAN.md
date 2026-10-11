@@ -55,6 +55,19 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Reacties | Pas zichtbaar **na stemmen of overslaan** |
 | Pushmeldingen | **Actief**: vraag van de dag, trending vragen, vrienden die stemmen, wekelijkse recap, voorspelling opgelost, reacties, streak in gevaar. Alles per type uit te zetten. Harde limiet: max 3 per dag, geen pushes tussen 22:00 en 08:00 lokale tijd |
 
+### Lancering & landen
+
+| Onderwerp | Beslissing |
+|---|---|
+| Startlanden | **Wereld open, lokaal eerst NL + BE (Vlaanderen).** Iedereen kan meedoen met globale vragen (NL/EN-interface). De "Lokaal"-tab, landpagina's en lokale vragen starten met Nederland en België. Andere landen zien "Lokaal komt eraan: word ambassadeur!" |
+| Uitbreiden | **Op basis van data**: een land krijgt lokale content zodra het ≥ 500 maandelijks actieve gebruikers heeft (drempel instelbaar) **en** minstens 1 actieve ambassadeur. Het admin-dashboard toont welke landen bijna klaar zijn. De eigenaar geeft het laatste akkoord (`localEnabled` aanzetten) |
+| Lokale vragen | **Ambassadeurs + gebruikers via moderatie**, later aangevuld met **AI-suggesties uit het nieuws** (na lancering) |
+| Ambassadeurs | **Aanmelden + goedkeuring door eigenaar/admin.** Voorwaarde: minimaal level 5 en een goede trust score (instelbaar). Eerst 30 dagen proeftijd (vragen voorstellen die direct bovenaan de moderatiewachtrij komen, meldingen afhandelen). Daarna volledig: lokale vragen direct publiceren (behalve politiek) en de lokale wachtrij modereren. Rechten gelden per land/regio, alles in de audit log, intrekken altijd mogelijk |
+| AI-nieuwssuggesties | **Na lancering**, met de Claude API (Haiku). Alleen koppen en links uit openbare RSS-feeds (bijv. NOS, VRT), nooit artikeltekst overnemen. AI stelt vragen voor, een ambassadeur/admin keurt goed. Vereist een Anthropic API-account (eigenaar) |
+| Categorieën | Sport ⚽ · Eten & drinken 🍽 · Entertainment (film/muziek/tv/games) 🎬 · Actualiteit 📰 · **Politiek & maatschappij 🏛** · Lifestyle & relaties 💛 · Tech 💻 · Weer & natuur 🌦 · Lokaal & je buurt 🏘 · Dit of dat 🎲 |
+| Politiek | **Toegestaan, met regels**: (1) altijd via moderatie, ook voor vertrouwde gebruikers en ambassadeurs; (2) label "Geen representatieve peiling" op vraag, uitslag en deelkaart; (3) neutrale formulering verplicht (checklist voor moderatoren); (4) **verkiezingsstilte** per land: uitslagen van politieke vragen over dat land worden verborgen tijdens de periode die de lokale regels voorschrijven (admin-beheerde kalender); (5) stemmen van accounts jonger dan 7 dagen tellen niet mee in politieke uitslagen (ze mogen wel stemmen, en hun stem telt na 7 dagen alsnog mee); (6) geen vragen die privépersonen noemen |
+| Startcontent | **De agent schrijft concepten, de eigenaar keurt.** ±100 vragen (±50 lokaal NL/BE, ±50 globaal) + 10 voorspellingen, NL + EN, als seed-bestand. De eigenaar loopt ze door vóór de lancering |
+
 ## Open vragen
 
 Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze hier neer.
@@ -65,7 +78,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Mascotte**: naam voor de bij? Later eventueel een illustrator voor de definitieve versie (de agent maakt een eerste SVG-versie).
 - [ ] **Merknaam-check**: GuessHive in het EUIPO-register controleren vóór lancering (eigenaar).
 - [ ] **Domeinen registreren**: `.com`, `.net`, `.eu` en `.nl` (eigenaar).
-- [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Sentry (fase 11).
+- [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Sentry (fase 11), Anthropic API voor AI-nieuwssuggesties (na lancering).
 
 ---
 
@@ -115,7 +128,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
 - [ ] 1.2 ID-strategie kiezen (cuid2 of UUIDv7) en vastleggen in een ADR
 - [ ] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken
-- [ ] 1.4 Seed-script: ~15 landen met regio's, categorieën (NL+EN), 1 admin-gebruiker, ~20 voorbeeldvragen van alle types
+- [ ] 1.4 Seed-script: alle landen (ISO), met `localEnabled` aan voor NL en BE en regio's voor NL en BE; de 10 categorieën uit "Lancering & landen" (NL+EN, Politiek met `sensitive = true`); 1 admin-gebruiker; ~20 voorbeeldvragen van alle types (development-data, niet de startcontent)
 - [ ] 1.5 Globale Nest-setup: config-module (zod), `ZodValidationPipe`, exception filter met `{ code, message }`, request-logging (pino) zonder PII
 - [ ] 1.6 `@nestjs/swagger` + `nestjs-zod`: OpenAPI op `/docs` (alleen in dev)
 - [ ] 1.7 `health`-module: `/health` controleert db en redis
@@ -221,8 +234,10 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 - [ ] 6.1 Landen- en regiodata compleet (ISO 3166-1/2) met namen in NL en EN, in `packages/shared`
 - [ ] 6.9 Progressieve profielvragen: op slimme momenten (bijv. na 5 stemmen, of bij het openen van de uitsplitsing) een kaartje "Wil je zien hoe jouw leeftijdsgroep/provincie stemt?", met geboortejaar, geslacht of regio invullen in één tik. Wegklikbaar, maximaal 1× per week tonen
-- [ ] 6.2 Feed-personalisatie: mix van lokaal (jouw land/regio), globaal en categorieën uit je interesses
-- [ ] 6.3 Landpagina `/[locale]/land/[cc]`: "Wat denkt Nederland?" met top-vragen, recente uitslagen, lokale ranglijst
+- [ ] 6.2 Feed-personalisatie: mix van lokaal (jouw land/regio, alleen als `localEnabled`), globaal en categorieën uit je interesses
+- [ ] 6.2b Landen zonder lokale content: de "Lokaal"-tab toont de bij met "Lokaal komt eraan in <land>", hoeveel gebruikers er nog nodig zijn, en een knop "Word ambassadeur"
+- [ ] 6.3 Landpagina `/[locale]/land/[cc]`: "Wat denkt Nederland?" met top-vragen, recente uitslagen, lokale ranglijst. Alleen voor landen met `localEnabled`
+- [ ] 6.10 Uitbreidingsdashboard (admin): per land maandelijks actieve gebruikers, aantal (kandidaat-)ambassadeurs, ingediende lokale vragen, en een "klaar voor lokaal"-indicator op basis van de drempels. De knop `localEnabled` aanzetten is alleen voor de eigenaar/admin
 - [ ] 6.4 Wereldkaart-component (d3-geo + world-atlas TopoJSON): kleur per land = meest gekozen optie of % voor optie X, met tooltip. Landen onder de drempel grijs
 - [ ] 6.5 Landvergelijking op een vraagpagina: "Nederland vs België vs Duitsland"
 - [ ] 6.6 Regio-uitsplitsing per land (provincies), zelfde drempel
@@ -277,6 +292,19 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 9.8 Admin-dashboard: statistieken (nieuwe gebruikers, stemmen/dag, actieve vragen), wachtrijen, gebruikersbeheer
 - [ ] 9.9 Verdachte stempatronen detecteren (veel nieuwe accounts die op één vraag stemmen, zelfde IP/device) → markeren, niet automatisch verwijderen
 
+### Ambassadeurs
+- [ ] 9.10 Ambassadeur-aanmelding: formulier (land/regio, motivatie), voorwaarden zichtbaar (level, trust), status in je profiel
+- [ ] 9.11 Goedkeuren/afwijzen door eigenaar/admin. Status `APPLIED → PROBATION (30 dagen) → ACTIVE`, en `REVOKED` op elk moment. Rechten zijn gebonden aan land/regio via een guard (`@AmbassadorOf(countryCode)`)
+- [ ] 9.12 Rechten per fase: proeftijd (voorstellen met voorrang in de wachtrij, meldingen afhandelen), actief (lokale niet-politieke vragen direct publiceren, lokale wachtrij modereren). Alles in de `AuditLog`
+- [ ] 9.13 Ambassadeur-dashboard: lokale wachtrij, meldingen uit hun land, statistieken van hun vragen. Badge en rang "Ambassadeur 🇳🇱" op het profiel
+
+### Politieke vragen
+- [ ] 9.14 Categorieën met `sensitive = true` (Politiek): altijd via de moderatiewachtrij, ongeacht trust of rol (behalve admin). Moderatie-checklist "neutrale formulering, geen privépersonen"
+- [ ] 9.15 Label "Geen representatieve peiling" op vraagkaart, uitslag en deelkaart van gevoelige vragen (NL+EN)
+- [ ] 9.16 Nieuwe-accountregel: stemmen van accounts jonger dan 7 dagen worden opgeslagen, maar pas na 7 dagen meegeteld in de uitslag van gevoelige vragen. Aggregatie houdt hier rekening mee + tests
+- [ ] 9.17 Verkiezingsstilte: tabel `ElectionBlackout` (land, start, eind, notitie), beheerd door een admin. Tijdens de periode zijn de uitslagen van politieke vragen over dat land verborgen (API én deelkaarten). Stemmen blijft mogelijk
+- [ ] 9.18 Uitzoeken welke regels NL en BE hebben voor het publiceren van peilingen rond verkiezingen, met bronnen in `docs/legal/election-rules.md`. **De eigenaar laat dit juridisch bevestigen.** Geen aannames als feit opschrijven
+
 **Acceptatie:** gebruikers dienen vragen in, moderatoren handelen ze af in een wachtrij, meldingen werken, en alle moderatoracties zijn terug te vinden in de audit log.
 
 ---
@@ -320,7 +348,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 12.3 Domeinen: `guesshive.com` live (HTTPS), `.net`, `.eu` en `.nl` als 301-redirects (`.nl` → `/nl`)
 - [ ] 12.4 Productie-mail: Resend met SPF/DKIM/DMARC op het eigen domein
 - [ ] 12.5 OAuth-apps in productie: Google Cloud Console en Apple Developer (eigenaar regelt de accounts)
-- [ ] 12.6 Startcontent: ±100 vragen (50 NL-lokaal, 50 globaal, NL+EN), 10 lopende voorspellingen, vraag van de dag voor 2 weken vooruit
+- [ ] 12.6 Startcontent (concept door de agent, mag al eerder klaargezet worden): ±100 vragen (±50 lokaal NL/BE, ±50 globaal, over alle 10 categorieën, NL+EN), 10 lopende voorspellingen, vraag van de dag voor 2 weken vooruit, als `seed/launch-content.json` + import-script
+- [ ] 12.6b **Eigenaar keurt de startcontent** (goedkeuren / aanpassen / schrappen) vóór de import in productie
 - [ ] 12.7 Loadtest (k6): 500 gelijktijdige stemmers, p95 < 300 ms op stemmen en feed
 - [ ] 12.8 Deploy-checklist + rollback-procedure in `docs/deploy.md`
 - [ ] 12.9 Soft launch: vrienden en familie, feedbackformulier in de app, bugs oplossen
@@ -333,6 +362,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ## Backlog (na lancering, niet beginnen zonder akkoord)
 
 - Realtime live-uitslagen (SSE of WebSocket) bij populaire vragen
+- **AI-nieuwssuggesties** (besloten, eerste item na lancering): dagelijkse job per land met `localEnabled` leest koppen en links uit openbare RSS-feeds (bijv. NOS, VRT), Claude Haiku stelt 5–10 neutrale vragen voor (NL+EN), en die komen in de wachtrij voor ambassadeurs/admins. Nooit artikeltekst overnemen. Vereist een Anthropic API-account (eigenaar) en een kostenlimiet
 - AI-vertaling van vragen (zodat lokale vragen ook voor anderen leesbaar zijn) en AI-moderatie
 - Meer talen: DE, FR, ES (alleen vertalen dankzij de i18n-opzet)
 - Privé-groepen ("vriendengroep", "klas", "kantoor") met eigen vragen en ranglijsten
@@ -357,9 +387,12 @@ User            id, email, emailVerified, username (uniek), displayName, avatarU
                 profileVisibility (PUBLIC|PRIVATE), createdAt, deletedAt?
 Account/Session/Verification   (tabellen van Better Auth)
 
-Country         code (PK), names (json nl/en), enabled
+Country         code (PK), names (json nl/en), localEnabled, localEnabledAt?
 Region          code (PK), countryCode, names (json)
-Category        id, slug, names (json), icon, sortOrder
+Category        id, slug, names (json), icon, sortOrder, sensitive (bool)
+Ambassador      id, userId, countryCode, regionCode?, status (APPLIED|PROBATION|ACTIVE|REJECTED|REVOKED),
+                motivation, appliedAt, decidedById?, decidedAt?, probationEndsAt?
+ElectionBlackout id, countryCode, startsAt, endsAt, note, createdById
 
 Question        id, shortId, slug, type (POLL_SINGLE|POLL_MULTI|THIS_OR_THAT|
                 PREDICTION_BINARY|PREDICTION_CHOICE), status (DRAFT|PENDING_REVIEW|

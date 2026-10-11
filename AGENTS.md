@@ -110,10 +110,51 @@ pnpm --filter api db:seed      # seed local data
    - User-facing strings exist in both `nl` and `en`.
    - PLAN.md is updated (box ticked, notes added if something changed).
 4. **Git**: follow the branch model in "Git workflow" below. You may commit, merge and push on your own, within the rules below.
-5. **Ask, don't guess**, when a product decision is not covered by this file or PLAN.md. Note the open question in PLAN.md under "Open questions".
+5. **Ask, don't guess.** The owner makes every real decision. See "Decisions: always consult the owner" below.
 6. **Record decisions.** Any significant technical choice (new dependency of consequence, architectural change) gets a short ADR in `docs/decisions/`.
 7. **Do not add dependencies casually.** Prefer the platform and existing deps. When adding one, say why in the commit message.
 8. **Leave the repo runnable.** Never leave `main` broken, and never commit commented-out code or stray debug logs.
+
+### Decisions: always consult the owner
+
+The owner wants to be consulted on every real choice. This applies to the main agent **and** to every subagent. Never pick an option silently because it seems reasonable.
+
+**Needs the owner** (ask first):
+
+- Anything user-visible that PLAN.md does not already specify: flows, copy tone, layout, which data is shown, defaults, limits, notification behaviour.
+- The data model differing from the "Datamodel" section in PLAN.md (new tables, removed fields, changed relations).
+- A new runtime dependency, a new external service, or anything that costs money or needs an account.
+- Deviating from PLAN.md or AGENTS.md: skipping, merging or reordering tasks, or changing the stack.
+- Security or privacy trade-offs, such as relaxing a rule, a weaker but simpler option, or accepting a 🟡 finding instead of fixing it.
+- Reviewer findings where several fixes are reasonable and they differ in behaviour.
+
+**Does not need the owner** (decide yourself, within the conventions):
+
+- Internal naming, file structure inside a module, refactors without behaviour change.
+- Choosing between equivalent implementations with identical behaviour.
+- Fixing a clear bug or a 🔴 finding with one obvious fix.
+- Test structure and test data.
+
+**Subagents never ask the owner directly.** When a subagent hits a decision, it stops on that point and includes a block in its output:
+
+```
+DECISION NEEDED: <question>
+Options: A) … B) … C) …
+Recommendation: <option> because <reason>
+Blocks: <what cannot continue until answered>
+```
+
+The main agent collects these and asks the owner.
+
+**How to ask:**
+
+1. Write the question in PLAN.md under "Open questions": the context in 1–2 sentences, 2–4 options with trade-offs, your recommendation, and the task it blocks.
+2. Ask with `AskUserQuestion`: up to 4 questions per call, recommended option first and marked "(Recommended)", in Dutch, and with a `preview` mockup for UI choices. Remote Control is on, so the owner can answer from the Claude mobile app.
+3. Send one `PushNotification` (Dutch, under 200 characters, for example "GuessHive: 2 vragen over de feed-layout wachten op je antwoord"), so the question reaches the owner's phone.
+4. **Keep working while you wait, if you can.**
+   - If other unblocked tasks exist, park the question (steps 1 and 3 only) and continue with them. Ask the parked questions in one batch when you reach a natural stop: end of a task, or before pausing.
+   - If nothing unblocked remains, ask right away. Set `.agent-state.json` to `waiting_for_owner` and wait for the answer. Waiting does not use up quota.
+5. After the answer: record it under "Vastgelegde beslissingen" or "UX-beslissingen" in PLAN.md (or in an ADR for technical choices), remove it from "Open questions", and continue.
 
 ### Git workflow
 
@@ -187,7 +228,7 @@ To make sure **only one session works on the repo at a time**, every session use
 
 ```json
 {
-  "status": "working | paused | blocked | done",
+  "status": "working | waiting_for_owner | paused | blocked | done",
   "since": "2026-10-11T21:00:00+02:00",
   "resumeAt": "2026-10-12T01:35:00+02:00 or null",
   "task": "1.3",
@@ -201,7 +242,7 @@ To make sure **only one session works on the repo at a time**, every session use
 |---|---|
 | `working` and `since` less than 6 hours ago | Another session is active. **Exit immediately** without touching anything. |
 | `paused` and `resumeAt` still in the future | **Exit immediately.** The resume task will handle it. |
-| `blocked` or `done` | **Exit immediately.** Only the owner can unblock. |
+| `waiting_for_owner`, `blocked` or `done` | **Exit immediately**, regardless of age. Another session is waiting for an answer, or only the owner can unblock. |
 | Missing, `paused` with `resumeAt` in the past, or a stale `working` (6 hours or older) | Check usage. If it is below 75%, write `working` with `since` = now and the task id, then resume. Otherwise schedule `guesshive-resume` at the reset and exit. |
 
 **While working**: keep `task` up to date. **On pause**: write `paused` with `resumeAt`. **On finishing everything that can be done unattended**: write `done`.

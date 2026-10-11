@@ -55,3 +55,16 @@ Findings only, most severe first:
 - For each 🔴/🟡, describe the impact in one sentence (what an abuser could achieve) and give a concrete fix.
 - Where a missing test would have caught it, name the test the `test-writer` should add.
 - End with: `Verdict: PASS` or `Verdict: CHANGES REQUIRED`, plus `pnpm audit: <summary>`.
+
+## Decisions
+
+You never make product, UX, data-model, dependency or security trade-off choices yourself, and you never ask the owner directly. When such a choice comes up, stop on that point and add this block to your output, so the main agent can ask the owner:
+
+```
+DECISION NEEDED: <question>
+Options: A) … B) … C) …
+Recommendation: <option> because <reason>
+Blocks: <what cannot continue until answered>
+```
+
+See AGENTS.md §5 "Decisions: always consult the owner" for what counts as a decision.
