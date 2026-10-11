@@ -163,7 +163,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 3 — Web-shell (SvelteKit)
 
-- [ ] 3.0 **Designrichting ter goedkeuring** (eigenaar): stijltegel + klikbare mockup als HTML-pagina met kleuren (honinggeel, warm), typografie, ronde vormen, eerste SVG-versie van de bij-mascotte, en de schermen home-feed, vraagkaart (voor/na stemmen), aanmeldsheet voor gasten, voorspelkaart (Ja/Nee + zekerheid) en Snel stemmen. Light + dark, mobiel + desktop. **Pas na akkoord UI-taken van fase 3 bouwen.** Tot die tijd mag de agent doorwerken aan andere niet-UI-taken
+- [~] 3.0 **Designrichting ter goedkeuring** (eigenaar). Eerste versie: https://claude.ai/artifact/27Jt9oFZeytMGGnwuu8XpU (wacht op feedback/akkoord). Inhoud: stijltegel + klikbare mockup als HTML-pagina met kleuren (honinggeel, warm), typografie, ronde vormen, eerste SVG-versie van de bij-mascotte, en de schermen home-feed, vraagkaart (voor/na stemmen), aanmeldsheet voor gasten, voorspelkaart (Ja/Nee + zekerheid) en Snel stemmen. Light + dark, mobiel + desktop. **Pas na akkoord UI-taken van fase 3 bouwen.** Tot die tijd mag de agent doorwerken aan andere niet-UI-taken
 - [ ] 3.1 Tailwind v4-thema volgens de goedgekeurde designrichting: kleuren (design tokens), typografie, radius, schaduwen, dark mode (systeem + toggle), animatie-tokens (respecteert `prefers-reduced-motion`)
 - [ ] 3.2 shadcn-svelte initialiseren: basiscomponenten (button, card, input, dialog, sheet, tabs, toast, avatar, dropdown)
 - [ ] 3.3 Paraglide: locales `nl` en `en`, routes `/[locale]/...`, taaldetectie (cookie → Accept-Language → `en`), taalwisselaar
