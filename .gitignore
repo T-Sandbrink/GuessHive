@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Agent runtime state (see AGENTS.md §5)
+.agent-state.json
+
+# Local Claude settings
+.claude/settings.local.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
