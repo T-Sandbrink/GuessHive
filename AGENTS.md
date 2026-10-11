@@ -275,7 +275,7 @@ Specialised subagents live in `.claude/agents/`. Claude Code loads them automati
 | `code-reviewer` | Correctness, edge cases, and compliance with this file (conventions, layering, i18n, pagination) | No |
 | `security-reviewer` | Defensive review against §8 and §9: authZ, input validation, injection, XSS/CSRF, secrets, rate limits, privacy rules, dependency audit | No |
 | `db-reviewer` | Prisma schema and migration review: constraints, indexes, migration safety, query performance | No |
-| `ux-reviewer` | Accessibility, mobile-first layout, i18n completeness, light and dark mode, SEO tags on new pages | No |
+| `ux-reviewer` | **Mandatory for every UX/GUI change.** Reviews with the `frontend-design` skill, plus accessibility, mobile-first layout, i18n completeness, light and dark mode, and SEO tags on new pages | No |
 
 All subagents run on **Opus**. The owner chose quality over cost, so do not downgrade them. Because they are expensive, follow the usage rules in §5.
 
@@ -304,10 +304,17 @@ Reviewers are **read-only**. They report findings and the main agent fixes them.
    | Any code | `code-reviewer` |
    | Endpoints, auth, sessions, user input, uploads, comments, env/config, new dependencies | `security-reviewer` |
    | `schema.prisma` or migrations | `db-reviewer` |
-   | Svelte components, routes, messages | `ux-reviewer` |
+   | **Anything a user can see**: Svelte components, styles, routes, messages, icons, copy, design mockups or canvases | `ux-reviewer` (**always**, see the UI rule below) |
 
 4. Fix every 🔴 and 🟡, or note in PLAN.md why a 🟡 is deferred. Re-run a reviewer only on the fixed areas.
 5. Tick the task.
+
+### UI rule (owner requirement)
+
+**Every change to UX or GUI is checked by the `ux-reviewer` subagent using the `frontend-design` skill**: Svelte code, CSS, copy, icons, and also design mockups and canvases (such as task 3.0). This applies to small tweaks and to fixes made after an earlier review: after fixing UI findings, run `ux-reviewer` again on the changed parts. A UI change is not done until `ux-reviewer` returns `Verdict: PASS`.
+
+- The `frontend-design` skill comes from the `frontend-design` plugin (claude-plugins-official). If it is not available, `ux-reviewer` falls back to the checklist in its own file and says so. In that case, tell the owner.
+- `ux-reviewer` cannot see a rendered page. If a change is hard to judge from code alone, also check it in the browser (desktop and mobile width, light and dark) as the definition of done requires.
 
 ### Phase gate
 
