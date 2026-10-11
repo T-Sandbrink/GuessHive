@@ -13,6 +13,7 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
+- **Status:** ⏸ **Bouwen staat UIT op verzoek van de eigenaar** tot het plan helemaal af is. De geplande taken `guesshive-resume` en `guesshive-watchdog` zijn uitgeschakeld en `.agent-state.json` staat op `blocked`. Pas starten als de eigenaar expliciet zegt dat er gebouwd mag worden.
 - **Huidige taak:** — (nog niet begonnen, start bij 0.1)
 - **Klaar:** —
 - **Nog te doen in deze taak:** —
@@ -54,6 +55,14 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Profiel | **Publiek, stemmen privé**: username, avatar, level, badges en voorspelscore zichtbaar. Een stem is alleen zichtbaar als de gebruiker hem zelf openbaar maakt |
 | Reacties | Pas zichtbaar **na stemmen of overslaan** |
 | Pushmeldingen | **Actief**: vraag van de dag, trending vragen, vrienden die stemmen, wekelijkse recap, voorspelling opgelost, reacties, streak in gevaar. Alles per type uit te zetten. Harde limiet: max 3 per dag, geen pushes tussen 22:00 en 08:00 lokale tijd |
+| Voorspellen vanuit de feed | **In de kaart, 2 tikken**: tik Ja of Nee, dan verschijnen de drie zekerheidsknoppen. Een tik op een zekerheid plaatst de voorspelling meteen. Geen vooraf ingevulde zekerheid. Aanpassen kan daarna. De detailpagina werkt hetzelfde, plus de precieze slider met "Voorspelling plaatsen" |
+| Overslaan bij voorspellingen | Ook voorspellingen kun je overslaan: je ziet wat de zwerm denkt, maar kunt daarna niet meer voorspellen. De gevolgen staan onder de knop |
+| Snel stemmen | Op mobiel een honinggele **banner bovenaan de feed** ("Snel stemmen: 10 vragen in één minuut"), op desktop een knop naast de feed-tabs. In de modus heet de knop **"Volgende vraag"**: die gaat door zonder uitslag en registreert géén skip (de vraag blijft stembaar). "Overslaan" betekent in de hele app hetzelfde |
+| Woord voor alle stemmers | **"De zwerm"** (NL) / **"the hive"** (EN), overal hetzelfde: "Jij en 46% van de zwerm kozen Messi" |
+| Honingraat-regel | **Zeshoek = iets van jou**: jouw avatar, het "jouw keuze"-vinkje, jouw voortgang en streak, het "of"-rondje in Snel stemmen. Niet voor andermans avatars, badges van anderen of decoratieve iconen |
+| Aanmeldsheet | Sluitknop (X) + "Niet nu". Google en Apple even zwaar bovenaan (volgens hun huisstijlregels), e-mail als rustige derde optie: "Doorgaan met e-mail". Regel over voorwaarden, privacybeleid en 16+. Aparte tekst voor wie op "overslaan" tikte |
+| Lettertypen | Fredoka (koppen en cijfers) + Nunito (tekst), **zelf gehost** (bijv. @fontsource). Nooit laden via fonts.googleapis.com: dat stuurt IP-adressen naar Google (AVG) |
+| Designbron | Het design-canvas is de referentie voor de UI van fase 3–8: https://claude.ai/artifact/27Jt9oFZeytMGGnwuu8XpU |
 
 ### Lancering & landen
 
@@ -164,7 +173,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ## Fase 3 — Web-shell (SvelteKit)
 
 - [~] 3.0 **Designrichting ter goedkeuring** (eigenaar). Eerste versie: https://claude.ai/artifact/27Jt9oFZeytMGGnwuu8XpU (wacht op feedback/akkoord). Inhoud: stijltegel + klikbare mockup als HTML-pagina met kleuren (honinggeel, warm), typografie, ronde vormen, eerste SVG-versie van de bij-mascotte, en de schermen home-feed, vraagkaart (voor/na stemmen), aanmeldsheet voor gasten, voorspelkaart (Ja/Nee + zekerheid) en Snel stemmen. Light + dark, mobiel + desktop. **Pas na akkoord UI-taken van fase 3 bouwen.** Tot die tijd mag de agent doorwerken aan andere niet-UI-taken
-- [ ] 3.1 Tailwind v4-thema volgens de goedgekeurde designrichting: kleuren (design tokens), typografie, radius, schaduwen, dark mode (systeem + toggle), animatie-tokens (respecteert `prefers-reduced-motion`)
+- [ ] 3.1 Tailwind v4-thema volgens de goedgekeurde designrichting: kleuren (design tokens, de volledige kleurentabel van de stijltegel in licht en donker), zelf gehoste lettertypen (Fredoka + Nunito), typografie, radius, schaduwen, dark mode (systeem + toggle), animatie-tokens (respecteert `prefers-reduced-motion`)
 - [ ] 3.2 shadcn-svelte initialiseren: basiscomponenten (button, card, input, dialog, sheet, tabs, toast, avatar, dropdown)
 - [ ] 3.3 Paraglide: locales `nl` en `en`, routes `/[locale]/...`, taaldetectie (cookie → Accept-Language → `en`), taalwisselaar
 - [ ] 3.4 `hooks.server.ts`: `/api/*` proxyen naar NestJS (cookies doorgeven, origin-check), sessie ophalen naar `event.locals.user`

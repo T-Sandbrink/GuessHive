@@ -27,7 +27,7 @@ Product principles. Use them to decide when something is unclear:
 | Monorepo | pnpm workspaces + Turborepo |
 | Runtime | Node.js LTS (24.x), TypeScript `strict` everywhere |
 | Frontend | SvelteKit 2 + **Svelte 5 (runes)**, SSR on, `adapter-node` (or `adapter-vercel`, decided at launch) |
-| UI | Tailwind CSS v4 + shadcn-svelte (Bits UI), lucide-svelte icons |
+| UI | Tailwind CSS v4 + shadcn-svelte (Bits UI), lucide-svelte icons, self-hosted fonts (Fredoka + Nunito via @fontsource, never a font CDN) |
 | i18n | Paraglide JS (via `sv add paraglide`), locale-prefixed routes `/nl/...`, `/en/...` |
 | Backend | NestJS (latest major), REST, OpenAPI via `@nestjs/swagger` |
 | Validation | zod schemas in `packages/shared`, used by both web and api (`nestjs-zod` in api) |
