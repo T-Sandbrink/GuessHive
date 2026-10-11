@@ -18,7 +18,7 @@ Product principles. Use them to decide when something is unclear:
 2. **Fast and fun beats complete.** Voting must take one tap. Every extra step costs users. The tone is playful and warm (honey yellow, rounded shapes, a bee mascot). See "UX-beslissingen" in PLAN.md, which is binding for UI work.
 3. **Local feels local.** Country questions are in the local language and about local topics.
 4. **Trustworthy numbers.** One person gets one vote, there are no fake accounts, and small groups are never exposed (see privacy rules).
-5. **No real money, ever.** No betting, no paid points, no crypto.
+5. **No real money, ever.** No paid points, no crypto, no money flowing through GuessHive. Friends may "bet" with group points, and may optionally write a stake note between themselves, but GuessHive never handles or settles money.
 
 ## 2. Tech stack
 
@@ -369,8 +369,10 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 
 - **Individual votes are private by default.** Others only see aggregates and agreement percentages, unless the user explicitly makes a vote public.
 - **k-anonymity threshold**: never show a demographic or geographic breakdown for a group smaller than **10 voters**. Show "not enough votes yet" instead. Enforce this in the api, not only in the UI.
-- Demographic fields (birth year, gender, region) are **optional** and used only for aggregate breakdowns.
-- Minimum age is 16.
+- **Private groups are the one exception**: inside a private group, members see each other's votes and forecasts, because they explicitly consented when joining (`GroupMember.consentAt`). Nothing from a group may leak to public feeds, search, SEO or share cards.
+- Demographic fields (birth date, gender, region) are **optional** and used only for aggregate breakdowns. Birth date is also used for the 18+ check. Never expose it, only the age bucket.
+- Minimum age is 16. The **Dark Corner is 18+**: invisible to guests, minors and anyone who has not opted in, never indexed, never in share cards or push.
+- Uploaded images are only shown after moderation (automated scan plus a CSAM hash check plus human review for flagged items). Strip EXIF metadata.
 - Users can export all their data and delete their account (hard delete of personal data, anonymised votes kept for aggregates).
 - No third-party tracking cookies, so no cookie wall is needed. Use cookieless analytics only.
 - Store user data in the EU (EU hosting region for DB and api).
