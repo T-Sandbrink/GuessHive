@@ -18,7 +18,7 @@ Product principles. Use them to decide when something is unclear:
 2. **Fast and fun beats complete.** Voting must take one tap. Every extra step costs users. The tone is playful and warm (honey yellow, rounded shapes, a bee mascot). See "UX-beslissingen", "Extra functies" and "Verdienmodel" in PLAN.md, which are binding for UI work.
 3. **Local feels local.** Country questions are in the local language and about local topics.
 4. **Trustworthy numbers.** One person gets one vote, there are no fake accounts, and small demographic groups (fewer than 10 voters) are never exposed (see privacy rules).
-5. **No real money in the game, ever.** Points, rankings, streaks and freezes are never for sale, and there is no crypto or money flowing between users through GuessHive. Friends may "bet" with group points and optionally write a stake note between themselves, but GuessHive never handles or settles money between users. A premium subscription for comfort and cosmetics, media insights/embeds and labelled sponsored questions are the only revenue (see PLAN.md "Verdienmodel").
+5. **No real money in the game, ever.** Points, rankings, streaks and freezes are never for sale, and there is no crypto or money flowing between users through GuessHive. Friends may "bet" with group points and optionally write a stake note between themselves, but GuessHive never handles or settles money between users. A premium subscription for comfort (plus its own badges; bee parts and colours are unlocked by playing, never bought), media insights/embeds and labelled sponsored questions are the only revenue (see PLAN.md "Verdienmodel").
 
 ## 2. Tech stack
 
@@ -75,7 +75,7 @@ The browser only talks to the SvelteKit origin (e.g. `guesshive.com`):
 
 ### NestJS module layout
 
-Use one module per domain: `auth`, `users`, `questions`, `votes`, `forecasts`, `results`, `scoring`, `social` (follows, comments, reactions), `groups`, `notifications`, `gamification`, `moderation`, `ambassadors`, `media` (uploads + image moderation), `flags`/`entitlements`, `billing` (phase 13), `admin`, `health`.
+Use one module per domain: `auth`, `users`, `questions`, `votes`, `forecasts`, `results`, `scoring`, `social` (follows, comments, reactions), `groups`, `notifications`, `gamification`, `personalization` (own bee, seasonal mascots, display settings), `moderation`, `ambassadors`, `media` (uploads + image moderation), `flags`/`entitlements`, `billing` (phase 13), `admin`, `health`.
 
 - Controllers stay thin: parse and validate input, call a service, map the output.
 - Services hold the logic. Prisma is accessed only through services (or repositories inside a module).

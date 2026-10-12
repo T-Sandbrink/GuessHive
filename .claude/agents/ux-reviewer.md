@@ -44,6 +44,7 @@ Use Bash only for read-only or local checks: `git diff`, `pnpm --filter web exec
    - "Volgende vraag" in Snel stemmen never records a skip.
    - Group prediction cards are called "Groepsweddenschap" and show a stake line.
    - Sponsored questions carry the "Gesponsord door …" label. No ads anywhere.
+   - Personalisation: a user's own bee replaces the mascot only for that user, and seasonal mascots never override it. Extras are unlocked by playing, never bought.
    - "Vraag stellen": a floating honey-yellow hexagon "+" button on mobile Home and Ontdek, the "Stel een vraag" button in the desktop header. The composer says that an AI check looks along.
 3. **i18n**:
    - No hard-coded user-facing strings in `.svelte` or `.ts` files.

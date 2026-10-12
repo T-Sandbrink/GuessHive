@@ -113,6 +113,9 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Knop "Vraag stellen" | Mobiel: een zwevende honinggele **zeshoek met +** rechtsonder boven de tabbalk, op Home en Ontdek. Desktop: de knop "Stel een vraag" in de kopbalk. De tabbalk blijft zoals besloten |
 | Automatisch verbergen | **Vragen**: elke melding komt in de wachtrij. Zodra minstens **20 mensen** de vraag zagen en **20%** van hen hem meldde (meldingen van verschillende accounts ouder dan 7 dagen), wordt hij **preventief verborgen**. Een admin beslist: definitief verwijderen of terugzetten. Beide drempels instelbaar. **Reacties**: na 3 meldingen (Dark Corner: 2) verborgen tot een moderator kijkt |
 | Wachtbijen (community-moderatie) | Gebruikers kunnen helpen modereren en daarmee punten verdienen. Eisen: **18+**, account minstens **30 dagen** oud, een minimaal level (instelbaar) en akkoord met de moderatorvoorwaarden (op te stellen door de eigenaar). Ze beoordelen gemelde en verborgen vragen; hun oordeel is advies, **admins beslissen definitief**. Werknaam, beloning en spelregels: zie Open vragen |
+| Personaliseren | Gebruikers maken hun **eigen bij**, zoals een Mii: kleur, ogen, neus, oortjes, haar, baard, outfits en accessoires, plus een eigen naam. Verder zelf in te stellen: **accentkleur** (vooraf geteste kleuren), **profiel** (uitgelichte badges, verdiende titel), **startscherm** (standaardtab, categorieën verbergen), **weergave** (tekstgrootte, compacte kaarten) en **vieringen** (confetti, geluid, trillen) |
+| Vrijspelen | De basis is gratis. Extra onderdelen en kleuren **speel je vrij** met levels en badges; ze zijn nooit te koop. Wachtbijen en premium-leden krijgen elk **eigen exclusieve badges** |
+| Seizoensmascotte | De admin stelt de standaardbij in en **plant seizoensbijen** (periode, overal of per land, bijv. kerstmuts in december, oranje met Koningsdag). Wie zelf een bij heeft gemaakt, **houdt altijd zijn eigen bij** |
 
 ### Verdienmodel
 
@@ -120,7 +123,7 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 |---|---|
 | Inkomstenbronnen | **Premium-abonnement**, **inzichten en embeds voor media/merken**, en **gesponsorde vragen**. Geen advertenties |
 | Wanneer | **Lancering volledig gratis**. De techniek wordt vóór de lancering voorbereid (feature-flags, datamodel), en de eigenaar zet het aan na groei (richtwaarde: 10.000 maandelijks actieve gebruikers) |
-| Premium | **Alleen gemak en uiterlijk, nooit voordeel in het spel**: uitgebreide statistieken (alle uitsplitsingen, kalibratie door de tijd), meer en grotere groepen, thema's en profielopties. Punten, ranglijsten, streaks en bevriezers zijn nooit te koop |
+| Premium | **Alleen gemak, nooit voordeel in het spel**: uitgebreide statistieken (alle uitsplitsingen, kalibratie door de tijd), meer en grotere groepen, en **eigen premium-badges**. Bij-onderdelen en kleuren speel je vrij, die zijn niet te koop (zie "Vrijspelen"). Punten, ranglijsten, streaks en bevriezers zijn nooit te koop |
 | Gratis vs premium statistieken | Alles uit fase 4–7 blijft **gratis** (uitsplitsingen, wereldkaart, kalibratie). Premium = kalibratie door de tijd, gecombineerde filters (bijv. leeftijd × land) en export |
 | Embeds: stemmen | Bezoekers kunnen **in een embed stemmen**: een tik opent de GuessHive-aanmelding (zoals de gast-stem), en de uitslag verschijnt pas na de stem |
 | Inzichten en embeds | Nieuwssites en merken betalen voor **geanonimiseerde trends** ("wat denkt Nederland") en **in te sluiten polls**. Alleen totalen boven de 10-stemmersdrempel, altijd met "Geen representatieve peiling", nooit individuele data. Nooit uit de Dark Corner of privégroepen |
@@ -147,6 +150,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Moderatorvoorwaarden voor Wachtbijen** (eigenaar, vóór fase 9): de tekst waarmee community-moderatoren akkoord gaan (geheimhouding, neutraliteit, geen privégegevens delen, gevolgen van misbruik).
 - [ ] **Wachtbijen: naam, beloning en spelregels** (vóór fase 9, voorstel in de mockups): werknaam "Wachtbij" (echte wachtbijen bewaken de ingang van de kast), XP per oordeel dat overeenkomt met de eindbeslissing van de admin, een dagplafond, en automatisch pauzeren bij een lage trefzekerheid. Eigenaar keurt goed of stuurt bij.
 - [ ] **Standaardwaarden voor vraag stellen** (vóór fase 9, instelbaar in het admin-paneel): voorstel maximaal 3 vragen per dag in de eerste 7 dagen, daarna 10, en minimaal level 5 voor Wachtbijen.
+- [ ] **Vrijspeel-schema** (fase 8b): de agent stelt voor welke bij-onderdelen, kleuren en titels bij welk level of welke badge horen (de mockup "Jouw bij" toont een eerste idee), en de eigenaar keurt goed of stuurt bij.
+- [ ] **Bij als profielfoto en naam van je bij** (fase 8b, voorstel in de mockups): (a) je eigen bij kan je profielfoto zijn (geen foto uploaden nodig, dus ook geen beeldmoderatie), (b) de naam van je bij ziet alleen jij. Eigenaar beslist.
 - [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), analytics-dienst Umami of Plausible (fase 11), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor de AI-check op nieuwe vragen (fase 9) en de AI-nieuwssuggesties (na lancering).
 
 ---
@@ -374,6 +379,19 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ---
 
+## Fase 8b — Personaliseren
+
+- [ ] 8b.1 Bij-onderdelen als SVG-lagen (zie mockups "Jouw bij" en de component `Bee`): kleur, ogen, neus, oortjes, haar, baard, outfits en accessoires. De agent tekent de eerste set (later eventueel een illustrator, zie Open vragen "Mascotte"). Een look wordt opgeslagen als JSON met alleen bekende onderdeel-id's (zod-validatie). Catalogus `MascotItem` met vrijspeelregel
+- [ ] 8b.2 Bijenmaker (web): voorbeeld, onderdelen per categorie, vergrendelde onderdelen met "Level n", "Verras me", naam van je bij (max. 16 tekens, woordfilter) en "Terug naar de standaardbij". Je eigen bij vervangt de mascotte overal in de app, alleen voor jou
+- [ ] 8b.3 Vrijspelen: onderdelen, kleuren en titels komen vrij via levels en badges, server-side gecontroleerd (de client wordt nooit vertrouwd). Schema: voorstel van de agent (zie Open vragen). Nooit te koop. Exclusieve badges voor Wachtbijen (9.21) en premium (13.5)
+- [ ] 8b.4 Personaliseren-scherm (zie mockup): accentkleur uit vooraf geteste paletten (AA-contrast in licht en donker), profiel (3 uitgelichte badges, verdiende titel), startscherm (standaardtab, verborgen categorieën), tekstgrootte, compacte kaarten en vieringen (confetti, geluid, trillen; volgt altijd "minder beweging"). Bereikbaar via Instellingen › Personaliseren
+- [ ] 8b.5 Admin: standaardbij en seizoensbijen (naam, periode, overal of per land, look) met voorbeeld (zie mockup "Admin: mascotte en seizoenen"). Een seizoensbij geldt alleen voor wie geen eigen bij heeft. Alles in de `AuditLog`
+- [ ] 8b.6 Tests: vrijspeelregels, validatie van looks, keuze van de juiste seizoensbij (datum, tijdzone, land), en dat een eigen bij nooit wordt overschreven
+
+**Acceptatie:** een gebruiker maakt een eigen bij met alleen vrijgespeelde onderdelen en ziet die overal in de app; personaliseer-instellingen blijven bewaard; een admin plant een seizoensbij die verschijnt voor iedereen zonder eigen bij.
+
+---
+
 ## Fase 9 — Vragen van gebruikers & moderatie
 
 - [ ] 9.1 **Vraag stellen** (zie "Vraag stellen" en de mockups): iedereen met een account en bevestigd e-mailadres, zonder levelgrens. Gasten: de knop opent eerst het aanmeldscherm. Onbevestigd e-mailadres: scherm "Bevestig eerst je e-mailadres" met opnieuw versturen. Formulier met typekeuze, opties, categorie, bereik, sluitdatum en preview, plus de melding dat een AI-check meekijkt. Daglimiet uit `AppSetting`. Mobiel: zwevende zeshoek-knop op Home en Ontdek; desktop: knop in de kopbalk. Na plaatsen: "Je vraag staat live" met delen; de deellink bevat je invite-code (7.10), zodat nieuwe leden via jouw vraag als jouw uitnodiging tellen
@@ -492,7 +510,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 **Na groei (eigenaar zet aan):**
 - [ ] 13.4 Betalen via de gekozen dienst (zie Open vragen): abonnement afsluiten, opzeggen, factuur, webhooks, proefperiode. Volgens de securityregels (webhook-handtekening controleren, idempotent)
-- [ ] 13.5 Premium-functies: uitgebreide statistieken, meer en grotere groepen, thema's en profielopties, premium-badge. **Nooit** punten, ranglijsten, streaks of bevriezers
+- [ ] 13.5 Premium-functies: uitgebreide statistieken, meer en grotere groepen, eigen premium-badges (geen bij-onderdelen of kleuren: die speel je vrij). **Nooit** punten, ranglijsten, streaks of bevriezers
 - [ ] 13.6 Embeds: in te sluiten poll-widget (iframe/script) per vraag, met een partner-sleutel, alleen geaggregeerde uitslagen boven de drempel, label "Geen representatieve peiling", link terug naar GuessHive. Nooit voor Dark Corner-, groeps- of gevoelige vragen tijdens verkiezingsstilte Stemmen in de embed: een tik opent de GuessHive-aanmelding, uitslag pas na de stem.
 - [ ] 13.7 Inzichten voor partners: dashboard of export met geanonimiseerde trends per land, categorie en periode. Alleen totalen boven de drempel, nooit data uit de Dark Corner of privégroepen. Afspraken in de verwerkersovereenkomst en de privacyverklaring
 - [ ] 13.8 Gesponsorde vragen: sponsorbeheer (admin), label "Gesponsord door …", moderatie, nooit politiek, Dark Corner of groepen, max 1 per 10 feed-items, uitslagrapport voor de sponsor (geaggregeerd)
@@ -598,7 +616,11 @@ Reaction        id, userId, targetType (QUESTION|COMMENT), targetId, emoji
 Notification    id, userId, type, payload (json), readAt?, createdAt
 PushSubscription id, userId, endpoint, keys (json), createdAt
 
-Badge           id, slug, names (json), descriptions (json), icon
+Badge           id, slug, names (json), descriptions (json), icon, title (json nl/en)?, exclusiveTo (NONE|WACHTBIJ|PREMIUM)
+UserCustomization userId (PK), mascotLook (json)?, mascotName?, useBeeAsAvatar, accent, startTab, hiddenCategoryIds,
+                textSize, compactCards, celebrations (json), featuredBadgeIds, titleBadgeId?, updatedAt
+MascotItem      id, slot (BODY|EYES|NOSE|EARS|HAIR|BEARD|OUTFIT|ACCESSORY|ACCENT), key, unlock (FREE|LEVEL|BADGE), unlockValue?, sortOrder
+SeasonalMascot  id, name, look (json), countryCode?, startsAt, endsAt, createdById, createdAt
 UserBadge       userId + badgeId (PK), awardedAt
 XpEvent         id, userId, type, amount, refId?, createdAt
 Invite          id, inviterId, code, usedById?, usedAt?
