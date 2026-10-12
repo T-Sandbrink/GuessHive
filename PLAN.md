@@ -37,7 +37,8 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Platform | Web eerst, als PWA. Native apps later |
 | Geld | Nooit echt geld in het spel of tussen gebruikers: punten, XP en reputatie. Inkomsten alleen via premium, partners en sponsoring (zie Verdienmodel) |
 | Privacy | EU-hosting, stemmen standaard privé, geen uitsplitsing bij < 10 stemmers (uitzondering: binnen privégroepen, met toestemming) |
-| Vragen maken | Admins (startcontent) + gebruikers vanaf dag 1 via moderatie. Vertrouwde gebruikers later direct. Fase 9 blijft vóór lancering |
+| Vragen maken | Admins (startcontent) + **iedereen met een bevestigd e-mailadres** stelt direct een vraag, ook om vrienden te werven. Na een automatische AI-check staat hij meteen openbaar; politiek en Dark Corner gaan altijd eerst langs een moderator (zie "Vraag stellen"). Fase 9 blijft vóór lancering |
+| Admin-paneel | Alle drempels en limieten zijn instelbaar in een admin-paneel (`AppSetting`): per instelling een standaardwaarde, uitleg en een **veilige onder- en bovengrens in de code**, en elke wijziging in de audit log. Wachtwoord: **standaard minimaal 12 tekens**, instelbaar van 8 tot 64. **Wettelijke en privacyregels staan vast in de code en zijn niet instelbaar**: minimumleeftijd 16, Dark Corner 18+, minimaal 10 stemmers voor uitsplitsingen en de AVG-bewaartermijnen |
 | Git | Branch per fase + per taak (AGENTS.md §5). Agent commit, merget en pusht zelf. `main` alleen na een afgeronde fase |
 
 ### UX-beslissingen
@@ -108,8 +109,10 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Uitslag "jouw vrienden" | Percentages van je vrienden pas vanaf 10 vrienden die stemden, plus de namen van vrienden die hun stem zelf openbaar maakten |
 | Gesloten vragen | Na het sluiten ziet **iedereen** de uitslag, ook gasten en zoekmachines (stemmen kan dan toch niet meer). Open vragen blijven "eerst stemmen" |
 | Vraag van de dag | Een admin plant vooruit. Staat er niets gepland, dan wordt automatisch de meest trending open vraag gekozen |
-| Vragen indienen | Vanaf **level 3 of na 7 dagen**, altijd via moderatie |
-| Automatisch verbergen | Na **3 meldingen** van verschillende accounts die ouder zijn dan 7 dagen (Dark Corner: 2). Daarna kijkt een moderator |
+| Vraag stellen | **Iedereen met een account en een bevestigd e-mailadres** (Google en Apple tellen als bevestigd), zonder levelgrens. Gasten zien de knop, maar die opent eerst het aanmeldscherm. Na een **automatische AI-check** staat de vraag **direct openbaar** (feed, Ontdek, deellink). Twijfelt de check, dan beslist eerst een mens: de AI wijst nooit zelf definitief af. Politiek en Dark Corner altijd eerst langs een moderator. Daglimiet instelbaar in het admin-paneel |
+| Knop "Vraag stellen" | Mobiel: een zwevende honinggele **zeshoek met +** rechtsonder boven de tabbalk, op Home en Ontdek. Desktop: de knop "Stel een vraag" in de kopbalk. De tabbalk blijft zoals besloten |
+| Automatisch verbergen | **Vragen**: elke melding komt in de wachtrij. Zodra minstens **20 mensen** de vraag zagen en **20%** van hen hem meldde (meldingen van verschillende accounts ouder dan 7 dagen), wordt hij **preventief verborgen**. Een admin beslist: definitief verwijderen of terugzetten. Beide drempels instelbaar. **Reacties**: na 3 meldingen (Dark Corner: 2) verborgen tot een moderator kijkt |
+| Wachtbijen (community-moderatie) | Gebruikers kunnen helpen modereren en daarmee punten verdienen. Eisen: **18+**, account minstens **30 dagen** oud, een minimaal level (instelbaar) en akkoord met de moderatorvoorwaarden (op te stellen door de eigenaar). Ze beoordelen gemelde en verborgen vragen; hun oordeel is advies, **admins beslissen definitief**. Werknaam, beloning en spelregels: zie Open vragen |
 
 ### Verdienmodel
 
@@ -140,7 +143,11 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Tarieven voor embeds, inzichten en sponsoring** (vóór fase 13): de eigenaar bepaalt de prijzen. De agent bouwt een eenvoudig partnerbeheer.
 - [ ] **Dagvoorspellingen: bron van uitslagen** (fase 8): handmatig door admins/ambassadeurs, of automatisch via een weer- of sport-API (kost mogelijk geld). Voorstel: eerst handmatig.
 - [ ] **Bijzondere persoonsgegevens laten toetsen** (eigenaar, vóór fase 9 en 9b): stemmen op politieke vragen en Dark Corner-vragen over seks, gezondheid of drugs kunnen bijzondere persoonsgegevens zijn (AVG art. 9). Voorstel: uitdrukkelijke toestemming per categorie vóór de eerste stem, strengere toegang, nooit voor sponsors of partners behalve als totaal vanaf 10. Een jurist of privacy-adviseur bevestigt dit, of stuurt bij.
-- [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), analytics-dienst Umami of Plausible (fase 11), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor AI-nieuwssuggesties (na lancering).
+- [ ] **AI-check voor nieuwe vragen: welke dienst** (vóór fase 9): (a) Claude Haiku via de Anthropic API (begrijpt NL en context zoals privépersonen, is al gepland voor de nieuwssuggesties dus één verwerker, kost een fractie van een cent per vraag), (b) een gratis moderatie-API zoals die van OpenAI (alleen vaste categorieën, minder goed met context), (c) alleen het woordfilter (gratis, maar laat veel door). Voorstel: (a). Vereist een verwerkersovereenkomst en de Anthropic-account (eigenaar).
+- [ ] **Moderatorvoorwaarden voor Wachtbijen** (eigenaar, vóór fase 9): de tekst waarmee community-moderatoren akkoord gaan (geheimhouding, neutraliteit, geen privégegevens delen, gevolgen van misbruik).
+- [ ] **Wachtbijen: naam, beloning en spelregels** (vóór fase 9, voorstel in de mockups): werknaam "Wachtbij" (echte wachtbijen bewaken de ingang van de kast), XP per oordeel dat overeenkomt met de eindbeslissing van de admin, een dagplafond, en automatisch pauzeren bij een lage trefzekerheid. Eigenaar keurt goed of stuurt bij.
+- [ ] **Standaardwaarden voor vraag stellen** (vóór fase 9, instelbaar in het admin-paneel): voorstel maximaal 3 vragen per dag in de eerste 7 dagen, daarna 10, en minimaal level 5 voor Wachtbijen.
+- [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), analytics-dienst Umami of Plausible (fase 11), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor de AI-check op nieuwe vragen (fase 9) en de AI-nieuwssuggesties (na lancering).
 
 ---
 
@@ -198,6 +205,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 1.9 Rate-limiting (`@nestjs/throttler` met Redis-storage), standaardlimiet + per-route overrides
 - [ ] 1.10 Testopzet: Jest-integratietests tegen de `postgres-test`-container (reset per testbestand)
 - [ ] 1.11 Feature-flag-systeem (per omgeving en per gebruiker, tabel `FeatureFlag`), nodig voor 7b.6 en fase 13 (voorheen 13.2)
+- [ ] 1.12 Instellingenregister (`AppSetting`) in `packages/shared`: per instelling een key, type, standaardwaarde, **harde min/max**, categorie en uitleg NL+EN, gevalideerd met zod. De api cachet waarden in Redis en ververst na een wijziging; elke wijziging gaat in de `AuditLog` (oud → nieuw). Wettelijke en privacyregels (16+, 18+, k = 10, bewaartermijnen) zijn constanten in de code, nooit een instelling. Latere taken registreren hun eigen instellingen hier
 
 **Acceptatie:** migraties draaien schoon op een lege db, de seed vult data, `/health` geeft 200, `/docs` toont de API en een integratietest leest seed-data uit.
 
@@ -206,7 +214,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ## Fase 2 — Accounts & login
 
 - [ ] 2.1 Better Auth integreren in NestJS. **Eerst de huidige docs en de NestJS-integratie controleren.** Werkt dat niet goed: stoppen en de eigenaar een alternatief voorleggen (bijv. Passport) met voor- en nadelen; na akkoord een ADR (AGENTS.md §2)
-- [ ] 2.2 E-mail + wachtwoord: registreren, inloggen, e-mailverificatie, wachtwoord vergeten/resetten
+- [ ] 2.2 E-mail + wachtwoord: registreren, inloggen, e-mailverificatie, wachtwoord vergeten/resetten. Minimale wachtwoordlengte uit `AppSetting` (`auth.passwordMinLength`, standaard 12, grenzen 8–64), afgedwongen in de api
 - [ ] 2.3 Magic link via e-mail (Mailpit lokaal, Resend in prod)
 - [ ] 2.4 Google OAuth
 - [ ] 2.5 Apple Sign In
@@ -269,6 +277,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 4.13 Vraagpagina `/[locale]/q/[slug]`: SSR, volledige resultaten, uitsplitsing-tabs, "wat stemde jouw land vs de wereld"
 - [ ] 4.14 Categoriepagina's + Ontdek-pagina (categorieën, zoeken)
 - [ ] 4.15 Admin (minimaal): vragenlijst, vraag aanmaken/bewerken met vertalingen NL+EN, opties sorteren, statusbeheer
+- [ ] 4.15b Admin-paneel: opzet met eigen zijbalk (Overzicht, Moderatie, Vragen, Gebruikers, Wachtbijen, Landen, Instellingen, Audit log; secties verschijnen zodra hun fase er is) en de pagina **Instellingen** (zie mockup "Admin: instellingen"): per categorie de huidige waarde, standaard, grenzen en uitleg, "terug naar standaard", bevestiging bij opslaan, en de laatste wijzigingen uit de audit log. Alleen voor `ADMIN`, `noindex`
 - [ ] 4.16 SEO: vraagpagina's indexeerbaar, `sitemap.xml` (per taal, met hreflang), gestructureerde data waar zinvol
 - [ ] 4.17 Tests: unit (aggregatie, k-anonimiteit, trending-score), integratie (stem → resultaten), e2e (stemmen → resultaat zien)
 
@@ -367,15 +376,21 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 9 — Vragen van gebruikers & moderatie
 
-- [ ] 9.1 Gebruikers kunnen een vraag indienen (vanaf level 3 of na 7 dagen, altijd via moderatie): formulier met preview, typekeuze, scope, categorie, opties
+- [ ] 9.1 **Vraag stellen** (zie "Vraag stellen" en de mockups): iedereen met een account en bevestigd e-mailadres, zonder levelgrens. Gasten: de knop opent eerst het aanmeldscherm. Onbevestigd e-mailadres: scherm "Bevestig eerst je e-mailadres" met opnieuw versturen. Formulier met typekeuze, opties, categorie, bereik, sluitdatum en preview, plus de melding dat een AI-check meekijkt. Daglimiet uit `AppSetting`. Mobiel: zwevende zeshoek-knop op Home en Ontdek; desktop: knop in de kopbalk. Na plaatsen: "Je vraag staat live" met delen; de deellink bevat je invite-code (7.10), zodat nieuwe leden via jouw vraag als jouw uitnodiging tellen
+- [ ] 9.1b **AI-check bij plaatsen** (dienst: zie Open vragen): controleert tekst en alt-teksten op haat, bedreiging, privépersonen, spam en illegale inhoud. Goed: direct openbaar. Twijfel: status `PENDING_REVIEW`, de steller ziet waarom, en een mens beslist. De AI wijst nooit zelf definitief af (AI Act en DSA). Politiek (`sensitive`) en Dark Corner gaan altijd naar de wachtrij. Valt de dienst uit: naar de wachtrij, nooit ongecontroleerd live
 - [ ] 9.2 Duplicaatdetectie bij indienen: vergelijkbare bestaande vragen tonen (full-text/trigram)
-- [ ] 9.3 Moderatiewachtrij: goedkeuren / afwijzen (met reden) / aanpassen. Gebruikers met hoge trust publiceren direct
-- [ ] 9.4 Melden: vragen, reacties en gebruikers, met reden. Na 3 meldingen van verschillende accounts ouder dan 7 dagen automatisch verbergen tot een moderator kijkt
+- [ ] 9.3 Moderatiewachtrij (zie mockup "Admin: moderatie"): vragen die de AI-check niet haalden, preventief verborgen vragen, meldingen, politiek en Dark Corner. Per zaak de aanleiding (AI-check of meldingen, met kijkers en meldpercentage) en het advies van de Wachtbijen. Acties: goedkeuren, terugzetten, aanpassen of verwijderen, altijd met reden; de steller krijgt een motivering en kan bezwaar maken (DSA)
+- [ ] 9.4 Melden: vragen, reacties en gebruikers, met reden (inclusief "illegale inhoud" voor de DSA). Elke melding komt in de wachtrij. **Vragen** worden preventief verborgen zodra minstens 20 unieke ingelogde kijkers ze zagen en 20% van hen meldde (meldingen van verschillende accounts ouder dan 7 dagen; beide drempels in `AppSetting`); een admin beslist definitief. Unieke kijkers tellen met een Redis HyperLogLog per vraag, dus zonder tabel van wie wat zag. **Reacties**: na 3 meldingen (Dark Corner: 2) verborgen tot een moderator kijkt
 - [ ] 9.5 Woordfilter (NL+EN scheldwoorden/spam) op vragen, reacties en usernames
-- [ ] 9.6 Trust score per gebruiker (accountleeftijd, geverifieerd, meldingen, gedrag), gebruikt voor publicatierechten en rate limits
+- [ ] 9.6 Trust score per gebruiker (accountleeftijd, geverifieerd, meldingen, gedrag), gebruikt voor rate limits
 - [ ] 9.7 Moderatoracties: verbergen, verwijderen, gebruiker waarschuwen/schorsen/bannen. Alles in een `AuditLog`
-- [ ] 9.8 Admin-dashboard: statistieken (nieuwe gebruikers, stemmen/dag, actieve vragen), wachtrijen, gebruikersbeheer
+- [ ] 9.8 Admin-paneel uitbreiden (opzet uit 4.15b): Overzicht met statistieken (nieuwe gebruikers, stemmen/dag, actieve vragen) en wachtrijen, Moderatie, Gebruikersbeheer en Wachtbijen. Nieuwe instellingen van fase 9 in het register (1.12): daglimieten, meld-drempels, Wachtbij-eisen
 - [ ] 9.9 Verdachte stempatronen detecteren (veel nieuwe accounts die op één vraag stemmen, zelfde IP-hash of apparaatkenmerk; alleen gezouten hashes, 30 dagen bewaard) → markeren, niet automatisch verwijderen
+
+### Wachtbijen (community-moderatie)
+- [ ] 9.19 Wachtbij worden: eisen 18+ (geboortedatum), account minstens 30 dagen oud, minimaal level (`AppSetting`) en akkoord met de moderatorvoorwaarden (tekst: eigenaar, zie Open vragen). Toegang zodra aan alle eisen is voldaan; een admin kan altijd pauzeren of intrekken. Alles in de `AuditLog`
+- [ ] 9.20 Wachtbij-wachtrij (zie mockup): gemelde en verborgen **openbare** vragen, nooit politiek, Dark Corner of groepen. Per vraag "Mag blijven", "Moet weg" of "Weet ik niet", met een reden. Stellers en melders blijven anoniem voor de Wachtbij. Het oordeel is advies voor de admin
+- [ ] 9.21 Beloning en spelregels (voorstel ter goedkeuring, zie Open vragen): XP per oordeel dat overeenkomt met de eindbeslissing, dagplafond, badge, trefzekerheid per Wachtbij, automatisch pauzeren bij een lage trefzekerheid
 
 ### Ambassadeurs
 - [ ] 9.10 Ambassadeur-aanmelding: formulier (land/regio, motivatie), voorwaarden zichtbaar (level, trust), status in je profiel
@@ -390,7 +405,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 9.17 Verkiezingsstilte: tabel `ElectionBlackout` (land, start, eind, notitie), beheerd door een admin. Tijdens de periode zijn de uitslagen van politieke vragen over dat land verborgen (API én deelkaarten). Stemmen blijft mogelijk
 - [ ] 9.18 Uitzoeken welke regels NL en BE hebben voor het publiceren van peilingen rond verkiezingen, met bronnen in `docs/legal/election-rules.md`. **De eigenaar laat dit juridisch bevestigen.** Geen aannames als feit opschrijven
 
-**Acceptatie:** gebruikers dienen vragen in, moderatoren handelen ze af in een wachtrij, meldingen werken, en alle moderatoracties zijn terug te vinden in de audit log.
+**Acceptatie:** een gebruiker met bevestigd e-mailadres stelt een vraag die na de AI-check direct live staat en deelt hem; twijfelgevallen, politiek en Dark Corner wachten op een mens; bij 20 kijkers en 20% meldingen verdwijnt een vraag preventief; Wachtbijen geven advies en een admin beslist; alle moderatoracties en instellingswijzigingen staan in de audit log.
 
 ---
 
@@ -519,7 +534,11 @@ User            id, email, emailVerified, username (uniek), avatarUrl,
 UserInterest    userId + categoryId (PK)
 NotificationPreference userId + type (PK), push (bool), inApp (bool)
 FeatureFlag     key (PK), enabled, rules (json), updatedAt
-AppSetting      key (PK), value (json), updatedById, updatedAt     (instelbare drempels: 500 MAU, ambassadeur-level/trust, max. groepsleden)
+AppSetting      key (PK), value (json), updatedById, updatedAt     (waarden binnen de grenzen uit het register in packages/shared, 1.12)
+CommunityModerator userId (PK), status (ACTIVE|PAUSED|REVOKED), termsVersion, termsAcceptedAt, reviewedCount, agreedCount, createdAt
+ModerationCase  id, targetType, targetId, trigger (AI_CHECK|REPORTS|SENSITIVE|DARK_CORNER), status (OPEN|KEPT|REMOVED),
+                viewerCount?, reportCount?, decidedById?, decidedAt?, reasonCode?, statement? (DSA-motivering), createdAt
+ModerationReview caseId + userId (PK), verdict (KEEP|REMOVE|UNSURE), reason?, createdAt
 Group           id, name, avatarUrl?, description?, ownerId, maxMembers (default 25), seasonLengthMonths (1|3|6), seasonStartsAt, createdAt, deletedAt?
 FraudSignal     id, userId, ipHash (gezouten), deviceHint, ipCountry, day, createdAt   (na 30 dagen verwijderd)
 GroupMember     groupId + userId (PK), role (OWNER|ADMIN|MEMBER), points, joinedAt, consentAt, leftAt?
@@ -550,6 +569,7 @@ Question        id, shortId, slug, type (POLL_SINGLE|POLL_MULTI|THIS_OR_THAT|
                 defaultLocale, authorId, categoryId, maxChoices, allowVoteChange,
                 imageAssetId?, opensAt, closesAt, resolvesAt?, resolvedOptionId?,
                 resolutionSource?, resolutionNote?, resolvedAt?, resolvedById?,
+                aiCheck (PASSED|FLAGGED|SKIPPED)?, aiCheckLabels (json)?,
                 hiddenAt? (9.4), voteCount (denormalized), createdAt
 QuestionTranslation  questionId + locale (PK), title, description?
 DailyQuestion   date + scopeKey (PK; 'GLOBAL' of landcode), questionId, chosenById?, createdAt

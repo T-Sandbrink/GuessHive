@@ -372,6 +372,7 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Sanitize user-generated content. Render comments as plain text (or a safe markdown subset), and never use `{@html}` with user input.
 - Set security headers: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`.
 - Keep secrets only in env vars or the secret store. If you find a secret in code, stop and tell the owner.
+- Admin settings (`AppSetting`) are validated in the api against hard bounds from the registry in `packages/shared` (for example the password minimum length: default 12, allowed 8–64). Legal and privacy rules (minimum age 16, Dark Corner 18+, k = 10, retention periods) are constants in code, never admin settings.
 
 ## 9. Privacy rules (AVG/GDPR and other privacy laws, EU-first)
 
@@ -409,7 +410,7 @@ Agents are not lawyers. When a feature processes personal data in a new way, fla
   - The owner notifies the Autoriteit Persoonsgegevens within 72 hours when required, and the affected users when the risk is high.
   - Agents report any suspected leak to the owner immediately.
 - **DSA**: provide notice-and-action for illegal content, a statement of reasons when content is removed or an account is restricted, an appeal route and a point of contact. Moderation and sponsored content ("Gesponsord door …") are transparent. No targeted ads, and no profiling of minors or of special-category data.
-- **AI (AI Act transparency)**: tell users when AI moderates or suggests content. AI alone never bans or suspends an account.
+- **AI (AI Act transparency)**: tell users when AI moderates or suggests content. AI alone never bans or suspends an account, and never removes content for good: content it flags waits for a human.
 
 ### Product rules
 
@@ -421,6 +422,7 @@ Agents are not lawyers. When a feature processes personal data in a new way, fla
 - Uploaded images are only shown after moderation: every image, including admin uploads, gets an automated scan plus a CSAM hash check. Clean user images are auto-approved, and flagged ones go to a human. Dark Corner images always get human review. Strip EXIF metadata.
 - Fraud signals store only a salted IP hash, a coarse device hint and the IP country per day, kept for 30 days. Never store raw IP addresses.
 - Users can export all their data and delete their account. The account is hidden immediately, there is a disclosed 14-day grace period (logging in again restores it), and after that personal data is hard-deleted and votes are kept anonymised for aggregates.
+- Community moderators ("Wachtbijen") are 18+, see only public reported questions (never politics, the Dark Corner or groups), never see who asked or who reported, and only advise: admins make the final decision.
 - Comments never reveal the commenter's choice unless they opt in for that comment. Public profiles identify the user by username only: never a real name (displayName) or city.
 - No third-party tracking cookies, so no cookie wall is needed. Use cookieless analytics only.
 - Store user data in the EU (EU hosting region for DB and api).
