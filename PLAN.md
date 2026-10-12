@@ -442,9 +442,9 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ## Fase 13 — Verdienmodel (voorbereiden vóór lancering, aanzetten na groei)
 
 **Vóór lancering (onderdeel van fase 1–12, alles achter feature-flags, standaard uit):**
-- [ ] 13.1 Datamodel:  (FREE|PREMIUM), , tabellen , , , . 
+- [ ] 13.1 Datamodel: `User.plan` (FREE|PREMIUM), `premiumUntil`, tabellen `Subscription`, `Partner`, `EmbedKey`, `Sponsor`. `Question.sponsorId?`
 - [ ] 13.2 Feature-flag-systeem (bijv. per omgeving en per gebruiker) voor premium, embeds en sponsoring
-- [ ] 13.3 Entitlements-laag in de api (), zodat premium-functies later alleen een vlag zijn
+- [ ] 13.3 Entitlements-laag in de api (bijv. `can(user, "premium.stats")`), zodat premium-functies later alleen een vlag zijn
 
 **Na groei (eigenaar zet aan):**
 - [ ] 13.4 Betalen via de gekozen dienst (zie Open vragen): abonnement afsluiten, opzeggen, factuur, webhooks, proefperiode. Volgens de securityregels (webhook-handtekening controleren, idempotent)
