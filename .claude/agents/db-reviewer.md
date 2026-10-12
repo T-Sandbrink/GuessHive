@@ -30,7 +30,7 @@ The main agent gives you a diff range or files. Read `AGENTS.md` §7 (NestJS/Pri
 🔴 blocker | 🟡 should fix | 🔵 nit — path:line — problem — suggested fix
 ```
 
-End with `Verdict: PASS` or `Verdict: CHANGES REQUIRED`.
+End with `Verdict: PASS` (no 🔴) or `Verdict: CHANGES REQUIRED`.
 
 ## Decisions
 

@@ -17,7 +17,8 @@ Invoke the Skill tool with `frontend-design:frontend-design` **before anything e
 The main agent gives you a diff range, files, or mockup files. Read:
 
 - `AGENTS.md` §1 (product principles), §7 (Svelte conventions), §9 (privacy) and §10 (i18n rules);
-- `PLAN.md` "UX-beslissingen" and "Lancering & landen". These are **binding owner decisions**. Flag deviations; never suggest overturning them as a plain finding (use a DECISION NEEDED block instead).
+- `PLAN.md` "UX-beslissingen", "Lancering & landen", "Extra functies" and "Verdienmodel". These are **binding owner decisions**. Flag deviations; never suggest overturning them as a plain finding (use a DECISION NEEDED block instead);
+- `docs/design/`: the local export of the approved design canvas (PLAN.md task 3.0b), the visual reference for colours, tokens and screens.
 
 Use Bash only for read-only or local checks: `git diff`, `pnpm --filter web exec svelte-check`, `pnpm --filter web test`, and the existing Playwright suite (including any screenshot or axe checks it contains). **Never modify files.**
 
@@ -30,13 +31,19 @@ Use Bash only for read-only or local checks: `git diff`, `pnpm --filter web exec
    - Motion restraint: one orchestrated moment, and motion that answers user actions.
    - Copy: plain, active, consistent vocabulary, errors that explain how to fix, empty states as an invitation to act.
    - Whether the honeycomb signature stays one memorable element, used with restraint.
+   - Cards that show their status.
+   - No middle-dot meta strings, ALL-CAPS labels or trailing arrows.
 2. **Owner decisions** (PLAN.md):
    - The vote-first guest flow.
    - Results and comments only after voting or skipping.
    - Yes/No + confidence for predictions.
    - "De zwerm" as the word for all voters.
-   - Cards that show their status.
-   - No middle-dot meta strings, ALL-CAPS labels or trailing arrows.
+   - Mobile tab bar: Home, Ontdek, Voorspel, Groepen, Meldingen. Profile via the hexagon avatar top right.
+   - Dark Corner: only a tile at the top of Ontdek, visible only to 18+ users who opted in. Never in the tab bar, never for guests.
+   - Comments hide the commenter's choice by default (opt-in per comment).
+   - "Volgende vraag" in Snel stemmen never records a skip.
+   - Group prediction cards are called "Groepsweddenschap" and show a stake line.
+   - Sponsored questions carry the "Gesponsord door …" label. No ads anywhere.
 3. **i18n**:
    - No hard-coded user-facing strings in `.svelte` or `.ts` files.
    - Every new message key exists in **both** `nl` and `en`, with natural wording rather than literal translation.
@@ -53,7 +60,7 @@ Use Bash only for read-only or local checks: `git diff`, `pnpm --filter web exec
 5. **Mobile-first**: tap targets ≥ 44px, no horizontal scroll at 360px width, bottom tab bar not covering content, safe-area insets on iOS.
 6. **Product principles**: voting stays one tap, results stay hidden before voting, and loading, empty and error states exist.
 7. **Theming**: uses theme tokens (no hard-coded colours in Svelte code), and works in light and dark.
-8. **SEO on new pages**: `SeoHead` with title, description, canonical, hreflang (`nl`/`en`) and OG tags. Indexable pages render meaningful content server-side.
+8. **SEO on new public pages**: `SeoHead` with title, description, canonical, hreflang (`nl`/`en`) and OG tags. Indexable pages render meaningful content server-side. Private pages (Dark Corner, groups, settings, notifications, admin) set `noindex`, stay out of the sitemap, and use a generic OG image without question text or results.
 
 ## Output
 
@@ -63,7 +70,7 @@ Use Bash only for read-only or local checks: `git diff`, `pnpm --filter web exec
 
 End with:
 
-- `Verdict: PASS` or `Verdict: CHANGES REQUIRED`;
+- `Verdict: PASS` (no 🔴) or `Verdict: CHANGES REQUIRED`;
 - a list of missing translation keys, if any;
 - 2–3 sentences on what works and should be kept.
 

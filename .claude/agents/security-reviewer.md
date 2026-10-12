@@ -27,14 +27,19 @@ The main agent gives you a diff range or files. Read `AGENTS.md` §8 (security r
 - Redirect targets (`redirectTo`) only allow relative or same-origin paths (open redirect).
 
 **Abuse and integrity**
-- Rate limits on vote, forecast, comment, sign-up, login, magic link, question submission and report.
+- Rate limits on vote, forecast, comment, sign-up, login, magic link, question submission, report, upload and group invite.
 - One vote per user per question is enforced by a DB constraint, not only by a service check.
 - Counts, scores, country and roles never come from the client.
 - Turnstile is verified server-side where required.
 
 **Privacy (GDPR)**
-- k-anonymity: breakdowns for groups under 10 are suppressed **in the api response**, not only hidden in the UI. Check for side channels (e.g. totals minus visible groups revealing a hidden group).
+- k-anonymity: breakdowns for groups under 10 are suppressed **in the api response**, not only hidden in the UI, except inside private groups (AGENTS §9). Check for side channels (e.g. totals minus visible groups revealing a hidden group).
 - Individual votes are not exposed unless the user made them public.
+- Private groups: choices are visible only to members with `GroupMember.consentAt`. Flag any group data reaching non-members, public feeds, search, sitemap/SEO, share cards, embeds, insights or push.
+- Dark Corner: only for users with a birth date proving 18+, `darkCornerEnabled` and `darkCornerConfirmedAt`. Never for guests, never indexed, never in share cards, push, the carousel, embeds or insights. Check every list, search and feed query for this filter.
+- Comments never include the commenter's choice unless that comment opted in. Public profile responses never contain displayName, email, birth date, gender or region.
+- Account deletion: hidden immediately, 14-day grace period, then hard delete of personal data with votes anonymised.
+- Partners and sponsors (embeds, insights, sponsored questions) receive only aggregates of 10 or more voters, never individual data.
 - No PII (email, IP, tokens, magic links) in logs, error messages, Sentry events or URLs.
 - Data export and account deletion cover every table holding personal data.
 
@@ -54,7 +59,7 @@ Findings only, most severe first:
 
 - For each 🔴/🟡, describe the impact in one sentence (what an abuser could achieve) and give a concrete fix.
 - Where a missing test would have caught it, name the test the `test-writer` should add.
-- End with: `Verdict: PASS` or `Verdict: CHANGES REQUIRED`, plus `pnpm audit: <summary>`.
+- End with: `Verdict: PASS` (no 🔴) or `Verdict: CHANGES REQUIRED`, plus `pnpm audit: <summary>`.
 
 ## Decisions
 

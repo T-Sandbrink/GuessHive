@@ -1,6 +1,6 @@
 # PLAN.md — GuessHive roadmap
 
-Dit is het werkplan. Agents werken het **van boven naar beneden** af (zie `AGENTS.md` §5).
+Dit is het werkplan. Agents werken het **van boven naar beneden** af (zie `AGENTS.md` §5). De volgorde in dit document is leidend, niet de nummering.
 Vink een taak af met `[x]` zodra hij aan de *definition of done* voldoet, inclusief de review gate met subagents (AGENTS.md §6).
 Aan het eind van elke fase draait de *phase gate* (security- en code-review over de hele fase). Noteer de uitkomst onder de fase.
 Elke fase eindigt met **acceptatiecriteria**: pas door naar de volgende fase als die allemaal kloppen.
@@ -13,7 +13,7 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
-- **Status:** ⏸ **Bouwen staat UIT op verzoek van de eigenaar** tot het plan helemaal af is. De geplande taken `guesshive-resume` en `guesshive-watchdog` zijn uitgeschakeld en `.agent-state.json` staat op `blocked`. Pas starten als de eigenaar expliciet zegt dat er gebouwd mag worden.
+- **Status:** ⏸ **Bouwen staat UIT op verzoek van de eigenaar** tot het plan helemaal af is. De geplande taken `guesshive-resume` en `guesshive-watchdog` zijn uitgeschakeld en `.agent-state.json` staat op `off`. Pas starten als de eigenaar expliciet zegt dat er gebouwd mag worden.
 - **Huidige taak:** — (nog niet begonnen, start bij 0.1)
 - **Klaar:** —
 - **Nog te doen in deze taak:** —
@@ -35,8 +35,8 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Login | Google, Apple, e-mail magic link, e-mail + wachtwoord |
 | Talen | NL + EN bij lancering, meertalig opgezet |
 | Platform | Web eerst, als PWA. Native apps later |
-| Geld | Nooit echt geld. Punten, XP en reputatie |
-| Privacy | EU-hosting, stemmen standaard privé, geen uitsplitsing bij < 10 stemmers |
+| Geld | Nooit echt geld in het spel of tussen gebruikers: punten, XP en reputatie. Inkomsten alleen via premium, partners en sponsoring (zie Verdienmodel) |
+| Privacy | EU-hosting, stemmen standaard privé, geen uitsplitsing bij < 10 stemmers (uitzondering: binnen privégroepen, met toestemming) |
 | Vragen maken | Admins (startcontent) + gebruikers vanaf dag 1 via moderatie. Vertrouwde gebruikers later direct. Fase 9 blijft vóór lancering |
 | Git | Branch per fase + per taak (AGENTS.md §5). Agent commit, merget en pusht zelf. `main` alleen na een afgeronde fase |
 
@@ -52,9 +52,12 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Stijl | **Speels & warm**: honinggeel als hoofdkleur, ronde vormen, zachte schaduwen, emoji, kleine animaties bij stemmen. Light + dark mode (standaard: systeem) |
 | Mascotte | **Een bij**: juicht bij een goede voorspelling, troost bij een foute, verschijnt in lege schermen, onboarding en meldingen |
 | Onboarding | **Kort**: alleen username + land (+ interesses). Geboortedatum, geslacht en regio worden **later op een slim moment** gevraagd, bijv. na 5 stemmen: "Wil je zien hoe jouw leeftijdsgroep stemt?" |
-| Profiel | **Publiek, stemmen privé**: username, avatar, level, badges en voorspelscore zichtbaar. Een stem is alleen zichtbaar als de gebruiker hem zelf openbaar maakt |
+| Profiel | **Publiek, stemmen privé**: wat er op het profiel staat, zie "Publiek profiel" onder Extra functies. Een stem is alleen zichtbaar als de gebruiker hem zelf openbaar maakt |
 | Reacties | Pas zichtbaar **na stemmen of overslaan** |
 | Pushmeldingen | **Actief**: vraag van de dag, trending vragen, vrienden die stemmen, wekelijkse recap, voorspelling opgelost, reacties, streak in gevaar. Alles per type uit te zetten. Harde limiet: max 3 per dag, geen pushes tussen 22:00 en 08:00 lokale tijd |
+| Pushmeldingen: groepen en vrienden | Nieuw type **groepsactiviteit** (nieuwe groepsvraag, uitkomst voorgesteld, bezwaar en stemming) met de hoogste prioriteit. Vriendenpushes alleen als aantal zonder namen ("3 vrienden stemden al"), nooit bij gevoelige of Dark Corner-vragen. Volgorde: groep > opgelost > reactie > streak > vraag van de dag > wekelijkse recap > vrienden > trending. Stille uren zijn alleen ruimer in te stellen dan 22:00–08:00 |
+| Vegen in Snel stemmen | Omhoog vegen of de knop = "Volgende vraag" (geen skip). Alleen bij Dit-of-dat is links/rechts vegen een stem op A of B, altijd met knoppen als alternatief |
+| Naam | Alleen een **username**. Geen weergavenaam of echte naam, ook niet in groepen |
 | Voorspellen vanuit de feed | **In de kaart, 2 tikken**: tik Ja of Nee, dan verschijnen de drie zekerheidsknoppen. Een tik op een zekerheid plaatst de voorspelling meteen. Geen vooraf ingevulde zekerheid. Aanpassen kan daarna. De detailpagina werkt hetzelfde, plus de precieze slider met "Voorspelling plaatsen" |
 | Overslaan bij voorspellingen | Ook voorspellingen kun je overslaan: je ziet wat de zwerm denkt, maar kunt daarna niet meer voorspellen. De gevolgen staan onder de knop |
 | Wisselende banner | **Carrousel "Uitgelicht" bovenaan de home** (mobiel en desktop): eerste dia is de **vraag van de dag**, daarna de **nieuwste vragen** (mix lokaal en globaal, vragen waarop je al stemde worden overgeslagen). **Stemmen kan direct in de dia met één tik**, daarna kort de uitslag. Wisselt **automatisch elke 6 seconden** en pauzeert bij aanraken, hover, focus, na je stem, en bij "minder beweging". Zichtbare pauzeknop en puntjes (44px tikvlak) |
@@ -63,7 +66,7 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Honingraat-regel | **Zeshoek = iets van jou**: jouw avatar, het "jouw keuze"-vinkje, jouw voortgang en streak, het "of"-rondje in Snel stemmen. Niet voor andermans avatars, badges van anderen of decoratieve iconen |
 | Aanmeldsheet | Sluitknop (X) + "Niet nu". Google en Apple even zwaar bovenaan (volgens hun huisstijlregels), e-mail als rustige derde optie: "Doorgaan met e-mail". Regel over voorwaarden, privacybeleid en 16+. Aparte tekst voor wie op "overslaan" tikte |
 | Lettertypen | Fredoka (koppen en cijfers) + Nunito (tekst), **zelf gehost** (bijv. @fontsource). Nooit laden via fonts.googleapis.com: dat stuurt IP-adressen naar Google (AVG) |
-| Designbron | Het design-canvas is de referentie voor de UI van fase 3–8: https://claude.ai/artifact/27Jt9oFZeytMGGnwuu8XpU |
+| Designbron | Het design-canvas is de referentie voor alle UI (fase 3–13): https://claude.ai/artifact/27Jt9oFZeytMGGnwuu8XpU. Een lokale export staat in `docs/design/` (taak 3.0b) |
 
 ### Lancering & landen
 
@@ -86,6 +89,8 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Dark Corner: 18+ | **Nu**: geboortedatum in het profiel (18+), een eenmalige bevestiging en een schakelaar in de instellingen. **Later** (gepland, zie backlog): echte leeftijdsverificatie via ID of bank (bijv. iDIN) |
 | Winning streak | **Alleen een winning streak** (vervangt de actief-streak). Elke dag minstens 1 voorspelling goed (uitkomst die dag) = streak +1. Niks goed of niet meegedaan = streak weg. Zodat iedereen elke dag kans heeft, zijn er elke dag **dagvoorspellingen** die binnen 24 uur uitkomen (weer, uitslagen van vandaag). Gerekend in de tijdzone van de gebruiker |
 | Streak-bevriezer | Een bevriezer redt je streak op een dag zonder goede voorspelling. Je **verdient** er een per 7 dagen streak, maximaal 2 tegelijk. Wordt automatisch gebruikt |
+| Spelstatistieken | **Groepsvragen** tellen alleen voor groepspunten en de groepsranglijst, nooit voor XP, voorspelpunten, ranglijsten, winning streak, badges, kalibratie of overeenkomst-%. **Dark Corner** telt alleen voor XP, niet voor overeenkomst-%, kalibratie, badges of ranglijsten |
+| Winning streak: wat is goed | Goed = kans op de werkelijke uitkomst **> 50%** (precies 50% telt niet; meerkeuze: jouw gekozen optie won). De dag is die van `resolvesAt` in jouw tijdzone. De dagjob sluit een dag pas af als alle voorspellingen van die dag opgelost of `ANNULLED` zijn, zodat een late resolutie niemands streak breekt |
 | Privégroepen | Groepen met vrienden (op uitnodiging) met eigen vragen en voorspellingen die alleen leden zien. **Wedden met groepspunten** plus een optioneel **vrij "inzet"-tekstveld** ("verliezer trakteert op friet"). **GuessHive regelt nooit echt geld**. De inzet-tekst is alleen een afspraak tussen vrienden, met een duidelijke melding (juridische check door de eigenaar, zie Open vragen) |
 | Groepen: uitkomst | De **maker** van een groepsvraag kiest de uitkomst. Leden hebben **24 uur** om bezwaar te maken. Bij bezwaar volgt een **stemming** onder de leden (meerderheid beslist; bij gelijkspel wordt de vraag geannuleerd en gaan de punten terug) |
 | Groepen: privacy | **Binnen een groep zien leden elkaars stemmen en voorspellingen**. Dat staat duidelijk bij het lid worden. Buiten de groep blijft alles privé. De 10-stemmersdrempel geldt niet binnen groepen (bewuste uitzondering met toestemming) |
@@ -103,6 +108,8 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Inkomstenbronnen | **Premium-abonnement**, **inzichten en embeds voor media/merken**, en **gesponsorde vragen**. Geen advertenties |
 | Wanneer | **Lancering volledig gratis**. De techniek wordt vóór de lancering voorbereid (feature-flags, datamodel), en de eigenaar zet het aan na groei (richtwaarde: 10.000 maandelijks actieve gebruikers) |
 | Premium | **Alleen gemak en uiterlijk, nooit voordeel in het spel**: uitgebreide statistieken (alle uitsplitsingen, kalibratie door de tijd), meer en grotere groepen, thema's en profielopties. Punten, ranglijsten, streaks en bevriezers zijn nooit te koop |
+| Gratis vs premium statistieken | Alles uit fase 4–7 blijft **gratis** (uitsplitsingen, wereldkaart, kalibratie). Premium = kalibratie door de tijd, gecombineerde filters (bijv. leeftijd × land) en export |
+| Embeds: stemmen | Bezoekers kunnen **in een embed stemmen**: een tik opent de GuessHive-aanmelding (zoals de gast-stem), en de uitslag verschijnt pas na de stem |
 | Inzichten en embeds | Nieuwssites en merken betalen voor **geanonimiseerde trends** ("wat denkt Nederland") en **in te sluiten polls**. Alleen totalen boven de 10-stemmersdrempel, altijd met "Geen representatieve peiling", nooit individuele data. Nooit uit de Dark Corner of privégroepen |
 | Gesponsorde vragen | Merken betalen om een vraag te plaatsen: duidelijk gelabeld **"Gesponsord door …"**, gemodereerd zoals elke vraag, **nooit politiek**, nooit in de Dark Corner of groepen. De sponsor ziet alleen geaggregeerde uitslagen. Maximaal 1 gesponsorde vraag per 10 in de feed |
 
@@ -112,7 +119,6 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 - [ ] **Productie-hosting**: (a) Hetzner VPS + Coolify/Docker (goedkoop, EU, meer zelf beheren), (b) Railway/Render EU-regio (simpel, duurder), of (c) web op Vercel + api/db elders. Beslissen vóór fase 12. Tot die tijd blijft alles Docker-portable.
 - [ ] **Puntensysteem voorspellingen**: de agent schrijft in fase 5 een voorstel (tijdgewogen Brier-score t.o.v. de massa) en bouwt dat alvast. De eigenaar keurt het goed of stuurt bij.
-- [ ] **Designrichting goedkeuren** (taak 3.0): stijl, kleuren en mascotte-concept. Tot de goedkeuring kan de agent doorwerken aan backend-taken.
 - [ ] **Mascotte**: naam voor de bij? Later eventueel een illustrator voor de definitieve versie (de agent maakt een eerste SVG-versie).
 - [ ] **Merknaam-check**: GuessHive in het EUIPO-register controleren vóór lancering (eigenaar).
 - [ ] **Domeinen registreren**: `.com`, `.net`, `.eu` en `.nl` (eigenaar).
@@ -122,7 +128,21 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Premium-prijs en betaaldienst** (vóór fase 13): voorstel €2,99 per maand of €24,99 per jaar, betalen via Mollie (iDEAL, Bancontact, creditcard). De eigenaar beslist en regelt het account.
 - [ ] **Tarieven voor embeds, inzichten en sponsoring** (vóór fase 13): de eigenaar bepaalt de prijzen. De agent bouwt een eenvoudig partnerbeheer.
 - [ ] **Dagvoorspellingen: bron van uitslagen** (fase 8): handmatig door admins/ambassadeurs, of automatisch via een weer- of sport-API (kost mogelijk geld). Voorstel: eerst handmatig.
-- [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Sentry (fase 11), Anthropic API voor AI-nieuwssuggesties (na lancering).
+- [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), analytics-dienst Umami of Plausible (fase 11), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor AI-nieuwssuggesties (na lancering).
+- [ ] **Kalibratie op het publieke profiel** (blokkeert 7.1): 7.1 toont kalibratie op het publieke profiel, maar de beslissing "Publiek profiel" noemt alleen username, avatar, level, badges, voorspelscore en streak. Opties: (a) tonen (geeft goede voorspellers status, en het is een totaal zonder losse stemmen); (b) alleen voor jezelf zichtbaar; (c) per gebruiker in te stellen, standaard uit. Advies: (a), omdat de voorspelscore er al staat en kalibratie geen losse stemmen prijsgeeft. Daarna de rij "Publiek profiel" bijwerken.
+- [ ] **Beeldmoderatie: admin-uploads en automatisch goedkeuren** (blokkeert 4.1, 9b.3, 9b.4): AGENTS.md §9 vraagt menselijke controle alleen voor gemarkeerde beelden, terwijl 9b.3 zegt "pas zichtbaar na goedkeuring". Admins uploaden optie-afbeeldingen al in 4.1, voordat de moderatie van 9b bestaat. Opties: (a) admin-uploads zonder moderatie; beelden van gebruikers na een schone automatische scan en hash-check automatisch goedgekeurd, alleen gemarkeerde naar een mens; (b) elk beeld altijd door een mens (veiligst, traag en veel werk); (c) admin-uploads alleen door de automatische scan en hash-check, gebruikers zoals bij (a), Dark Corner-beelden altijd door een mens. Advies: (c), omdat de hash-check weinig kost, ook fouten van admins vangt, en de Dark Corner extra zorg vraagt.
+- [ ] **"Groepsweddenschap" ook voor groepspolls?** (blokkeert 7b.10): de groepskaart heet "Groepsweddenschap" met een inzetregel, maar een poll (mening) heeft geen uitkomst en geen inzet. Opties: (a) alleen groepsvoorspellingen heten zo, groepspolls heten "Groepsvraag"; (b) alle groepskaarten heten zo (één naam, maar een poll zonder inzet heet dan ook weddenschap). Advies: (a).
+- [ ] **Dark Corner in de desktopzijbalk** (blokkeert 9b.7): volgens "Mobiel menu" is de Dark Corner een tegel bovenaan Ontdek, "nooit in de onderbalk of zijbalk voor anderen". Niet duidelijk is of 18+-gebruikers met opt-in hem wél in de desktopzijbalk krijgen. Opties: (a) alleen de tegel in Ontdek, voor iedereen (bewust uit het zicht, ook voor meekijkers); (b) voor wie hem aanzette ook een link in de desktopzijbalk (sneller bereikbaar). Advies: (a).
+- [ ] **Vragen indienen: drempel** (blokkeert 9.1): 9.1 laat gebruikers vragen indienen "vanaf level X of na Y dagen" zonder waarden, terwijl de beslissing "Vragen maken" zegt "gebruikers vanaf dag 1 via moderatie". Opties: (a) geen drempel, alleen een geverifieerd e-mailadres (past letterlijk bij "vanaf dag 1", drukkere wachtrij); (b) vanaf level 3 of na 7 dagen; (c) level 5 én 14 dagen (rustige wachtrij, minder nieuwe content). Advies: (b), omdat het spam afremt en nieuwe gebruikers toch snel mee laat doen.
+- [ ] **Automatisch verbergen na N meldingen** (blokkeert 9.4): 9.4 verbergt inhoud na N meldingen tot een moderator kijkt, maar N heeft geen waarde (in de Dark Corner is het 2, zie 9b.6). Opties: (a) N = 3 meldingen van verschillende accounts; (b) N = 5 (minder misbruik door groepjes melders, maar schadelijke inhoud blijft langer staan); (c) gewogen naar de trust score van de melders. Advies: (a), waarbij alleen meldingen van accounts ouder dan 7 dagen meetellen.
+- [ ] **Groepsgrootte en seizoenslengte** (blokkeert 7b.1, 7b.5): 7b.1 noemt "maximaal 50 leden (voorstel)" en groepspunten gelden "per seizoen", maar de lengte van een seizoen staat nergens. Opties: (a) 50 leden, seizoen = kalendermaand (vaak een nieuwe kans, kort voor lange voorspellingen); (b) 50 leden, seizoen = 3 maanden; (c) 25 leden, de groepseigenaar kiest de seizoenslengte. Advies: (b), omdat langere voorspellingen dan binnen één seizoen passen. Premium kan later grotere groepen geven.
+- [ ] **Uitsplitsing "jouw vrienden"** (blokkeert 7.5): 7.5 noemt twee varianten zonder keuze: dezelfde 10-stemmersdrempel, of alleen vrienden die hun stem openbaar maakten. Opties: (a) alleen boven de drempel van 10 vrienden (privé, maar met weinig vrienden zie je niets); (b) alleen openbare stemmen van vrienden, met naam (persoonlijk, werkt pas als mensen stemmen openbaar maken); (c) beide: het totaal boven de drempel, plus de namen van vrienden met een openbare stem. Advies: (c).
+- [ ] **Keuze vraag van de dag** (blokkeert 8.4, 12.6): 8.4 zegt "gekozen door een admin of automatisch (trending)". Opties: (a) een admin plant vooruit, en als er niets gepland is, wordt het automatisch de meest trending vraag; (b) altijd automatisch (geen werk, minder regie); (c) altijd handmatig (regie, maar een gat als niemand plant). Advies: (a).
+- [ ] **XP: bedragen, levelcurve en dagplafond** (blokkeert 8.1, 8.7): de XP-regels, de levelcurve en het XP-plafond per dag hebben geen waarden. Opties: (a) de agent schrijft een voorstel met tabel (in `packages/shared`), bouwt dat alvast, en de eigenaar keurt goed of stuurt bij, net als bij de scoring (5.4); (b) de eigenaar geeft de waarden vooraf. Advies: (a).
+- [ ] **Gesloten vragen: uitslag voor gasten en zoekmachines** (blokkeert 4.8, 4.13, 4.16): 4.8 toont uitslagen ook "als de vraag gesloten is", maar zegt ook "Gasten krijgen geen resultaten via de API", en 4.13 belooft "volledige resultaten" op een indexeerbare pagina. Opties: (a) na sluiten ziet iedereen de uitslag, ook gasten en Google (goed voor SEO en delen; de uitzondering op "eerst stemmen" komt dan in AGENTS.md §1); (b) gasten en crawlers zien nooit uitslagen, ook niet na sluiten (strikt, minder SEO-waarde); (c) na sluiten alleen voor ingelogde gebruikers. Advies: (a), omdat stemmen na sluiten toch niet meer kan.
+- [ ] **"Stemmen openbaar": per stem of algemene instelling** (blokkeert 7.2 en het datamodel): Instellingen noemt "stemmen openbaar" (klinkt als één schakelaar), terwijl 7.2 zegt "per stem openbaar maken". Opties: (a) alleen per stem; (b) per stem, plus een instelling "nieuwe stemmen standaard openbaar" (standaard uit, nooit met terugwerkende kracht); (c) één schakelaar voor al je stemmen. Advies: (b). Het datamodel krijgt dan `User.votesPublicByDefault`.
+- [ ] **Geboortedatum: Dark Corner-schakelaar, wijzigen en onder 16** (blokkeert 9b.1, 6.9): 9b.1 regelt niet of de Dark Corner-schakelaar zichtbaar is zonder geboortedatum, of je je geboortedatum later mag wijzigen (zo kan iedereen zich ouder maken), en wat er gebeurt bij een datum onder de 16. Opties: (a) de schakelaar staat alleen in de instellingen bij een ingevulde 18+-geboortedatum (anders geen hint); de geboortedatum is na invullen alleen via support te wijzigen; een datum onder de 16 blokkeert het account met uitleg, waarna het na de bedenktijd wordt verwijderd; (b) de schakelaar is altijd zichtbaar met "vul je geboortedatum in", de datum is vrij te wijzigen, en onder de 16 volgt alleen een waarschuwing; (c) zoals (a), maar de datum mag één keer zelf gecorrigeerd worden. Advies: (a), omdat het de 16+- en 18+-grens serieus neemt tot de echte leeftijdsverificatie (backlog) er is.
+- [ ] **IP- en apparaatgegevens voor fraudedetectie** (blokkeert 6.8, 9.9): 6.8 (land vs IP) en 9.9 (zelfde IP of apparaat) hebben IP- en apparaatgegevens nodig, maar er is geen keuze over wat er wordt bewaard en hoe lang (AGENTS.md verbiedt PII in logs). Opties: (a) alleen een gezouten hash van het IP-adres, een grof apparaatkenmerk en het IP-land per dag, 30 dagen bewaard; (b) ruwe IP-adressen, 30 dagen (beter onderzoek, meer AVG-risico); (c) niets bewaren, alleen live rate limits (privacyvriendelijk, zwakkere fraudedetectie). Advies: (a), vermeld in de privacyverklaring (11.3).
 
 ---
 
@@ -135,9 +155,9 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 4. **Voorspelling ja/nee**: "Wint Ajax de Eredivisie?" Ja/Nee + zekerheid (60/75/90%), of precies via een slider (1–99%).
 5. **Voorspelling meerkeuze**: "Wie wint het WK?" Optie kiezen + zekerheid (volledige kansverdeling: backlog).
 
-**Bereik (scope)** van een vraag: `GLOBAL` (hele wereld), `COUNTRY` (één land) of `REGION` (provincie/staat).
+**Bereik (scope)** van een vraag: `GLOBAL` (hele wereld), `COUNTRY` (één land), `REGION` (provincie/staat) of `GROUP` (alleen leden van een privégroep, fase 7b).
 
-**Resultaten**: pas zichtbaar na je stem of na "overslaan". Totaal plus uitsplitsing per land (wereldkaart), regio, leeftijdsgroep en "jouw vrienden", altijd met de drempel van 10 stemmers.
+**Resultaten**: pas zichtbaar na je stem of na "overslaan". Totaal plus uitsplitsing per land (wereldkaart), regio, leeftijdsgroep en "jouw vrienden", altijd met de drempel van 10 stemmers (uitzondering: binnen privégroepen).
 
 **Sociaal**: profielen, volgen, overeenkomst-% met anderen, reacties, emoji-reacties, deelkaarten met de uitslag als plaatje, meldingen.
 
@@ -170,8 +190,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ## Fase 1 — Database & API-skelet
 
 - [ ] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
-- [ ] 1.2 ID-strategie kiezen (cuid2 of UUIDv7) en vastleggen in een ADR
-- [ ] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken
+- [ ] 1.2 ID-strategie (cuid2 of UUIDv7) voorstellen aan de eigenaar en na akkoord vastleggen in een ADR
+- [ ] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken, inclusief de verdienmodel-velden en -tabellen (voorheen 13.1: `User.plan`, `premiumUntil`, `Subscription`, `Partner`, `EmbedKey`, `Sponsor`, `Question.sponsorId`), alles standaard uit
 - [ ] 1.4 Seed-script: alle landen (ISO), met `localEnabled` aan voor NL en BE en regio's voor NL en BE; de 10 categorieën uit "Lancering & landen" (NL+EN, Politiek met `sensitive = true`); 1 admin-gebruiker; ~20 voorbeeldvragen van alle types (development-data, niet de startcontent)
 - [ ] 1.5 Globale Nest-setup: config-module (zod), `ZodValidationPipe`, exception filter met `{ code, message }`, request-logging (pino) zonder PII
 - [ ] 1.6 `@nestjs/swagger` + `nestjs-zod`: OpenAPI op `/docs` (alleen in dev)
@@ -179,6 +199,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 1.8 Redis-module + BullMQ-basis (queue-registratie, eerste dummy-job)
 - [ ] 1.9 Rate-limiting (`@nestjs/throttler` met Redis-storage), standaardlimiet + per-route overrides
 - [ ] 1.10 Testopzet: Jest-integratietests tegen de `postgres-test`-container (reset per testbestand)
+- [ ] 1.11 Feature-flag-systeem (per omgeving en per gebruiker, tabel `FeatureFlag`), nodig voor 7b.6 en fase 13 (voorheen 13.2)
 
 **Acceptatie:** migraties draaien schoon op een lege db, de seed vult data, `/health` geeft 200, `/docs` toont de API en een integratietest leest seed-data uit.
 
@@ -186,7 +207,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 2 — Accounts & login
 
-- [ ] 2.1 Better Auth integreren in NestJS. **Eerst de huidige docs en de NestJS-integratie controleren.** Werkt dat niet goed: fallback naar Passport-strategieën, vastgelegd in een ADR
+- [ ] 2.1 Better Auth integreren in NestJS. **Eerst de huidige docs en de NestJS-integratie controleren.** Werkt dat niet goed: stoppen en de eigenaar een alternatief voorleggen (bijv. Passport) met voor- en nadelen; na akkoord een ADR (AGENTS.md §2)
 - [ ] 2.2 E-mail + wachtwoord: registreren, inloggen, e-mailverificatie, wachtwoord vergeten/resetten
 - [ ] 2.3 Magic link via e-mail (Mailpit lokaal, Resend in prod)
 - [ ] 2.4 Google OAuth
@@ -196,9 +217,9 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 2.8 Globale `AuthGuard` (default deny) + `@Public()` + `RolesGuard` met rollen `USER`, `MODERATOR` en `ADMIN`
 - [ ] 2.9 Cloudflare Turnstile op registratie en magic-link-aanvraag (server-side verificatie)
 - [ ] 2.10 Rate limits op login, registratie en magic link
-- [ ] 2.11 Onboarding-gegevens (kort): unieke `username`, `displayName`, `countryCode` (voorstel via IP-geolocatie, gebruiker bevestigt), interesses, plus akkoord voorwaarden + 16+-bevestiging. Regio, geboortedatum en geslacht zijn optioneel en worden later via `PATCH /me` aangevuld (zie 6.9)
+- [ ] 2.11 Onboarding-gegevens (kort): unieke `username`, `countryCode` (voorstel via IP-geolocatie, gebruiker bevestigt), interesses, plus akkoord voorwaarden + 16+-bevestiging. Regio, geboortedatum en geslacht zijn optioneel en worden later via `PATCH /me` aangevuld (zie 6.9)
 - [ ] 2.14 Gast-stem afronden: een "pending vote/skip" (vraag-id, optie(s), zekerheid) die vóór aanmelden is gekozen, wordt na aanmelden/onboarding één keer server-side ingediend (gevalideerd alsof de gebruiker het nu doet, de vraag moet nog open zijn)
-- [ ] 2.12 `GET/PATCH /me`, avatar-upload naar S3/MinIO (resize, max-grootte, alleen afbeeldingen)
+- [ ] 2.12 `GET/PATCH /me`, avatar-upload naar S3/MinIO als `MediaAsset` (status `PENDING`, resize, max-grootte, alleen JPG/PNG/WebP, EXIF eraf). Tot 9b.4 er is, worden geüploade avatars niet getoond (standaard-avatar)
 - [ ] 2.13 Tests: registratie → verificatie → login, magic link, guard-gedrag en rate limits
 
 **Acceptatie:** een nieuwe gebruiker kan zich op alle 4 manieren aanmelden, onboarding afronden en `/me` ophalen. Niet-ingelogd krijgt 401 op beschermde routes.
@@ -207,13 +228,14 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 3 — Web-shell (SvelteKit)
 
-- [~] 3.0 **Designrichting ter goedkeuring** (eigenaar). Ux-review: PASS na 6 rondes. Omvat: desktoppagina's (vraag, voorspel + ranglijsten, profiel, ontdek + land), instellingen (mobiel + desktop), Dark Corner, privégroepen en winning streak. Canvas: https://claude.ai/artifact/27Jt9oFZeytMGGnwuu8XpU (wacht op feedback/akkoord). Inhoud: stijltegel + klikbare mockup als HTML-pagina met kleuren (honinggeel, warm), typografie, ronde vormen, eerste SVG-versie van de bij-mascotte, en de schermen home-feed, vraagkaart (voor/na stemmen), aanmeldsheet voor gasten, voorspelkaart (Ja/Nee + zekerheid) en Snel stemmen. Light + dark, mobiel + desktop. **Pas na akkoord UI-taken van fase 3 bouwen.** Tot die tijd mag de agent doorwerken aan andere niet-UI-taken
+- [x] 3.0 **Designrichting goedgekeurd** door de eigenaar (12-10-2026). Ux-review: PASS na 6 rondes. Omvat: desktoppagina's (vraag, voorspel + ranglijsten, profiel, ontdek + land), instellingen (mobiel + desktop), Dark Corner, privégroepen en winning streak. Canvas: https://claude.ai/artifact/27Jt9oFZeytMGGnwuu8XpU. Inhoud: stijltegel + klikbare mockup als HTML-pagina met kleuren (honinggeel, warm), typografie, ronde vormen, eerste SVG-versie van de bij-mascotte, en de schermen home-feed, vraagkaart (voor/na stemmen), aanmeldsheet voor gasten, voorspelkaart (Ja/Nee + zekerheid) en Snel stemmen. Light + dark, mobiel + desktop
+- [ ] 3.0b Kleurentabel, tokens en schermreferenties uit het canvas exporteren naar `docs/design/`, zodat agents en `ux-reviewer` ze lokaal kunnen lezen
 - [ ] 3.1 Tailwind v4-thema volgens de goedgekeurde designrichting: kleuren (design tokens, de volledige kleurentabel van de stijltegel in licht en donker), zelf gehoste lettertypen (Fredoka + Nunito), typografie, radius, schaduwen, dark mode (systeem + toggle), animatie-tokens (respecteert `prefers-reduced-motion`)
 - [ ] 3.2 shadcn-svelte initialiseren: basiscomponenten (button, card, input, dialog, sheet, tabs, toast, avatar, dropdown)
 - [ ] 3.3 Paraglide: locales `nl` en `en`, routes `/[locale]/...`, taaldetectie (cookie → Accept-Language → `en`), taalwisselaar
 - [ ] 3.4 `hooks.server.ts`: `/api/*` proxyen naar NestJS (cookies doorgeven, origin-check), sessie ophalen naar `event.locals.user`
 - [ ] 3.5 Typed API-client: types genereren uit OpenAPI (`openapi-typescript` + `openapi-fetch`), plus een gedeelde helper voor server- en client-calls
-- [ ] 3.6 App-layout mobile-first: bovenbalk (logo, zoeken, profiel), onderste tabbalk op mobiel (**Home, Ontdek, Voorspel, Groepen, Meldingen**). Profiel via de zeshoek-avatar rechtsboven. Dark Corner als tegel bovenaan Ontdek, alleen voor 18+ met opt-in. Onder 768px gebruikt ook de desktopsite deze mobiele kop- en tabbalk, zijbalk op desktop
+- [ ] 3.6 App-layout mobile-first: bovenbalk (logo, zoeken, profiel), onderste tabbalk op mobiel (**Home, Ontdek, Voorspel, Groepen, Meldingen**). Tabs van functies die nog niet gebouwd zijn blijven verborgen tot ze bestaan (pas bij lancering zijn alle vijf er). Profiel via de zeshoek-avatar rechtsboven. Dark Corner als tegel bovenaan Ontdek, alleen voor 18+ met opt-in. Onder 768px gebruikt ook de desktopsite deze mobiele kop- en tabbalk, zijbalk op desktop
 - [ ] 3.7 Auth-pagina's: inloggen, registreren, magic link verstuurd, wachtwoord vergeten/reset, e-mail geverifieerd
 - [ ] 3.8 Onboarding-flow (kort, met de bij als gids): username → land → interesses (categorieën). Daarna direct terug naar de vraag waar de gast op tikte (pending vote indienen, uitslag tonen)
 - [ ] 3.8b Aanmeldsheet voor gasten: bottom sheet "Laat je stem tellen!" met Google, Apple en e-mail. Gekozen optie blijft zichtbaar geselecteerd. Pending vote bewaren in sessionStorage + cookie, zodat hij een OAuth-redirect overleeft
@@ -244,8 +266,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ### Web
 - [ ] 4.11 Vraagkaart-component: titel, opties, stemmen in één tap, "overslaan"-link, en na stemmen een speelse animatie naar resultaatbalken met percentages. Voor gasten opent een tik de aanmeldsheet (3.8b)
 - [ ] 4.12 Home-feed met tabs Trending / Lokaal / Nieuw, infinite scroll, en een knop "⚡ Snel stemmen"
-- [ ] 4.12b **Snel stemmen**-modus: één vraag per scherm, swipen of tikken naar de volgende, uitslag kort tonen na elke stem. Knop "Volgende vraag" registreert geen skip. Werkt met toetsenbord en zonder swipe (toegankelijk)
-- [ ] 4.12c **Carrousel "Uitgelicht"** bovenaan de home: vraag van de dag + nieuwste vragen (API: endpoint `featured` met de vraag van de dag + de nieuwste open vragen voor jouw land en globaal, zonder vragen waarop je al stemde). Stemmen in de dia, automatisch wisselen (6 s) met pauzeknop, pauzeren bij hover/focus/aanraken/na stemmen/"minder beweging", volgens het WAI-ARIA carrousel-patroon. Bewuste keuze: na aanraken of na een stem blijft de carrousel gepauzeerd tot de gebruiker zelf op afspelen of een puntje tikt
+- [ ] 4.12b **Snel stemmen**-modus: één vraag per scherm, omhoog vegen of tikken naar de volgende, uitslag kort tonen na elke stem. Knop "Volgende vraag" registreert geen skip. Werkt met toetsenbord en zonder swipe (toegankelijk)
+- [ ] 4.12c **Carrousel "Uitgelicht"** bovenaan de home: vraag van de dag + nieuwste vragen (API: endpoint `featured` met de vraag van de dag + de nieuwste open vragen voor jouw land en globaal, zonder vragen waarop je al stemde). Stemmen in de dia, automatisch wisselen (6 s) met pauzeknop, pauzeren bij hover/focus/aanraken/na stemmen/"minder beweging", volgens het WAI-ARIA carrousel-patroon. Bewuste keuze: na aanraken of na een stem blijft de carrousel gepauzeerd tot de gebruiker zelf op afspelen of een puntje tikt. Tot 8.4 klaar is, is de eerste dia de meest trending open vraag
 - [ ] 4.13 Vraagpagina `/[locale]/q/[slug]`: SSR, volledige resultaten, uitsplitsing-tabs, "wat stemde jouw land vs de wereld"
 - [ ] 4.14 Categoriepagina's + Ontdek-pagina (categorieën, zoeken)
 - [ ] 4.15 Admin (minimaal): vragenlijst, vraag aanmaken/bewerken met vertalingen NL+EN, opties sorteren, statusbeheer
@@ -280,9 +302,9 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 6.1 Landen- en regiodata compleet (ISO 3166-1/2) met namen in NL en EN, in `packages/shared`
 - [ ] 6.9 Progressieve profielvragen: op slimme momenten (bijv. na 5 stemmen, of bij het openen van de uitsplitsing) een kaartje "Wil je zien hoe jouw leeftijdsgroep/provincie stemt?", met geboortedatum, geslacht of regio invullen in één tik. Wegklikbaar, maximaal 1× per week tonen
 - [ ] 6.2 Feed-personalisatie: mix van lokaal (jouw land/regio, alleen als `localEnabled`), globaal en categorieën uit je interesses
-- [ ] 6.2b Landen zonder lokale content: de "Lokaal"-tab toont de bij met "Lokaal komt eraan in <land>", hoeveel gebruikers er nog nodig zijn, en een knop "Word ambassadeur"
+- [ ] 6.2b Landen zonder lokale content: de "Lokaal"-tab toont de bij met "Lokaal komt eraan in <land>", hoeveel gebruikers er nog nodig zijn, en een knop "Word ambassadeur" (linkt naar het formulier van 9.10; tot dan een wachtlijstmelding)
 - [ ] 6.3 Landpagina `/[locale]/land/[cc]`: "Wat denkt Nederland?" met top-vragen, recente uitslagen, lokale ranglijst. Alleen voor landen met `localEnabled`
-- [ ] 6.10 Uitbreidingsdashboard (admin): per land maandelijks actieve gebruikers, aantal (kandidaat-)ambassadeurs, ingediende lokale vragen, en een "klaar voor lokaal"-indicator op basis van de drempels. De knop `localEnabled` aanzetten is alleen voor de eigenaar/admin
+- [ ] 6.10 Uitbreidingsdashboard (admin): per land maandelijks actieve gebruikers, aantal (kandidaat-)ambassadeurs, ingediende lokale vragen, en een "klaar voor lokaal"-indicator op basis van de drempels. De knop `localEnabled` aanzetten is alleen voor de eigenaar/admin. De ambassadeurkolom vult zich zodra 9.11 er is
 - [ ] 6.4 Wereldkaart-component (d3-geo + world-atlas TopoJSON): kleur per land = meest gekozen optie of % voor optie X, met tooltip. Landen onder de drempel grijs
 - [ ] 6.5 Landvergelijking op een vraagpagina: "Nederland vs België vs Duitsland"
 - [ ] 6.6 Regio-uitsplitsing per land (provincies), zelfde drempel
@@ -295,14 +317,14 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 7 — Sociaal
 
-- [ ] 7.1 Publieke profielpagina `/[locale]/u/[username]`: avatar, level, badges, voorspel-ranking, kalibratie, publiek gemaakte stemmen
+- [ ] 7.1 Publieke profielpagina `/[locale]/u/[username]`: avatar, level, badges, voorspel-ranking, streak, kalibratie, publiek gemaakte stemmen
 - [ ] 7.2 Privacy-instellingen: profiel publiek/privé, stemmen standaard privé, per stem "openbaar maken"
 - [ ] 7.3 Volgen/ontvolgen, volgers/volgend-lijsten, "vrienden" = wederzijds volgen
 - [ ] 7.4 Overeenkomst-%: per gebruikerspaar berekenen over gedeelde vragen (job + cache), tonen op het profiel ("Je bent het 72% eens met Sam")
 - [ ] 7.5 Resultaten-uitsplitsing "jouw vrienden" (zelfde k-drempel, of alleen als vrienden hun stem openbaar maakten)
-- [ ] 7.6 Reacties onder vragen: threads (1 niveau diep), bewerken/verwijderen, sorteren op populair/nieuw, rate-limited. Pas zichtbaar na je stem (tegen beïnvloeding)
+- [ ] 7.6 Reacties onder vragen: threads (1 niveau diep), bewerken/verwijderen, sorteren op populair/nieuw, rate-limited. Pas zichtbaar na je stem (tegen beïnvloeding). Je keuze staat standaard niet bij je reactie; per reactie de optie "Laat mijn keuze zien bij deze reactie"
 - [ ] 7.7 Emoji-reacties op vragen en reacties
-- [ ] 7.8 Deelkaarten: dynamische OG-afbeelding per vraag met de actuele uitslag (satori + resvg in een SvelteKit-endpoint, gecachet) + native share-knop
+- [ ] 7.8 Deelkaarten: dynamische OG-afbeelding per vraag met de actuele uitslag (satori + resvg in een SvelteKit-endpoint, gecachet) + native share-knop. Geen deelkaarten voor groeps- en Dark Corner-vragen; tijdens verkiezingsstilte zonder uitslag (9.17). Lettertypen uit de eigen @fontsource-bestanden, nooit van een font-CDN
 - [ ] 7.9 In-app meldingen: iemand volgt je, reactie op jouw reactie, voorspelling opgelost, vraag van vrienden. Meldingenpagina + badge-teller
 - [ ] 7.10 Vrienden uitnodigen: persoonlijke invite-link (meten wie wie aanbrengt, badge als beloning)
 
@@ -314,14 +336,14 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 - [ ] 7b.1 Groep aanmaken: naam, avatar, beschrijving. Rollen eigenaar/beheerder/lid. Maximaal 50 leden (instelbaar, voorstel)
 - [ ] 7b.2 Uitnodigen via een link of code (verloopt na 7 dagen, intrekbaar). Lid worden toont expliciet "Binnen deze groep zien leden wat jij stemt en voorspelt" + akkoord
-- [ ] 7b.3 Groepsvragen (polls en voorspellingen) met `scope = GROUP`: alleen zichtbaar voor leden, nooit in publieke feeds, zoekresultaten, Google of deelkaarten met namen
+- [ ] 7b.3 Groepsvragen (polls en voorspellingen) met `scope = GROUP`: alleen zichtbaar voor leden, nooit in publieke feeds, zoekresultaten, Google of deelkaarten
 - [ ] 7b.4 Binnen de groep: per lid zichtbaar wat hij/zij koos (uitzondering op privé-stemmen en de 10-stemmersdrempel, met toestemming uit 7b.2)
 - [ ] 7b.5 Groepspunten en inzet volgens het goedgekeurde voorstel (zie Open vragen), plus de groepsranglijst per seizoen
 - [ ] 7b.6 Optioneel inzet-tekstveld per groepsvoorspelling ("verliezer trakteert"), achter een feature-flag tot de juridische check rond is, met de melding "GuessHive regelt nooit geld. Dit is een afspraak tussen jullie"
 - [ ] 7b.7 Uitkomst: de maker kiest, dan 24 uur bezwaartermijn. Bij bezwaar een stemming onder de leden (meerderheid; gelijkspel = annuleren, punten terug). Meldingen voor alle stappen
 - [ ] 7b.8 Groep verlaten of verwijderd worden: je stemmen blijven in de groep als "oud-lid" (zonder naam). De eigenaar kan de groep opheffen (alles verwijderd na 30 dagen)
 - [ ] 7b.9 Moderatie: groepsinhoud kan gemeld worden. Admins kunnen ingrijpen. Woordfilter en rate limits gelden ook hier
-- [ ] 7b.10 Web: groepenoverzicht, groepspagina (feed, ranglijst, leden), groepsvraag maken, uitnodigen, bezwaar en stemming
+- [ ] 7b.10 Web: groepenoverzicht, groepspagina (feed, ranglijst, leden), groepsvraag maken, uitnodigen, bezwaar en stemming. De kaart van een groepsvoorspelling heet "Groepsweddenschap" met een inzetregel (ingezette groepspunten, plus de inzet-tekst als de vlag van 7b.6 aan staat)
 
 **Acceptatie:** vrienden maken een groep, nodigen elkaar uit, wedden met groepspunten op een eigen vraag, de maker kiest de uitkomst, en een bezwaar leidt tot een eerlijke stemming. Niets uit de groep lekt naar publieke plekken.
 
@@ -330,18 +352,18 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ## Fase 8 — Gamification
 
 - [ ] 8.1 XP-regels (stemmen, voorspellen, dagelijkse login, reacties met likes) + levels (curve in `packages/shared`). XP staat los van voorspelpunten
-- [ ] 8.2 **Winning streak** (vervangt de actief-streak): job aan het eind van elke dag in de tijdzone van de gebruiker. Minstens 1 voorspelling met uitkomst die dag goed = +1. Anders: een bevriezer gebruiken als die er is, en anders streak naar 0. Bijhouden: huidige en langste streak. Unit tests op randgevallen (tijdzones, zomertijd, geannuleerde vragen tellen niet)
+- [ ] 8.2 **Winning streak** (vervangt de actief-streak): job aan het eind van elke dag in de tijdzone van de gebruiker. Minstens 1 voorspelling met uitkomst die dag goed = +1. Anders: een bevriezer gebruiken als die er is, en anders streak naar 0. Bijhouden: huidige en langste streak. Unit tests op randgevallen (tijdzones, zomertijd, geannuleerde vragen tellen niet) Definitie van "goed" en de dag: zie "Extra functies".
 - [ ] 8.2b **Streak-bevriezer**: 1 verdienen per 7 dagen streak, maximaal 2. Automatisch gebruikt, met melding "Je bevriezer heeft je streak gered!"
-- [ ] 8.2c **Dagvoorspellingen**: elke dag 3–5 voorspellingen per land met `localEnabled` + globaal, die binnen 24 uur uitkomen (weer, uitslagen van vandaag). Gemaakt door admins/ambassadeurs (bron van uitslagen: zie Open vragen). Uitgelicht in de Voorspel-tab en de carrousel
+- [ ] 8.2c **Dagvoorspellingen**: elke dag 3–5 voorspellingen per land met `localEnabled` + globaal, die binnen 24 uur uitkomen (weer, uitslagen van vandaag). Gemaakt door admins/ambassadeurs (bron van uitslagen: zie Open vragen). Uitgelicht in de Voorspel-tab
 - [ ] 8.2d Web: streak-teller met vlam op profiel, Voorspel-tab en na een goede voorspelling. "Streak in gevaar"-melding als je vandaag nog niets goed hebt en er nog dagvoorspellingen open staan
-- [ ] 8.3 Badges: definities + automatische toekenning via events (eerste stem, 7-daagse streak, 10 goede voorspellingen, top 10 in je land, …)
+- [ ] 8.3 Badges: definities + automatische toekenning via events (eerste stem, 7 dagen winning streak, 10 goede voorspellingen, top 10 in je land, …)
 - [ ] 8.4 Vraag van de dag: per land en globaal, gekozen door een admin of automatisch (trending), uitgelicht bovenaan
-- [ ] 8.5 "Dit of dat"-duels in de Snel stemmen-modus (4.12b): A vs B, swipe links/rechts, met reeksen ("10 snelle duels over eten")
+- [ ] 8.5 "Dit of dat"-duels in de Snel stemmen-modus (4.12b): A vs B, links/rechts vegen = stem (altijd met knoppen als alternatief), met reeksen ("10 snelle duels over eten")
 - [ ] 8.9 De bij-mascotte overal inzetten: lege staten, onboarding, streak-mijlpalen, badges, resolutie (juichen of troosten), foutpagina's
 - [ ] 8.6 Wekelijkse recap: "Deze week stemde je 34×, je zat 5× goed, je bent #120 in Nederland"
 - [ ] 8.7 Anti-farming: XP-plafond per dag, geen XP voor stem wijzigen, alleen gelikete reacties tellen
 
-**Acceptatie:** actief zijn levert zichtbaar XP, levels, streaks en badges op, er is elke dag een uitgelichte vraag, en de swipe-modus werkt soepel op mobiel.
+**Acceptatie:** meedoen levert zichtbaar XP, levels en badges op, goede voorspellingen bouwen een winning streak op, er zijn elke dag dagvoorspellingen en een uitgelichte vraag, en de swipe-modus werkt soepel op mobiel.
 
 ---
 
@@ -360,7 +382,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ### Ambassadeurs
 - [ ] 9.10 Ambassadeur-aanmelding: formulier (land/regio, motivatie), voorwaarden zichtbaar (level, trust), status in je profiel
 - [ ] 9.11 Goedkeuren/afwijzen door eigenaar/admin. Status `APPLIED → PROBATION (30 dagen) → ACTIVE`, en `REVOKED` op elk moment. Rechten zijn gebonden aan land/regio via een guard (`@AmbassadorOf(countryCode)`)
-- [ ] 9.12 Rechten per fase: proeftijd (voorstellen met voorrang in de wachtrij, meldingen afhandelen), actief (lokale niet-politieke vragen direct publiceren, lokale wachtrij modereren). Alles in de `AuditLog`
+- [ ] 9.12 Rechten per fase: proeftijd (voorstellen met voorrang in de wachtrij, meldingen afhandelen), actief (lokale niet-politieke vragen direct publiceren, lokale wachtrij modereren, dagvoorspellingen in hun land oplossen). Alles in de `AuditLog`
 - [ ] 9.13 Ambassadeur-dashboard: lokale wachtrij, meldingen uit hun land, statistieken van hun vragen. Badge en rang "Ambassadeur 🇳🇱" op het profiel
 
 ### Politieke vragen
@@ -382,7 +404,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 9b.4 Beeldmoderatie: automatische scan (naakt, geweld, extremistische symbolen) + verplichte hash-check op misbruikmateriaal + menselijke wachtrij (dienst: zie Open vragen). Geblokkeerde symbolen-lijst in `docs/moderation/`
 - [ ] 9b.5 Inhoudsregels Dark Corner (NL+EN), zichtbaar bij het aanzetten en het indienen. Moderatie altijd vooraf (geen direct publiceren, ook niet voor ambassadeurs). Strengere rate limits
 - [ ] 9b.6 Melden met extra redenen (naakt, haat, minderjarig), na 2 meldingen automatisch verbergen. Ernstige overtredingen leiden tot een directe ban en, waar de wet dat vereist, een melding bij de autoriteiten (procedure in `docs/moderation/`)
-- [ ] 9b.7 Web: Dark Corner-tab met een donkerder eigen accent (binnen de huisstijl), duidelijk 18+-label, bevestigingsscherm en de instellingsschakelaar
+- [ ] 9b.7 Web: Dark Corner-pagina via de tegel bovenaan Ontdek, met een donkerder eigen accent (binnen de huisstijl), duidelijk 18+-label, bevestigingsscherm en de instellingsschakelaar
 - [ ] 9b.8 Juridische check (eigenaar): voorwaarden, leeftijdsgrens, de DSA-regels voor minderjarigen en app-store-regels voor een latere native app
 
 **Acceptatie:** alleen 18+-gebruikers die de hoek zelf aanzetten zien hem. Afbeeldingen zijn pas zichtbaar na moderatie. Niets uit de Dark Corner verschijnt op publieke plekken of in Google.
@@ -395,8 +417,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 10.2 Service worker (SvelteKit `service-worker.ts` of `@vite-pwa/sveltekit`): app-shell cachen, offline-pagina
 - [ ] 10.3 Installatie-prompt op een slim moment (na 3 stemmen), met iOS-instructie ("Zet op beginscherm")
 - [ ] 10.4 Web Push (VAPID): opt-in na een waardevol moment, abonnementen opslaan, versturen via BullMQ
-- [ ] 10.5 Pushtypes (standaard **actief**) + instellingen per type: vraag van de dag, trending vragen, vrienden die stemmen, wekelijkse recap, voorspelling opgelost, iemand reageert, streak in gevaar
-- [ ] 10.5b Push-limieten: max 3 per dag per gebruiker (prioriteit: opgelost > reactie > streak > vraag van de dag > vrienden > trending), stille uren 22:00–08:00 in de tijdzone van de gebruiker, bundelen ("3 vrienden stemden op …")
+- [ ] 10.5 Pushtypes (standaard **actief**) + instellingen per type: groepsactiviteit, vraag van de dag, trending vragen, vrienden die stemmen, wekelijkse recap, voorspelling opgelost, iemand reageert, streak in gevaar
+- [ ] 10.5b Push-limieten: max 3 per dag per gebruiker (prioriteit: groep > opgelost > reactie > streak > vraag van de dag > wekelijkse recap > vrienden > trending), stille uren 22:00–08:00 in de tijdzone van de gebruiker, bundelen ("3 vrienden stemden op …")
 - [ ] 10.6 Lighthouse-check: PWA installable, performance ≥ 90 op mobiel
 
 **Acceptatie:** de site is installeerbaar op Android en iOS, opent standalone, en gebruikers krijgen pushmeldingen die ze per type kunnen uitzetten.
@@ -416,6 +438,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 11.7c Threat model (STRIDE, 1 pagina) in `docs/security.md`: stemfraude, nepaccounts, scraping, privacy-lekken via uitsplitsingen
 - [ ] 11.8 Back-ups: dagelijkse Postgres-dump naar aparte opslag, restore-procedure getest en beschreven
 - [ ] 11.9 Sentry in web en api (zonder PII), uptime-monitoring op `/health`
+- [ ] 11.10 Entitlements-laag in de api (bijv. `can(user, "premium.stats")`), alles achter vlaggen, standaard uit, zodat premium-functies later alleen een vlag zijn (voorheen 13.3)
 
 **Acceptatie:** een gebruiker kan zijn data exporteren en zijn account verwijderen, juridische pagina's staan online, de security-checklist is volledig afgevinkt en een restore is aantoonbaar getest.
 
@@ -441,16 +464,16 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 13 — Verdienmodel (voorbereiden vóór lancering, aanzetten na groei)
 
-**Vóór lancering (onderdeel van fase 1–12, alles achter feature-flags, standaard uit):**
-- [ ] 13.1 Datamodel: `User.plan` (FREE|PREMIUM), `premiumUntil`, tabellen `Subscription`, `Partner`, `EmbedKey`, `Sponsor`. `Question.sponsorId?`
-- [ ] 13.2 Feature-flag-systeem (bijv. per omgeving en per gebruiker) voor premium, embeds en sponsoring
-- [ ] 13.3 Entitlements-laag in de api (bijv. `can(user, "premium.stats")`), zodat premium-functies later alleen een vlag zijn
+**Vóór lancering:** verplaatst naar fase 1 en 11, zodat het in volgorde wordt gebouwd (alles achter feature-flags, standaard uit):
+- [-] 13.1 Datamodel voor het verdienmodel: verplaatst naar 1.3
+- [-] 13.2 Feature-flag-systeem: verplaatst naar 1.11
+- [-] 13.3 Entitlements-laag: verplaatst naar 11.10
 
 **Na groei (eigenaar zet aan):**
 - [ ] 13.4 Betalen via de gekozen dienst (zie Open vragen): abonnement afsluiten, opzeggen, factuur, webhooks, proefperiode. Volgens de securityregels (webhook-handtekening controleren, idempotent)
 - [ ] 13.5 Premium-functies: uitgebreide statistieken, meer en grotere groepen, thema's en profielopties, premium-badge. **Nooit** punten, ranglijsten, streaks of bevriezers
-- [ ] 13.6 Embeds: in te sluiten poll-widget (iframe/script) per vraag, met een partner-sleutel, alleen geaggregeerde uitslagen boven de drempel, label "Geen representatieve peiling", link terug naar GuessHive
-- [ ] 13.7 Inzichten voor partners: dashboard of export met geanonimiseerde trends per land, categorie en periode. Alleen totalen boven de drempel. Afspraken in de verwerkersovereenkomst en de privacyverklaring
+- [ ] 13.6 Embeds: in te sluiten poll-widget (iframe/script) per vraag, met een partner-sleutel, alleen geaggregeerde uitslagen boven de drempel, label "Geen representatieve peiling", link terug naar GuessHive. Nooit voor Dark Corner-, groeps- of gevoelige vragen tijdens verkiezingsstilte Stemmen in de embed: een tik opent de GuessHive-aanmelding, uitslag pas na de stem.
+- [ ] 13.7 Inzichten voor partners: dashboard of export met geanonimiseerde trends per land, categorie en periode. Alleen totalen boven de drempel, nooit data uit de Dark Corner of privégroepen. Afspraken in de verwerkersovereenkomst en de privacyverklaring
 - [ ] 13.8 Gesponsorde vragen: sponsorbeheer (admin), label "Gesponsord door …", moderatie, nooit politiek, Dark Corner of groepen, max 1 per 10 feed-items, uitslagrapport voor de sponsor (geaggregeerd)
 - [ ] 13.9 Juridisch (eigenaar): voorwaarden voor premium (opzegtermijn, herroepingsrecht), partnercontract, reclameregels voor gesponsorde content
 
@@ -466,7 +489,6 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - Meer talen: DE, FR, ES (alleen vertalen dankzij de i18n-opzet)
 - **Echte leeftijdsverificatie voor de Dark Corner** (besloten, gepland): via ID of bank (bijv. iDIN of een ID-verificatiedienst), ter vervanging van alleen de geboortedatum. Eigenaar kiest de provider (kosten per check)
 - Toernooien/seizoenen voor voorspellingen (bijv. "EK-voorspelcompetitie")
-- Embeds: poll insluiten op andere websites of in nieuwsartikelen
 - Publieke data-API / datasets voor journalisten (geaggregeerd)
 - Native apps (Capacitor-wrapper rond de PWA, of native)
 - Meerkeuze-voorspellingen met volledige kansverdeling over de opties
@@ -479,12 +501,19 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 Richtlijn, geen keurslijf: aanpassen mag, maar dan ook hier bijwerken.
 
 ```
-User            id, email, emailVerified, username (uniek), displayName, avatarUrl,
+User            id, email, emailVerified, username (uniek), avatarUrl,
                 countryCode, regionCode?, birthDate? (alleen voor leeftijdsgroep en 18+-check), gender?,
                 locale, timezone, role (USER|MODERATOR|ADMIN), trustScore, xp, level,
                 winStreak, longestWinStreak, streakFreezes (0-2), lastStreakDate,
                 darkCornerEnabled, darkCornerConfirmedAt?,
-                profileVisibility (PUBLIC|PRIVATE), plan (FREE|PREMIUM), premiumUntil?, createdAt, deletedAt?
+                termsAcceptedAt, termsVersion, ageConfirmedAt (16+-bevestiging),
+                status (ACTIVE|SUSPENDED|BANNED), suspendedUntil?, profilePromptedAt? (6.9),
+                profileVisibility (PUBLIC|PRIVATE), plan (FREE|PREMIUM), premiumUntil?, createdAt,
+                deletedAt? (= start van 14 dagen bedenktijd; hard delete op deletedAt + 14 d)
+UserInterest    userId + categoryId (PK)
+NotificationPreference userId + type (PK), push (bool), inApp (bool)
+FeatureFlag     key (PK), enabled, rules (json), updatedAt
+AppSetting      key (PK), value (json), updatedById, updatedAt     (instelbare drempels: 500 MAU, ambassadeur-level/trust, max. groepsleden)
 Group           id, name, avatarUrl?, description?, ownerId, maxMembers, seasonStartsAt, createdAt, deletedAt?
 GroupMember     groupId + userId (PK), role (OWNER|ADMIN|MEMBER), points, joinedAt, consentAt, leftAt?
 GroupInvite     id, groupId, code, createdById, expiresAt, revokedAt?
@@ -495,7 +524,8 @@ Subscription    id, userId, provider, status (TRIAL|ACTIVE|CANCELED|PAST_DUE), p
 Partner         id, name, kind (MEDIA|BRAND), contactEmail, createdAt
 EmbedKey        id, partnerId, keyHash, allowedOrigins, revokedAt?
 Sponsor         id, partnerId, name, logoAssetId?
-MediaAsset      id, ownerId, url, kind (QUESTION|OPTION|AVATAR), status (PENDING|APPROVED|REJECTED), moderationLabels (json), hash, createdAt
+MediaAsset      id, ownerId, url, kind (QUESTION|OPTION|AVATAR|GROUP_AVATAR|SPONSOR_LOGO), altText (json nl/en),
+                status (PENDING|APPROVED|REJECTED), moderationLabels (json), hash, createdAt
 Account/Session/Verification   (tabellen van Better Auth)
 
 Country         code (PK), names (json nl/en), localEnabled, localEnabledAt?
@@ -508,20 +538,24 @@ ElectionBlackout id, countryCode, startsAt, endsAt, note, createdById
 Question        id, shortId, slug, type (POLL_SINGLE|POLL_MULTI|THIS_OR_THAT|
                 PREDICTION_BINARY|PREDICTION_CHOICE), status (DRAFT|PENDING_REVIEW|
                 OPEN|CLOSED|RESOLVED|ANNULLED|REJECTED|ARCHIVED),
-                scope (GLOBAL|COUNTRY|REGION), countryCode?, regionCode?,
+                scope (GLOBAL|COUNTRY|REGION|GROUP), countryCode?, regionCode?, groupId? (verplicht bij GROUP),
+                darkCorner (bool, default false), isDaily (bool, dagvoorspelling, 8.2c), sponsorId?,
                 defaultLocale, authorId, categoryId, maxChoices, allowVoteChange,
-                imageUrl?, opensAt, closesAt, resolvesAt?, resolvedOptionId?,
+                imageAssetId?, opensAt, closesAt, resolvesAt?, resolvedOptionId?,
                 resolutionSource?, resolutionNote?, resolvedAt?, resolvedById?,
-                voteCount (denormalized), createdAt
+                hiddenAt? (9.4), voteCount (denormalized), createdAt
 QuestionTranslation  questionId + locale (PK), title, description?
-Option          id, questionId, position, imageUrl?
+DailyQuestion   date + scopeKey (PK; 'GLOBAL' of landcode), questionId, chosenById?, createdAt
+Option          id, questionId, position, imageAssetId?
 OptionTranslation    optionId + locale (PK), label
 
-Vote            id, questionId, optionId, userId, createdAt,
+Vote            id, questionId, userId? (null na definitieve verwijdering, 11.2), isPublic (default false),
+                countsFrom (timestamptz, 9.16), createdAt, updatedAt,
                 snapCountry, snapRegion?, snapAgeBucket?, snapGender?
-                UNIQUE(questionId, userId, optionId)
+                UNIQUE(questionId, userId)
+VoteChoice      voteId + optionId (PK)      1 rij bij POLL_SINGLE/THIS_OR_THAT, max. maxChoices bij POLL_MULTI
 QuestionSkip    questionId + userId (PK), createdAt
-Forecast        id, questionId, userId, optionId?, probability (1-99), updatedAt
+Forecast        id, questionId, userId, optionId?, probability (1-99), isPublic (default false), updatedAt
                 UNIQUE(questionId, userId)
 ForecastHistory id, forecastId, optionId?, probability, createdAt
 CrowdSnapshot   questionId, optionId?, probability, forecasterCount, takenAt
@@ -532,7 +566,7 @@ ResultAggregate questionId, optionId, dimension (ALL|COUNTRY|REGION|AGE|GENDER),
 
 Follow          followerId + followeeId (PK), createdAt
 Agreement       userAId + userBId (PK), sharedCount, agreeCount, updatedAt
-Comment         id, questionId, userId, parentId?, body, status, createdAt, editedAt?, deletedAt?
+Comment         id, questionId, userId, parentId?, body, showChoice (bool, default false), status, createdAt, editedAt?, deletedAt?
 Reaction        id, userId, targetType (QUESTION|COMMENT), targetId, emoji
 Notification    id, userId, type, payload (json), readAt?, createdAt
 PushSubscription id, userId, endpoint, keys (json), createdAt
@@ -546,4 +580,4 @@ Report          id, reporterId, targetType, targetId, reason, status, handledByI
 AuditLog        id, actorId, action, targetType, targetId, meta (json), createdAt
 ```
 
-Belangrijke indexen: `Question(status, scope, countryCode, opensAt)`, `Question(categoryId, status)`, `Vote(questionId)`, `Vote(userId)`, `Forecast(questionId)`, `Comment(questionId, createdAt)`, `Notification(userId, readAt)`, plus full-text index op `QuestionTranslation(title)` per taal.
+Belangrijke indexen: `Question(status, scope, countryCode, opensAt)`, `Question(categoryId, status)`, `Question(groupId)`, `Question(darkCorner, status)`, `Question(isDaily, resolvesAt)`, `Vote(questionId)`, `Vote(userId)`, `Forecast(questionId)`, `Comment(questionId, createdAt)`, `Notification(userId, readAt)`, plus full-text index op `QuestionTranslation(title)` per taal.

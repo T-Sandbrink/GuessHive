@@ -9,15 +9,15 @@ Read this file fully before starting any task. `PLAN.md` holds the work to be do
 
 - **Opinions**: "Who is the best footballer?", "What is your favourite dinner?"
 - **Predictions**: "Will Ajax win the Eredivisie?", "Will it snow at Christmas?", scored on accuracy with points instead of money.
-- **Local per country**: every country has its own questions and its own results ("What does the Netherlands think?"), and global questions can be compared country by country, for example on a world map.
+- **Local per country**: every country can get its own questions and its own results ("What does the Netherlands think?"), and global questions can be compared country by country, for example on a world map. At launch local content exists for NL and BE; other countries unlock when `localEnabled` is switched on.
 - **Fun and social**: follow people, compare with friends ("you agree 72% with Sam"), comments, streaks, badges, leaderboards, and share cards.
 
 Product principles. Use them to decide when something is unclear:
 
-1. **Vote first, then see results.** Results and comments stay hidden until the user has voted, forecast, or explicitly skipped. Skipping reveals results but locks out voting on that question. Guests can browse everything, and their first tap opens the sign-up sheet, after which the vote is submitted for them.
-2. **Fast and fun beats complete.** Voting must take one tap. Every extra step costs users. The tone is playful and warm (honey yellow, rounded shapes, a bee mascot). See "UX-beslissingen" in PLAN.md, which is binding for UI work.
+1. **Vote first, then see results.** Results and comments stay hidden until the user has voted, forecast, or explicitly skipped. Skipping reveals results but locks out voting on that question. (Exception: share cards show results, see PLAN.md "UX-beslissingen".) Guests can browse all public questions (never the Dark Corner or private groups), and their first tap opens the sign-up sheet, after which the vote is submitted for them.
+2. **Fast and fun beats complete.** Voting must take one tap. Every extra step costs users. The tone is playful and warm (honey yellow, rounded shapes, a bee mascot). See "UX-beslissingen", "Extra functies" and "Verdienmodel" in PLAN.md, which are binding for UI work.
 3. **Local feels local.** Country questions are in the local language and about local topics.
-4. **Trustworthy numbers.** One person gets one vote, there are no fake accounts, and small groups are never exposed (see privacy rules).
+4. **Trustworthy numbers.** One person gets one vote, there are no fake accounts, and small demographic groups (fewer than 10 voters) are never exposed (see privacy rules).
 5. **No real money in the game, ever.** Points, rankings, streaks and freezes are never for sale, and there is no crypto or money flowing between users through GuessHive. Friends may "bet" with group points and optionally write a stake note between themselves, but GuessHive never handles or settles money between users. A premium subscription for comfort and cosmetics, media insights/embeds and labelled sponsored questions are the only revenue (see PLAN.md "Verdienmodel").
 
 ## 2. Tech stack
@@ -75,7 +75,7 @@ The browser only talks to the SvelteKit origin (e.g. `guesshive.com`):
 
 ### NestJS module layout
 
-Use one module per domain: `auth`, `users`, `questions`, `votes`, `forecasts`, `results`, `scoring`, `social` (follows, comments, reactions), `notifications`, `gamification`, `moderation`, `admin`, `health`.
+Use one module per domain: `auth`, `users`, `questions`, `votes`, `forecasts`, `results`, `scoring`, `social` (follows, comments, reactions), `groups`, `notifications`, `gamification`, `moderation`, `ambassadors`, `media` (uploads + image moderation), `flags`/`entitlements`, `billing` (phase 13), `admin`, `health`.
 
 - Controllers stay thin: parse and validate input, call a service, map the output.
 - Services hold the logic. Prisma is accessed only through services (or repositories inside a module).
@@ -100,7 +100,7 @@ pnpm --filter api db:seed      # seed local data
 
 ## 5. How to work
 
-1. **Follow `PLAN.md` in order.** Pick the first unchecked task unless the owner says otherwise. Read the whole phase before starting it.
+1. **Follow `PLAN.md` in order.** Pick the first unchecked task unless the owner says otherwise, and never while PLAN.md "Laatste stand" says building is OFF (see "Master switch" below). Read the whole phase before starting it.
 2. **One task at a time.** Finish it, verify it, tick the box `[x]` in PLAN.md, then move on.
 3. **Definition of done** for every task:
    - Code compiles: `pnpm typecheck` and `pnpm lint` pass.
@@ -123,7 +123,7 @@ The owner wants to be consulted on every real choice. This applies to the main a
 
 - Anything user-visible that PLAN.md does not already specify: flows, copy tone, layout, which data is shown, defaults, limits, notification behaviour.
 - The data model differing from the "Datamodel" section in PLAN.md (new tables, removed fields, changed relations).
-- A new runtime dependency, a new external service, or anything that costs money or needs an account.
+- A new runtime dependency, a new external service, or anything that costs money or needs an account. A dependency named in a PLAN.md task counts as approved. Where a task offers alternatives ("X of Y"), propose one to the owner.
 - Deviating from PLAN.md or AGENTS.md: skipping, merging or reordering tasks, or changing the stack.
 - Security or privacy trade-offs, such as relaxing a rule, a weaker but simpler option, or accepting a 🟡 finding instead of fixing it.
 - Reviewer findings where several fixes are reasonable and they differ in behaviour.
@@ -148,13 +148,13 @@ The main agent collects these and asks the owner.
 
 **How to ask:**
 
-1. Write the question in PLAN.md under "Open questions": the context in 1–2 sentences, 2–4 options with trade-offs, your recommendation, and the task it blocks.
+1. Write the question in PLAN.md under "Open vragen": the context in 1–2 sentences, 2–4 options with trade-offs, your recommendation, and the task it blocks.
 2. Ask with `AskUserQuestion`: up to 4 questions per call, recommended option first and marked "(Recommended)", in Dutch, and with a `preview` mockup for UI choices. Remote Control is on, so the owner can answer from the Claude mobile app.
 3. Send one `PushNotification` (Dutch, under 200 characters, for example "GuessHive: 2 vragen over de feed-layout wachten op je antwoord"), so the question reaches the owner's phone.
 4. **Keep working while you wait, if you can.**
    - If other unblocked tasks exist, park the question (steps 1 and 3 only) and continue with them. Ask the parked questions in one batch when you reach a natural stop: end of a task, or before pausing.
    - If nothing unblocked remains, ask right away. Set `.agent-state.json` to `waiting_for_owner` and wait for the answer. Waiting does not use up quota.
-5. After the answer: record it under "Vastgelegde beslissingen" or "UX-beslissingen" in PLAN.md (or in an ADR for technical choices), remove it from "Open questions", and continue.
+5. After the answer: record it under "Vastgelegde beslissingen" in PLAN.md, in the matching table (the main table, "UX-beslissingen", "Lancering & landen", "Extra functies" or "Verdienmodel"), or in an ADR for technical choices. Remove it from "Open vragen", and continue.
 
 ### Git workflow
 
@@ -181,6 +181,7 @@ Rules:
 - Before every merge, `pnpm lint`, `pnpm typecheck` and `pnpm test` must pass on the source branch.
 - Never force-push, never rewrite history that has been pushed, and never commit secrets or `.env` files.
 - **Pushing** to GitHub (`origin`) is approved by the owner. Push task and phase branches after each merge into them, and push `main` plus the `phase-N-done` tag right after a phase merge. Never push `main` at any other time.
+- **Planning-phase exception**: before phase 0 starts, and while building is off, planning-document changes (PLAN.md, AGENTS.md, `.claude/agents/`) made at the owner's request may be committed and pushed directly to `main`.
 
 ### Usage limits: pause cleanly, resume automatically
 
@@ -228,7 +229,7 @@ To make sure **only one session works on the repo at a time**, every session use
 
 ```json
 {
-  "status": "working | waiting_for_owner | paused | blocked | done",
+  "status": "working | waiting_for_owner | paused | blocked | off | done",
   "since": "2026-10-11T21:00:00+02:00",
   "resumeAt": "2026-10-12T01:35:00+02:00 or null",
   "task": "1.3",
@@ -236,14 +237,16 @@ To make sure **only one session works on the repo at a time**, every session use
 }
 ```
 
-**At the start of every autonomous run** (resume or watchdog), check the state file before doing anything else:
+**Master switch.** Before anything else, autonomous or interactive, read the Status line of PLAN.md "Laatste stand". If it says building is OFF ("Bouwen staat UIT"), do not start or resume any PLAN.md task, do not write `working`, and do not schedule `guesshive-resume`. Autonomous runs exit immediately. Only the owner turns building on, by saying so in chat. The session that receives that message updates the Status line and writes the state file. While building is off, interactive sessions may still edit planning documents (PLAN.md, AGENTS.md, `.claude/agents/`) when the owner asks. Write status `off` for this switch, and `blocked` only for "no unblocked task left". `waiting_for_owner`, `blocked` and `off` are cleared only by a session that receives the owner's answer or go-ahead in chat.
+
+**At the start of every autonomous run** (resume or watchdog), after the master switch, check the state file before doing anything else:
 
 | State file says | Action |
 |---|---|
 | `working` and `since` less than 6 hours ago | Another session is active. **Exit immediately** without touching anything. |
 | `paused` and `resumeAt` still in the future | **Exit immediately.** The resume task will handle it. |
-| `waiting_for_owner`, `blocked` or `done` | **Exit immediately**, regardless of age. Another session is waiting for an answer, or only the owner can unblock. |
-| Missing, `paused` with `resumeAt` in the past, or a stale `working` (6 hours or older) | Check usage. If it is below 75%, write `working` with `since` = now and the task id, then resume. Otherwise schedule `guesshive-resume` at the reset and exit. |
+| `waiting_for_owner`, `blocked`, `off` or `done` | **Exit immediately**, regardless of age. Another session is waiting for an answer, or only the owner can unblock. |
+| Missing (and PLAN.md says building is ON), `paused` with `resumeAt` in the past, or a stale `working` (6 hours or older) | Check usage. If it is below 75%, write `working` with `since` = now and the task id, then resume. Otherwise schedule `guesshive-resume` at the reset and exit. |
 
 **While working**: keep `task` up to date. **On pause**: write `paused` with `resumeAt`. **On finishing everything that can be done unattended**: write `done`.
 
@@ -251,7 +254,7 @@ To make sure **only one session works on the repo at a time**, every session use
 
 **What autonomous runs may and may not do:**
 
-- **May**: everything in PLAN.md phases 0–11, branches, local commits and merges, `pnpm install`, `docker compose up` / `down`, running tests, and the subagents.
+- **May**: everything in PLAN.md phases 0–11 (including 7b and 9b), branches, local commits and merges, `pnpm install`, `docker compose up` / `down`, running tests, and the subagents.
 - **Must not**:
   - force-push, or push `main` outside a phase merge;
   - create external accounts or enter credentials;
@@ -259,8 +262,8 @@ To make sure **only one session works on the repo at a time**, every session use
   - deploy to production;
   - delete anything outside the repo;
   - change global system settings.
-- **Tasks that need the owner** (OAuth app credentials, hosting choice, legal texts, domains): build everything possible with env-var placeholders and mocks, add the required owner action to "Open questions" in PLAN.md, and continue with the next task. Only if **no** unblocked task remains: write `blocked`, notify the owner, and do not schedule a resume.
-- **Phase 12 (launch)** is never done unattended.
+- **Tasks that need the owner** (OAuth app credentials, hosting choice, legal texts, domains): build everything possible with env-var placeholders and mocks, add the required owner action to "Open vragen" in PLAN.md, and continue with the next task. Only if **no** unblocked task remains: write `blocked`, notify the owner, and do not schedule a resume.
+- **Phase 12 (launch) and phase 13 tasks 13.4–13.9** are never done unattended.
 
 ## 6. Subagents and the review gate
 
@@ -306,7 +309,7 @@ Reviewers are **read-only**. They report findings and the main agent fixes them.
    | `schema.prisma` or migrations | `db-reviewer` |
    | **Anything a user can see**: Svelte components, styles, routes, messages, icons, copy, design mockups or canvases | `ux-reviewer` (**always**, see the UI rule below) |
 
-4. Fix every 🔴 and 🟡, or note in PLAN.md why a 🟡 is deferred. Re-run a reviewer only on the fixed areas.
+4. Fix every 🔴 and 🟡. Deferring a 🟡 needs the owner (§5 "Decisions"): park it as an open question and record the approved deferral under the task in PLAN.md. Re-run a reviewer only on the fixed areas.
 5. Tick the task.
 
 ### UI rule (owner requirement)
@@ -342,7 +345,7 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Svelte 5 runes only. Components are `PascalCase.svelte`.
 - Data loading happens in `+page.server.ts` / `+layout.server.ts`. Use form actions with progressive enhancement (`use:enhance`) for mutations where possible.
 - Put shared UI in `apps/web/src/lib/components/`, with shadcn-svelte primitives under `lib/components/ui/`.
-- Every page sets `<title>`, a meta description, canonical, hreflang alternates and OG tags.
+- Every public page sets `<title>`, a meta description, canonical, hreflang alternates and OG tags. Private pages (Dark Corner, groups, settings, notifications, admin) set `noindex`, stay out of the sitemap, and use a generic OG image without question text or results.
 - Accessibility: semantic HTML, labelled controls, keyboard usable, contrast AA, respects `prefers-reduced-motion`.
 - Mobile-first. Most users vote on a phone.
 
@@ -358,7 +361,7 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 
 - The server enforces **one vote/forecast per user per question**, with a DB unique constraint plus a service check. The client is never trusted for counts, country, scores or roles.
 - Every endpoint has explicit authorization. Default deny: guards on by default, with `@Public()` to opt out.
-- Rate-limit voting, commenting, sign-up, login, magic-link requests and question submission (Redis-backed).
+- Rate-limit voting, forecasting, commenting, reporting, uploads, group invites, sign-up, login, magic-link requests and question submission (Redis-backed).
 - Hash passwords with argon2 or scrypt (Better Auth default). Never log passwords, tokens, magic links or full emails.
 - Session cookies are `HttpOnly`, `Secure`, `SameSite=Lax`. Protect state-changing requests against CSRF (same-origin proxy plus origin check).
 - Sanitize user-generated content. Render comments as plain text (or a safe markdown subset), and never use `{@html}` with user input.
@@ -374,7 +377,7 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Minimum age is 16. The **Dark Corner is 18+**: invisible to guests, minors and anyone who has not opted in, never indexed, never in share cards or push.
 - Uploaded images are only shown after moderation (automated scan plus a CSAM hash check plus human review for flagged items). Strip EXIF metadata.
 - Users can export all their data and delete their account. The account is hidden immediately, there is a disclosed 14-day grace period (logging in again restores it), and after that personal data is hard-deleted and votes are kept anonymised for aggregates.
-- Comments never reveal the commenter's choice unless they opt in for that comment. Public profiles show the username only, never a real name or city.
+- Comments never reveal the commenter's choice unless they opt in for that comment. Public profiles identify the user by username only: never a real name (displayName) or city.
 - No third-party tracking cookies, so no cookie wall is needed. Use cookieless analytics only.
 - Store user data in the EU (EU hosting region for DB and api).
 
@@ -394,6 +397,6 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 
 ## 12. Out of scope (unless PLAN.md says otherwise)
 
-- Real money, payments, crypto, betting odds.
+- Real money between users, crypto, betting odds. Payments exist only for premium and partners (PLAN.md phase 13, behind flags, switched on by the owner).
 - Native iOS/Android apps (we ship a PWA first).
 - Languages other than `nl` and `en` at launch. Keep everything ready for more.
