@@ -96,6 +96,16 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Reacties en privacy | Bij een reactie staat je keuze standaard **niet**. Optie "Laat mijn keuze zien bij deze reactie" per reactie |
 | Publiek profiel | Alleen username, avatar, level, badges, voorspelscore en streak. Geen echte naam of woonplaats |
 
+### Verdienmodel
+
+| Onderwerp | Beslissing |
+|---|---|
+| Inkomstenbronnen | **Premium-abonnement**, **inzichten en embeds voor media/merken**, en **gesponsorde vragen**. Geen advertenties |
+| Wanneer | **Lancering volledig gratis**. De techniek wordt vóór de lancering voorbereid (feature-flags, datamodel), en de eigenaar zet het aan na groei (richtwaarde: 10.000 maandelijks actieve gebruikers) |
+| Premium | **Alleen gemak en uiterlijk, nooit voordeel in het spel**: uitgebreide statistieken (alle uitsplitsingen, kalibratie door de tijd), meer en grotere groepen, thema's en profielopties. Punten, ranglijsten, streaks en bevriezers zijn nooit te koop |
+| Inzichten en embeds | Nieuwssites en merken betalen voor **geanonimiseerde trends** ("wat denkt Nederland") en **in te sluiten polls**. Alleen totalen boven de 10-stemmersdrempel, altijd met "Geen representatieve peiling", nooit individuele data. Nooit uit de Dark Corner of privégroepen |
+| Gesponsorde vragen | Merken betalen om een vraag te plaatsen: duidelijk gelabeld **"Gesponsord door …"**, gemodereerd zoals elke vraag, **nooit politiek**, nooit in de Dark Corner of groepen. De sponsor ziet alleen geaggregeerde uitslagen. Maximaal 1 gesponsorde vraag per 10 in de feed |
+
 ## Open vragen
 
 Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze hier neer.
@@ -109,6 +119,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Groepspunten-mechaniek** (voorstel, in fase 7b ter goedkeuring): elk lid start per seizoen met 1.000 groepspunten, en zet per groepsvoorspelling 10–100 punten in. Wie goed zat, deelt de pot naar verhouding van de inzet. Eigenaar keurt goed of stuurt bij.
 - [ ] **Juridische check inzet-tekst** (eigenaar): mag een vrije "inzet"-afspraak tussen vrienden (zonder geld via GuessHive) onder de Wet op de kansspelen en de Belgische regels? Tot het antwoord er is, bouwt de agent het veld achter een feature-flag (standaard uit).
 - [ ] **Dark Corner: beeldmoderatie** (eigenaar kiest dienst in fase 9b): automatische beeldscan (naakt, geweld, extremistische symbolen) + verplichte hash-check op misbruikmateriaal (bijv. Cloudflare CSAM-scan of PhotoDNA) + menselijke controle.
+- [ ] **Premium-prijs en betaaldienst** (vóór fase 13): voorstel €2,99 per maand of €24,99 per jaar, betalen via Mollie (iDEAL, Bancontact, creditcard). De eigenaar beslist en regelt het account.
+- [ ] **Tarieven voor embeds, inzichten en sponsoring** (vóór fase 13): de eigenaar bepaalt de prijzen. De agent bouwt een eenvoudig partnerbeheer.
 - [ ] **Dagvoorspellingen: bron van uitslagen** (fase 8): handmatig door admins/ambassadeurs, of automatisch via een weer- of sport-API (kost mogelijk geld). Voorstel: eerst handmatig.
 - [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Sentry (fase 11), Anthropic API voor AI-nieuwssuggesties (na lancering).
 
@@ -195,7 +207,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 3 — Web-shell (SvelteKit)
 
-- [~] 3.0 **Designrichting ter goedkeuring** (eigenaar). Uitbreiding in uitvoering: desktoppagina's (vraag, voorspel + ranglijsten, profiel, ontdek + land), instellingen (mobiel + desktop), Dark Corner, privégroepen en winning streak. Canvas: https://claude.ai/artifact/27Jt9oFZeytMGGnwuu8XpU (wacht op feedback/akkoord). Inhoud: stijltegel + klikbare mockup als HTML-pagina met kleuren (honinggeel, warm), typografie, ronde vormen, eerste SVG-versie van de bij-mascotte, en de schermen home-feed, vraagkaart (voor/na stemmen), aanmeldsheet voor gasten, voorspelkaart (Ja/Nee + zekerheid) en Snel stemmen. Light + dark, mobiel + desktop. **Pas na akkoord UI-taken van fase 3 bouwen.** Tot die tijd mag de agent doorwerken aan andere niet-UI-taken
+- [~] 3.0 **Designrichting ter goedkeuring** (eigenaar). Ux-review: PASS na 6 rondes. Omvat: desktoppagina's (vraag, voorspel + ranglijsten, profiel, ontdek + land), instellingen (mobiel + desktop), Dark Corner, privégroepen en winning streak. Canvas: https://claude.ai/artifact/27Jt9oFZeytMGGnwuu8XpU (wacht op feedback/akkoord). Inhoud: stijltegel + klikbare mockup als HTML-pagina met kleuren (honinggeel, warm), typografie, ronde vormen, eerste SVG-versie van de bij-mascotte, en de schermen home-feed, vraagkaart (voor/na stemmen), aanmeldsheet voor gasten, voorspelkaart (Ja/Nee + zekerheid) en Snel stemmen. Light + dark, mobiel + desktop. **Pas na akkoord UI-taken van fase 3 bouwen.** Tot die tijd mag de agent doorwerken aan andere niet-UI-taken
 - [ ] 3.1 Tailwind v4-thema volgens de goedgekeurde designrichting: kleuren (design tokens, de volledige kleurentabel van de stijltegel in licht en donker), zelf gehoste lettertypen (Fredoka + Nunito), typografie, radius, schaduwen, dark mode (systeem + toggle), animatie-tokens (respecteert `prefers-reduced-motion`)
 - [ ] 3.2 shadcn-svelte initialiseren: basiscomponenten (button, card, input, dialog, sheet, tabs, toast, avatar, dropdown)
 - [ ] 3.3 Paraglide: locales `nl` en `en`, routes `/[locale]/...`, taaldetectie (cookie → Accept-Language → `en`), taalwisselaar
@@ -427,6 +439,25 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ---
 
+## Fase 13 — Verdienmodel (voorbereiden vóór lancering, aanzetten na groei)
+
+**Vóór lancering (onderdeel van fase 1–12, alles achter feature-flags, standaard uit):**
+- [ ] 13.1 Datamodel:  (FREE|PREMIUM), , tabellen , , , . 
+- [ ] 13.2 Feature-flag-systeem (bijv. per omgeving en per gebruiker) voor premium, embeds en sponsoring
+- [ ] 13.3 Entitlements-laag in de api (), zodat premium-functies later alleen een vlag zijn
+
+**Na groei (eigenaar zet aan):**
+- [ ] 13.4 Betalen via de gekozen dienst (zie Open vragen): abonnement afsluiten, opzeggen, factuur, webhooks, proefperiode. Volgens de securityregels (webhook-handtekening controleren, idempotent)
+- [ ] 13.5 Premium-functies: uitgebreide statistieken, meer en grotere groepen, thema's en profielopties, premium-badge. **Nooit** punten, ranglijsten, streaks of bevriezers
+- [ ] 13.6 Embeds: in te sluiten poll-widget (iframe/script) per vraag, met een partner-sleutel, alleen geaggregeerde uitslagen boven de drempel, label "Geen representatieve peiling", link terug naar GuessHive
+- [ ] 13.7 Inzichten voor partners: dashboard of export met geanonimiseerde trends per land, categorie en periode. Alleen totalen boven de drempel. Afspraken in de verwerkersovereenkomst en de privacyverklaring
+- [ ] 13.8 Gesponsorde vragen: sponsorbeheer (admin), label "Gesponsord door …", moderatie, nooit politiek, Dark Corner of groepen, max 1 per 10 feed-items, uitslagrapport voor de sponsor (geaggregeerd)
+- [ ] 13.9 Juridisch (eigenaar): voorwaarden voor premium (opzegtermijn, herroepingsrecht), partnercontract, reclameregels voor gesponsorde content
+
+**Acceptatie:** premium, embeds en sponsoring werken achter vlaggen, geven nooit spelvoordeel en delen nooit individuele data.
+
+---
+
 ## Backlog (na lancering, niet beginnen zonder akkoord)
 
 - Realtime live-uitslagen (SSE of WebSocket) bij populaire vragen
@@ -453,13 +484,17 @@ User            id, email, emailVerified, username (uniek), displayName, avatarU
                 locale, timezone, role (USER|MODERATOR|ADMIN), trustScore, xp, level,
                 winStreak, longestWinStreak, streakFreezes (0-2), lastStreakDate,
                 darkCornerEnabled, darkCornerConfirmedAt?,
-                profileVisibility (PUBLIC|PRIVATE), createdAt, deletedAt?
+                profileVisibility (PUBLIC|PRIVATE), plan (FREE|PREMIUM), premiumUntil?, createdAt, deletedAt?
 Group           id, name, avatarUrl?, description?, ownerId, maxMembers, seasonStartsAt, createdAt, deletedAt?
 GroupMember     groupId + userId (PK), role (OWNER|ADMIN|MEMBER), points, joinedAt, consentAt, leftAt?
 GroupInvite     id, groupId, code, createdById, expiresAt, revokedAt?
 GroupStake      questionId + userId (PK), optionId?, amount, stakeNote?
 GroupResolution questionId (PK), proposedOptionId, proposedById, proposedAt, disputeUntil, status (PROPOSED|DISPUTED|FINAL|ANNULLED)
 GroupDisputeVote questionId + userId (PK), optionId?, createdAt
+Subscription    id, userId, provider, status (TRIAL|ACTIVE|CANCELED|PAST_DUE), plan, periodEnd, createdAt
+Partner         id, name, kind (MEDIA|BRAND), contactEmail, createdAt
+EmbedKey        id, partnerId, keyHash, allowedOrigins, revokedAt?
+Sponsor         id, partnerId, name, logoAssetId?
 MediaAsset      id, ownerId, url, kind (QUESTION|OPTION|AVATAR), status (PENDING|APPROVED|REJECTED), moderationLabels (json), hash, createdAt
 Account/Session/Verification   (tabellen van Better Auth)
 

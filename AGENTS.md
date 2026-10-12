@@ -18,7 +18,7 @@ Product principles. Use them to decide when something is unclear:
 2. **Fast and fun beats complete.** Voting must take one tap. Every extra step costs users. The tone is playful and warm (honey yellow, rounded shapes, a bee mascot). See "UX-beslissingen" in PLAN.md, which is binding for UI work.
 3. **Local feels local.** Country questions are in the local language and about local topics.
 4. **Trustworthy numbers.** One person gets one vote, there are no fake accounts, and small groups are never exposed (see privacy rules).
-5. **No real money, ever.** No paid points, no crypto, no money flowing through GuessHive. Friends may "bet" with group points, and may optionally write a stake note between themselves, but GuessHive never handles or settles money.
+5. **No real money in the game, ever.** Points, rankings, streaks and freezes are never for sale, and there is no crypto or money flowing between users through GuessHive. Friends may "bet" with group points and optionally write a stake note between themselves, but GuessHive never handles or settles money between users. A premium subscription for comfort and cosmetics, media insights/embeds and labelled sponsored questions are the only revenue (see PLAN.md "Verdienmodel").
 
 ## 2. Tech stack
 
