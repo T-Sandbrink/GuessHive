@@ -175,7 +175,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 0.6 `packages/shared` aanmaken (zod, build via tsup of TS project references) en vanuit web en api importeren als smoke test
 - [ ] 0.7 `docker-compose.yml`: postgres, postgres-test, redis, mailpit en minio, met healthchecks en named volumes
 - [ ] 0.8 `.env.example` in de root en per app. Env-validatie met zod in api en web
-- [ ] 0.9 husky + lint-staged (prettier + eslint op staged files)
+- [ ] 0.9 husky + lint-staged (prettier + eslint op staged files). **Let op:** husky verandert `core.hooksPath`, waardoor de huidige lokale `.git/hooks/post-commit` (Drive-kopie van PLAN.md) stopt. Zet die daarom over naar een husky `post-commit` die `node scripts/sync-drive.mjs` draait: kopieert PLAN.md naar de map uit de env-variabele `GUESSHIVE_DRIVE_DIR`, en doet niets als die niet bestaat. Controleer daarna dat de Drive-kopie na een commit bijgewerkt is
 - [ ] 0.10 GitHub Actions CI: install (met cache) → lint → typecheck → test → build, op elke push/PR
 - [ ] 0.10b Security in CI vanaf dag 1: secret-scanning (gitleaks), CodeQL (JS/TS), `pnpm audit --prod` (faalt bij high/critical), Dependabot of Renovate
 - [ ] 0.10c Subagents in `.claude/agents/` controleren tegen de echte scripts en paden. De review gate (AGENTS.md §6) geldt vanaf fase 1
