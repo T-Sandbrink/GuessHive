@@ -94,12 +94,22 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Privégroepen | Groepen met vrienden (op uitnodiging) met eigen vragen en voorspellingen die alleen leden zien. **Wedden met groepspunten** plus een optioneel **vrij "inzet"-tekstveld** ("verliezer trakteert op friet"). **GuessHive regelt nooit echt geld**. De inzet-tekst is alleen een afspraak tussen vrienden, met een duidelijke melding (juridische check door de eigenaar, zie Open vragen) |
 | Groepen: uitkomst | De **maker** van een groepsvraag kiest de uitkomst. Leden hebben **24 uur** om bezwaar te maken. Bij bezwaar volgt een **stemming** onder de leden (meerderheid beslist; bij gelijkspel wordt de vraag geannuleerd en gaan de punten terug) |
 | Groepen: privacy | **Binnen een groep zien leden elkaars stemmen en voorspellingen**. Dat staat duidelijk bij het lid worden. Buiten de groep blijft alles privé. De 10-stemmersdrempel geldt niet binnen groepen (bewuste uitzondering met toestemming) |
+| Groepen: grootte en seizoen | Maximaal **25 leden** (instelbaar door een admin). De **groepseigenaar kiest de seizoenslengte** bij het aanmaken (voorstel: 1, 3 of 6 maanden, standaard 3); groepspunten resetten aan het eind van elk seizoen |
+| Beeldmoderatie | **Alle** beelden, ook van admins, gaan door de automatische scan en de hash-check op misbruikmateriaal. Schone beelden van gebruikers worden automatisch goedgekeurd, gemarkeerde gaan naar een mens. **Dark Corner-beelden altijd door een mens** |
+| Geboortedatum | De Dark Corner-schakelaar verschijnt alleen bij een ingevulde geboortedatum van 18+. Je mag je geboortedatum **één keer zelf corrigeren**, daarna alleen via support. Een datum onder de 16 blokkeert het account met uitleg; na de bedenktijd volgt verwijdering |
+| Fraudedetectie | Alleen een **gezouten hash van het IP-adres**, een grof apparaatkenmerk en het land per dag, **30 dagen** bewaard, vermeld in de privacyverklaring. Nooit ruwe IP-adressen opslaan |
 | Instellingen | Account (naam, username, e-mail, inlogmethodes, wachtwoord), Profiel en privacy (publiek/privé, stemmen openbaar, land/regio, geboortedatum en geslacht optioneel, Dark Corner aan/uit), Meldingen (per type, stille uren), Weergave (taal NL/EN, thema licht/donker/systeem), Je gegevens (exporteren, account verwijderen), Hulp en juridisch. Mobiel: lijst → subpagina. Desktop: zijbalk met secties |
-| Mobiel menu | Onderbalk: **Home, Ontdek, Voorspel, Groepen, Meldingen**. Profiel via je zeshoek-avatar rechtsboven. Dark Corner is een tegel bovenaan Ontdek, alleen zichtbaar voor 18+ die hem hebben aangezet (nooit in de onderbalk of zijbalk voor anderen) |
-| Groepskaart | Heet **"Groepsweddenschap"**, met een zichtbare inzetregel |
+| Mobiel menu | Onderbalk: **Home, Ontdek, Voorspel, Groepen, Meldingen**. Profiel via je zeshoek-avatar rechtsboven. Dark Corner is een tegel bovenaan Ontdek, alleen zichtbaar voor 18+ die hem hebben aangezet (nooit in de onderbalk). Op desktop krijgen 18+-gebruikers die hem hebben aangezet ook een link in de zijbalk; anderen zien die nooit |
+| Groepskaart | Een groepsvoorspelling met inzet heet **"Groepsweddenschap"**, met een zichtbare inzetregel. Een meningsvraag in een groep (zonder uitkomst of inzet) heet **"Groepsvraag"** |
 | Account verwijderen | 14 dagen bedenktijd, daarna definitief |
 | Reacties en privacy | Bij een reactie staat je keuze standaard **niet**. Optie "Laat mijn keuze zien bij deze reactie" per reactie |
-| Publiek profiel | Alleen username, avatar, level, badges, voorspelscore en streak. Geen echte naam of woonplaats |
+| Publiek profiel | Alleen username, avatar, level, badges, voorspelscore, **kalibratie** en streak, plus zelf openbaar gemaakte stemmen. Geen echte naam of woonplaats |
+| Stemmen openbaar | Per stem openbaar te maken, plus een instelling "nieuwe stemmen standaard openbaar" (standaard uit, nooit met terugwerkende kracht) |
+| Uitslag "jouw vrienden" | Percentages van je vrienden pas vanaf 10 vrienden die stemden, plus de namen van vrienden die hun stem zelf openbaar maakten |
+| Gesloten vragen | Na het sluiten ziet **iedereen** de uitslag, ook gasten en zoekmachines (stemmen kan dan toch niet meer). Open vragen blijven "eerst stemmen" |
+| Vraag van de dag | Een admin plant vooruit. Staat er niets gepland, dan wordt automatisch de meest trending open vraag gekozen |
+| Vragen indienen | Vanaf **level 3 of na 7 dagen**, altijd via moderatie |
+| Automatisch verbergen | Na **3 meldingen** van verschillende accounts die ouder zijn dan 7 dagen (Dark Corner: 2). Daarna kijkt een moderator |
 
 ### Verdienmodel
 
@@ -118,6 +128,7 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze hier neer.
 
 - [ ] **Productie-hosting**: (a) Hetzner VPS + Coolify/Docker (goedkoop, EU, meer zelf beheren), (b) Railway/Render EU-regio (simpel, duurder), of (c) web op Vercel + api/db elders. Beslissen vóór fase 12. Tot die tijd blijft alles Docker-portable.
+- [ ] **XP-voorstel** (fase 8): de agent schrijft een tabel met XP per actie, de levelcurve en het dagplafond (in `packages/shared`), bouwt die alvast, en de eigenaar keurt goed of stuurt bij.
 - [ ] **Puntensysteem voorspellingen**: de agent schrijft in fase 5 een voorstel (tijdgewogen Brier-score t.o.v. de massa) en bouwt dat alvast. De eigenaar keurt het goed of stuurt bij.
 - [ ] **Mascotte**: naam voor de bij? Later eventueel een illustrator voor de definitieve versie (de agent maakt een eerste SVG-versie).
 - [ ] **Merknaam-check**: GuessHive in het EUIPO-register controleren vóór lancering (eigenaar).
@@ -128,21 +139,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Premium-prijs en betaaldienst** (vóór fase 13): voorstel €2,99 per maand of €24,99 per jaar, betalen via Mollie (iDEAL, Bancontact, creditcard). De eigenaar beslist en regelt het account.
 - [ ] **Tarieven voor embeds, inzichten en sponsoring** (vóór fase 13): de eigenaar bepaalt de prijzen. De agent bouwt een eenvoudig partnerbeheer.
 - [ ] **Dagvoorspellingen: bron van uitslagen** (fase 8): handmatig door admins/ambassadeurs, of automatisch via een weer- of sport-API (kost mogelijk geld). Voorstel: eerst handmatig.
+- [ ] **Bijzondere persoonsgegevens laten toetsen** (eigenaar, vóór fase 9 en 9b): stemmen op politieke vragen en Dark Corner-vragen over seks, gezondheid of drugs kunnen bijzondere persoonsgegevens zijn (AVG art. 9). Voorstel: uitdrukkelijke toestemming per categorie vóór de eerste stem, strengere toegang, nooit voor sponsors of partners behalve als totaal vanaf 10. Een jurist of privacy-adviseur bevestigt dit, of stuurt bij.
 - [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), analytics-dienst Umami of Plausible (fase 11), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor AI-nieuwssuggesties (na lancering).
-- [ ] **Kalibratie op het publieke profiel** (blokkeert 7.1): 7.1 toont kalibratie op het publieke profiel, maar de beslissing "Publiek profiel" noemt alleen username, avatar, level, badges, voorspelscore en streak. Opties: (a) tonen (geeft goede voorspellers status, en het is een totaal zonder losse stemmen); (b) alleen voor jezelf zichtbaar; (c) per gebruiker in te stellen, standaard uit. Advies: (a), omdat de voorspelscore er al staat en kalibratie geen losse stemmen prijsgeeft. Daarna de rij "Publiek profiel" bijwerken.
-- [ ] **Beeldmoderatie: admin-uploads en automatisch goedkeuren** (blokkeert 4.1, 9b.3, 9b.4): AGENTS.md §9 vraagt menselijke controle alleen voor gemarkeerde beelden, terwijl 9b.3 zegt "pas zichtbaar na goedkeuring". Admins uploaden optie-afbeeldingen al in 4.1, voordat de moderatie van 9b bestaat. Opties: (a) admin-uploads zonder moderatie; beelden van gebruikers na een schone automatische scan en hash-check automatisch goedgekeurd, alleen gemarkeerde naar een mens; (b) elk beeld altijd door een mens (veiligst, traag en veel werk); (c) admin-uploads alleen door de automatische scan en hash-check, gebruikers zoals bij (a), Dark Corner-beelden altijd door een mens. Advies: (c), omdat de hash-check weinig kost, ook fouten van admins vangt, en de Dark Corner extra zorg vraagt.
-- [ ] **"Groepsweddenschap" ook voor groepspolls?** (blokkeert 7b.10): de groepskaart heet "Groepsweddenschap" met een inzetregel, maar een poll (mening) heeft geen uitkomst en geen inzet. Opties: (a) alleen groepsvoorspellingen heten zo, groepspolls heten "Groepsvraag"; (b) alle groepskaarten heten zo (één naam, maar een poll zonder inzet heet dan ook weddenschap). Advies: (a).
-- [ ] **Dark Corner in de desktopzijbalk** (blokkeert 9b.7): volgens "Mobiel menu" is de Dark Corner een tegel bovenaan Ontdek, "nooit in de onderbalk of zijbalk voor anderen". Niet duidelijk is of 18+-gebruikers met opt-in hem wél in de desktopzijbalk krijgen. Opties: (a) alleen de tegel in Ontdek, voor iedereen (bewust uit het zicht, ook voor meekijkers); (b) voor wie hem aanzette ook een link in de desktopzijbalk (sneller bereikbaar). Advies: (a).
-- [ ] **Vragen indienen: drempel** (blokkeert 9.1): 9.1 laat gebruikers vragen indienen "vanaf level X of na Y dagen" zonder waarden, terwijl de beslissing "Vragen maken" zegt "gebruikers vanaf dag 1 via moderatie". Opties: (a) geen drempel, alleen een geverifieerd e-mailadres (past letterlijk bij "vanaf dag 1", drukkere wachtrij); (b) vanaf level 3 of na 7 dagen; (c) level 5 én 14 dagen (rustige wachtrij, minder nieuwe content). Advies: (b), omdat het spam afremt en nieuwe gebruikers toch snel mee laat doen.
-- [ ] **Automatisch verbergen na N meldingen** (blokkeert 9.4): 9.4 verbergt inhoud na N meldingen tot een moderator kijkt, maar N heeft geen waarde (in de Dark Corner is het 2, zie 9b.6). Opties: (a) N = 3 meldingen van verschillende accounts; (b) N = 5 (minder misbruik door groepjes melders, maar schadelijke inhoud blijft langer staan); (c) gewogen naar de trust score van de melders. Advies: (a), waarbij alleen meldingen van accounts ouder dan 7 dagen meetellen.
-- [ ] **Groepsgrootte en seizoenslengte** (blokkeert 7b.1, 7b.5): 7b.1 noemt "maximaal 50 leden (voorstel)" en groepspunten gelden "per seizoen", maar de lengte van een seizoen staat nergens. Opties: (a) 50 leden, seizoen = kalendermaand (vaak een nieuwe kans, kort voor lange voorspellingen); (b) 50 leden, seizoen = 3 maanden; (c) 25 leden, de groepseigenaar kiest de seizoenslengte. Advies: (b), omdat langere voorspellingen dan binnen één seizoen passen. Premium kan later grotere groepen geven.
-- [ ] **Uitsplitsing "jouw vrienden"** (blokkeert 7.5): 7.5 noemt twee varianten zonder keuze: dezelfde 10-stemmersdrempel, of alleen vrienden die hun stem openbaar maakten. Opties: (a) alleen boven de drempel van 10 vrienden (privé, maar met weinig vrienden zie je niets); (b) alleen openbare stemmen van vrienden, met naam (persoonlijk, werkt pas als mensen stemmen openbaar maken); (c) beide: het totaal boven de drempel, plus de namen van vrienden met een openbare stem. Advies: (c).
-- [ ] **Keuze vraag van de dag** (blokkeert 8.4, 12.6): 8.4 zegt "gekozen door een admin of automatisch (trending)". Opties: (a) een admin plant vooruit, en als er niets gepland is, wordt het automatisch de meest trending vraag; (b) altijd automatisch (geen werk, minder regie); (c) altijd handmatig (regie, maar een gat als niemand plant). Advies: (a).
-- [ ] **XP: bedragen, levelcurve en dagplafond** (blokkeert 8.1, 8.7): de XP-regels, de levelcurve en het XP-plafond per dag hebben geen waarden. Opties: (a) de agent schrijft een voorstel met tabel (in `packages/shared`), bouwt dat alvast, en de eigenaar keurt goed of stuurt bij, net als bij de scoring (5.4); (b) de eigenaar geeft de waarden vooraf. Advies: (a).
-- [ ] **Gesloten vragen: uitslag voor gasten en zoekmachines** (blokkeert 4.8, 4.13, 4.16): 4.8 toont uitslagen ook "als de vraag gesloten is", maar zegt ook "Gasten krijgen geen resultaten via de API", en 4.13 belooft "volledige resultaten" op een indexeerbare pagina. Opties: (a) na sluiten ziet iedereen de uitslag, ook gasten en Google (goed voor SEO en delen; de uitzondering op "eerst stemmen" komt dan in AGENTS.md §1); (b) gasten en crawlers zien nooit uitslagen, ook niet na sluiten (strikt, minder SEO-waarde); (c) na sluiten alleen voor ingelogde gebruikers. Advies: (a), omdat stemmen na sluiten toch niet meer kan.
-- [ ] **"Stemmen openbaar": per stem of algemene instelling** (blokkeert 7.2 en het datamodel): Instellingen noemt "stemmen openbaar" (klinkt als één schakelaar), terwijl 7.2 zegt "per stem openbaar maken". Opties: (a) alleen per stem; (b) per stem, plus een instelling "nieuwe stemmen standaard openbaar" (standaard uit, nooit met terugwerkende kracht); (c) één schakelaar voor al je stemmen. Advies: (b). Het datamodel krijgt dan `User.votesPublicByDefault`.
-- [ ] **Geboortedatum: Dark Corner-schakelaar, wijzigen en onder 16** (blokkeert 9b.1, 6.9): 9b.1 regelt niet of de Dark Corner-schakelaar zichtbaar is zonder geboortedatum, of je je geboortedatum later mag wijzigen (zo kan iedereen zich ouder maken), en wat er gebeurt bij een datum onder de 16. Opties: (a) de schakelaar staat alleen in de instellingen bij een ingevulde 18+-geboortedatum (anders geen hint); de geboortedatum is na invullen alleen via support te wijzigen; een datum onder de 16 blokkeert het account met uitleg, waarna het na de bedenktijd wordt verwijderd; (b) de schakelaar is altijd zichtbaar met "vul je geboortedatum in", de datum is vrij te wijzigen, en onder de 16 volgt alleen een waarschuwing; (c) zoals (a), maar de datum mag één keer zelf gecorrigeerd worden. Advies: (a), omdat het de 16+- en 18+-grens serieus neemt tot de echte leeftijdsverificatie (backlog) er is.
-- [ ] **IP- en apparaatgegevens voor fraudedetectie** (blokkeert 6.8, 9.9): 6.8 (land vs IP) en 9.9 (zelfde IP of apparaat) hebben IP- en apparaatgegevens nodig, maar er is geen keuze over wat er wordt bewaard en hoe lang (AGENTS.md verbiedt PII in logs). Opties: (a) alleen een gezouten hash van het IP-adres, een grof apparaatkenmerk en het IP-land per dag, 30 dagen bewaard; (b) ruwe IP-adressen, 30 dagen (beter onderzoek, meer AVG-risico); (c) niets bewaren, alleen live rate limits (privacyvriendelijk, zwakkere fraudedetectie). Advies: (a), vermeld in de privacyverklaring (11.3).
 
 ---
 
@@ -259,7 +257,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 4.5 Demografische snapshot bij de stem opslaan (land, regio, leeftijdsgroep, geslacht), zodat resultaten kloppen als iemand later verhuist
 - [ ] 4.6 `results`-module: tellingen per optie, aggregaten bijwerken in dezelfde transactie (of via queue) met tabel `ResultAggregate`
 - [ ] 4.7 Uitsplitsingen: per land, regio, leeftijdsgroep en geslacht, met **k-anonimiteit (≥ 10)** afgedwongen in de service + unit tests
-- [ ] 4.8 Resultaten (en reacties) pas teruggeven als de gebruiker gestemd of overgeslagen heeft, of als de vraag gesloten is. Gasten krijgen geen resultaten via de API
+- [ ] 4.8 Resultaten (en reacties) pas teruggeven als de gebruiker gestemd of overgeslagen heeft, of als de vraag gesloten is. Gasten krijgen geen resultaten van open vragen via de API; na het sluiten ziet iedereen de uitslag, ook gasten en zoekmachines
 - [ ] 4.9 Feed-endpoints (cursor-paginatie): `trending` (stemmen laatste 24 u, tijdsverval), `nieuw`, `lokaal` (scope = jouw land/regio), `per categorie`. Standaard verbergen waar je al op stemde (optioneel tonen)
 - [ ] 4.10 Zoeken op vraagtitel (Postgres full-text, per taal)
 
@@ -309,7 +307,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 6.5 Landvergelijking op een vraagpagina: "Nederland vs België vs Duitsland"
 - [ ] 6.6 Regio-uitsplitsing per land (provincies), zelfde drempel
 - [ ] 6.7 Vragen per land in de lokale taal. Wordt een vraag getoond aan iemand met een andere UI-taal: tonen met taallabel (vertalen kan later met AI, zie backlog)
-- [ ] 6.8 Land-detectie: mismatch tussen opgegeven land en IP over langere tijd markeren voor de trust score (niet blokkeren)
+- [ ] 6.8 Land-detectie: mismatch tussen opgegeven land en IP-land over langere tijd markeren voor de trust score (niet blokkeren). Alleen het IP-land per dag bewaren, nooit het ruwe IP-adres (zie "Fraudedetectie")
 
 **Acceptatie:** een Nederlandse gebruiker ziet vooral Nederlandse en globale vragen, kan per vraag de wereldkaart bekijken, en een landpagina laat zien wat dat land denkt.
 
@@ -318,10 +316,10 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 ## Fase 7 — Sociaal
 
 - [ ] 7.1 Publieke profielpagina `/[locale]/u/[username]`: avatar, level, badges, voorspel-ranking, streak, kalibratie, publiek gemaakte stemmen
-- [ ] 7.2 Privacy-instellingen: profiel publiek/privé, stemmen standaard privé, per stem "openbaar maken"
+- [ ] 7.2 Privacy-instellingen: profiel publiek/privé, stemmen standaard privé, per stem "openbaar maken", plus de instelling "nieuwe stemmen standaard openbaar" (standaard uit, nooit met terugwerkende kracht)
 - [ ] 7.3 Volgen/ontvolgen, volgers/volgend-lijsten, "vrienden" = wederzijds volgen
 - [ ] 7.4 Overeenkomst-%: per gebruikerspaar berekenen over gedeelde vragen (job + cache), tonen op het profiel ("Je bent het 72% eens met Sam")
-- [ ] 7.5 Resultaten-uitsplitsing "jouw vrienden" (zelfde k-drempel, of alleen als vrienden hun stem openbaar maakten)
+- [ ] 7.5 Resultaten-uitsplitsing "jouw vrienden": percentages pas vanaf 10 vrienden die stemden, plus de namen van vrienden met een openbare stem
 - [ ] 7.6 Reacties onder vragen: threads (1 niveau diep), bewerken/verwijderen, sorteren op populair/nieuw, rate-limited. Pas zichtbaar na je stem (tegen beïnvloeding). Je keuze staat standaard niet bij je reactie; per reactie de optie "Laat mijn keuze zien bij deze reactie"
 - [ ] 7.7 Emoji-reacties op vragen en reacties
 - [ ] 7.8 Deelkaarten: dynamische OG-afbeelding per vraag met de actuele uitslag (satori + resvg in een SvelteKit-endpoint, gecachet) + native share-knop. Geen deelkaarten voor groeps- en Dark Corner-vragen; tijdens verkiezingsstilte zonder uitslag (9.17). Lettertypen uit de eigen @fontsource-bestanden, nooit van een font-CDN
@@ -334,7 +332,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 7b — Privégroepen
 
-- [ ] 7b.1 Groep aanmaken: naam, avatar, beschrijving. Rollen eigenaar/beheerder/lid. Maximaal 50 leden (instelbaar, voorstel)
+- [ ] 7b.1 Groep aanmaken: naam, avatar, beschrijving. Rollen eigenaar/beheerder/lid. Maximaal 25 leden (instelbaar via `AppSetting`). De eigenaar kiest de seizoenslengte (1, 3 of 6 maanden, standaard 3)
 - [ ] 7b.2 Uitnodigen via een link of code (verloopt na 7 dagen, intrekbaar). Lid worden toont expliciet "Binnen deze groep zien leden wat jij stemt en voorspelt" + akkoord
 - [ ] 7b.3 Groepsvragen (polls en voorspellingen) met `scope = GROUP`: alleen zichtbaar voor leden, nooit in publieke feeds, zoekresultaten, Google of deelkaarten
 - [ ] 7b.4 Binnen de groep: per lid zichtbaar wat hij/zij koos (uitzondering op privé-stemmen en de 10-stemmersdrempel, met toestemming uit 7b.2)
@@ -351,13 +349,13 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 8 — Gamification
 
-- [ ] 8.1 XP-regels (stemmen, voorspellen, dagelijkse login, reacties met likes) + levels (curve in `packages/shared`). XP staat los van voorspelpunten
+- [ ] 8.1 XP-regels (stemmen, voorspellen, dagelijkse login, reacties met likes) + levels (curve in `packages/shared`). XP staat los van voorspelpunten. Waarden: voorstel van de agent, ter goedkeuring van de eigenaar (zie Open vragen)
 - [ ] 8.2 **Winning streak** (vervangt de actief-streak): job aan het eind van elke dag in de tijdzone van de gebruiker. Minstens 1 voorspelling met uitkomst die dag goed = +1. Anders: een bevriezer gebruiken als die er is, en anders streak naar 0. Bijhouden: huidige en langste streak. Unit tests op randgevallen (tijdzones, zomertijd, geannuleerde vragen tellen niet) Definitie van "goed" en de dag: zie "Extra functies".
 - [ ] 8.2b **Streak-bevriezer**: 1 verdienen per 7 dagen streak, maximaal 2. Automatisch gebruikt, met melding "Je bevriezer heeft je streak gered!"
 - [ ] 8.2c **Dagvoorspellingen**: elke dag 3–5 voorspellingen per land met `localEnabled` + globaal, die binnen 24 uur uitkomen (weer, uitslagen van vandaag). Gemaakt door admins/ambassadeurs (bron van uitslagen: zie Open vragen). Uitgelicht in de Voorspel-tab
 - [ ] 8.2d Web: streak-teller met vlam op profiel, Voorspel-tab en na een goede voorspelling. "Streak in gevaar"-melding als je vandaag nog niets goed hebt en er nog dagvoorspellingen open staan
 - [ ] 8.3 Badges: definities + automatische toekenning via events (eerste stem, 7 dagen winning streak, 10 goede voorspellingen, top 10 in je land, …)
-- [ ] 8.4 Vraag van de dag: per land en globaal, gekozen door een admin of automatisch (trending), uitgelicht bovenaan
+- [ ] 8.4 Vraag van de dag: per land en globaal, een admin plant vooruit; zonder planning automatisch de meest trending open vraag. Uitgelicht als eerste dia van de carrousel
 - [ ] 8.5 "Dit of dat"-duels in de Snel stemmen-modus (4.12b): A vs B, links/rechts vegen = stem (altijd met knoppen als alternatief), met reeksen ("10 snelle duels over eten")
 - [ ] 8.9 De bij-mascotte overal inzetten: lege staten, onboarding, streak-mijlpalen, badges, resolutie (juichen of troosten), foutpagina's
 - [ ] 8.6 Wekelijkse recap: "Deze week stemde je 34×, je zat 5× goed, je bent #120 in Nederland"
@@ -369,15 +367,15 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 9 — Vragen van gebruikers & moderatie
 
-- [ ] 9.1 Gebruikers kunnen een vraag indienen (vanaf level X of na Y dagen): formulier met preview, typekeuze, scope, categorie, opties
+- [ ] 9.1 Gebruikers kunnen een vraag indienen (vanaf level 3 of na 7 dagen, altijd via moderatie): formulier met preview, typekeuze, scope, categorie, opties
 - [ ] 9.2 Duplicaatdetectie bij indienen: vergelijkbare bestaande vragen tonen (full-text/trigram)
 - [ ] 9.3 Moderatiewachtrij: goedkeuren / afwijzen (met reden) / aanpassen. Gebruikers met hoge trust publiceren direct
-- [ ] 9.4 Melden: vragen, reacties en gebruikers, met reden. Na N meldingen automatisch verbergen tot een moderator kijkt
+- [ ] 9.4 Melden: vragen, reacties en gebruikers, met reden. Na 3 meldingen van verschillende accounts ouder dan 7 dagen automatisch verbergen tot een moderator kijkt
 - [ ] 9.5 Woordfilter (NL+EN scheldwoorden/spam) op vragen, reacties en usernames
 - [ ] 9.6 Trust score per gebruiker (accountleeftijd, geverifieerd, meldingen, gedrag), gebruikt voor publicatierechten en rate limits
 - [ ] 9.7 Moderatoracties: verbergen, verwijderen, gebruiker waarschuwen/schorsen/bannen. Alles in een `AuditLog`
 - [ ] 9.8 Admin-dashboard: statistieken (nieuwe gebruikers, stemmen/dag, actieve vragen), wachtrijen, gebruikersbeheer
-- [ ] 9.9 Verdachte stempatronen detecteren (veel nieuwe accounts die op één vraag stemmen, zelfde IP/device) → markeren, niet automatisch verwijderen
+- [ ] 9.9 Verdachte stempatronen detecteren (veel nieuwe accounts die op één vraag stemmen, zelfde IP-hash of apparaatkenmerk; alleen gezouten hashes, 30 dagen bewaard) → markeren, niet automatisch verwijderen
 
 ### Ambassadeurs
 - [ ] 9.10 Ambassadeur-aanmelding: formulier (land/regio, motivatie), voorwaarden zichtbaar (level, trust), status in je profiel
@@ -386,7 +384,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 9.13 Ambassadeur-dashboard: lokale wachtrij, meldingen uit hun land, statistieken van hun vragen. Badge en rang "Ambassadeur 🇳🇱" op het profiel
 
 ### Politieke vragen
-- [ ] 9.14 Categorieën met `sensitive = true` (Politiek): altijd via de moderatiewachtrij, ongeacht trust of rol (behalve admin). Moderatie-checklist "neutrale formulering, geen privépersonen"
+- [ ] 9.14 Categorieën met `sensitive = true` (Politiek): altijd via de moderatiewachtrij, ongeacht trust of rol (behalve admin). Stemmen op politieke vragen zijn bijzondere persoonsgegevens (AVG art. 9): vóór de eerste politieke stem een eenmalig scherm voor uitdrukkelijke toestemming, intrekbaar in de instellingen (zonder toestemming: alleen de uitslag bekijken). Moderatie-checklist "neutrale formulering, geen privépersonen"
 - [ ] 9.15 Label "Geen representatieve peiling" op vraagkaart, uitslag en deelkaart van gevoelige vragen (NL+EN)
 - [ ] 9.16 Nieuwe-accountregel: stemmen van accounts jonger dan 7 dagen worden opgeslagen, maar pas na 7 dagen meegeteld in de uitslag van gevoelige vragen. Aggregatie houdt hier rekening mee + tests
 - [ ] 9.17 Verkiezingsstilte: tabel `ElectionBlackout` (land, start, eind, notitie), beheerd door een admin. Tijdens de periode zijn de uitslagen van politieke vragen over dat land verborgen (API én deelkaarten). Stemmen blijft mogelijk
@@ -398,13 +396,13 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 9b — Dark Corner (18+)
 
-- [ ] 9b.1 Leeftijdspoort: alleen met een geboortedatum (18+) in het profiel + eenmalige bevestiging + schakelaar "Dark Corner tonen" in de instellingen (standaard uit). Nooit voor gasten. Wie onder de 18 is of geen geboortedatum heeft, ziet de hoek niet eens. Bij intrekken van de schakelaar direct onzichtbaar
+- [ ] 9b.1 Leeftijdspoort (zie "Geboortedatum"): de schakelaar verschijnt alleen bij een geboortedatum van 18+; de datum is één keer zelf te corrigeren, daarna via support; onder de 16 wordt het account geblokkeerd. Verder: alleen met een geboortedatum (18+) in het profiel + eenmalige bevestiging + schakelaar "Dark Corner tonen" in de instellingen (standaard uit). Nooit voor gasten. Wie onder de 18 is of geen geboortedatum heeft, ziet de hoek niet eens. Bij intrekken van de schakelaar direct onzichtbaar
 - [ ] 9b.2 Vragen met `darkCorner = true`: eigen feed/tab, nooit in publieke feeds, de carrousel, zoekresultaten van niet-ingeschakelde gebruikers, Google (`noindex`), deelkaarten of pushmeldingen
 - [ ] 9b.3 Afbeeldingen bij vragen en opties (ook buiten de Dark Corner bruikbaar): upload met een **verplicht veld "Beschrijf de afbeelding"** (alt-tekst, gecontroleerd bij moderatie), verkleinen, EXIF verwijderen, alleen JPG/PNG/WebP, max-grootte. Status `PENDING → APPROVED/REJECTED`. Pas zichtbaar na goedkeuring
 - [ ] 9b.4 Beeldmoderatie: automatische scan (naakt, geweld, extremistische symbolen) + verplichte hash-check op misbruikmateriaal + menselijke wachtrij (dienst: zie Open vragen). Geblokkeerde symbolen-lijst in `docs/moderation/`
-- [ ] 9b.5 Inhoudsregels Dark Corner (NL+EN), zichtbaar bij het aanzetten en het indienen. Moderatie altijd vooraf (geen direct publiceren, ook niet voor ambassadeurs). Strengere rate limits
+- [ ] 9b.5 Uitdrukkelijke toestemming voor bijzondere persoonsgegevens (seks, gezondheid, drugs) bij het aanzetten van de Dark Corner, intrekbaar in de instellingen (AVG art. 9). Inhoudsregels Dark Corner (NL+EN), zichtbaar bij het aanzetten en het indienen. Moderatie altijd vooraf (geen direct publiceren, ook niet voor ambassadeurs). Strengere rate limits
 - [ ] 9b.6 Melden met extra redenen (naakt, haat, minderjarig), na 2 meldingen automatisch verbergen. Ernstige overtredingen leiden tot een directe ban en, waar de wet dat vereist, een melding bij de autoriteiten (procedure in `docs/moderation/`)
-- [ ] 9b.7 Web: Dark Corner-pagina via de tegel bovenaan Ontdek, met een donkerder eigen accent (binnen de huisstijl), duidelijk 18+-label, bevestigingsscherm en de instellingsschakelaar
+- [ ] 9b.7 Web: Dark Corner-pagina via de tegel bovenaan Ontdek (en op desktop een zijbalklink, alleen voor wie hem aanzette), met een donkerder eigen accent (binnen de huisstijl), duidelijk 18+-label, bevestigingsscherm en de instellingsschakelaar
 - [ ] 9b.8 Juridische check (eigenaar): voorwaarden, leeftijdsgrens, de DSA-regels voor minderjarigen en app-store-regels voor een latere native app
 
 **Acceptatie:** alleen 18+-gebruikers die de hoek zelf aanzetten zien hem. Afbeeldingen zijn pas zichtbaar na moderatie. Niets uit de Dark Corner verschijnt op publieke plekken of in Google.
@@ -439,6 +437,14 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 11.8 Back-ups: dagelijkse Postgres-dump naar aparte opslag, restore-procedure getest en beschreven
 - [ ] 11.9 Sentry in web en api (zonder PII), uptime-monitoring op `/health`
 - [ ] 11.10 Entitlements-laag in de api (bijv. `can(user, "premium.stats")`), alles achter vlaggen, standaard uit, zodat premium-functies later alleen een vlag zijn (voorheen 13.3)
+- [ ] 11.11 Verwerkingsregister (`docs/privacy/processing-register.md`): per verwerking het doel, de grondslag, de categorieën gegevens, de bewaartermijn en de ontvangers (AVG art. 30)
+- [ ] 11.12 DPIA (`docs/privacy/dpia.md`) voor bijzondere persoonsgegevens, Dark Corner, minderjarigen (16–17), demografische uitsplitsingen, fraudesignalen en AI-moderatie. **Eigenaar laat toetsen**
+- [ ] 11.13 Overzicht van verwerkers (hosting, Resend, Cloudflare/R2, Sentry, analytics, Mollie, Anthropic) met de status van de verwerkersovereenkomst en de doorgifte buiten de EU. **Eigenaar sluit de overeenkomsten af**
+- [ ] 11.14 Bewaartermijnen per tabel met persoonsgegevens + automatische opschoon- en anonimiseringsjobs (BullMQ), met tests
+- [ ] 11.15 Datalekprocedure (`docs/privacy/datalek.md`): herkennen, vastleggen, binnen 72 uur melden bij de Autoriteit Persoonsgegevens indien nodig, gebruikers informeren
+- [ ] 11.16 DSA: melden van illegale inhoud (notice-and-action), motivering bij verwijderen of beperken, een bezwaarroute, een contactpunt, en transparantie over moderatie en gesponsorde inhoud
+- [ ] 11.17 Rechten van betrokkenen: inzage, correctie, verwijderen, beperking, bezwaar en overdraagbaarheid in de app of via een gedocumenteerde supportroute; afhandeling binnen een maand
+- [ ] 11.18 **Juridische AVG-toets** van het geheel vóór de lancering (eigenaar, met een jurist of privacy-adviseur)
 
 **Acceptatie:** een gebruiker kan zijn data exporteren en zijn account verwijderen, juridische pagina's staan online, de security-checklist is volledig afgevinkt en een restore is aantoonbaar getest.
 
@@ -502,7 +508,7 @@ Richtlijn, geen keurslijf: aanpassen mag, maar dan ook hier bijwerken.
 
 ```
 User            id, email, emailVerified, username (uniek), avatarUrl,
-                countryCode, regionCode?, birthDate? (alleen voor leeftijdsgroep en 18+-check), gender?,
+                countryCode, regionCode?, birthDate? (alleen voor leeftijdsgroep en 18+-check), birthDateCorrectedAt?, gender?, votesPublicByDefault (default false),
                 locale, timezone, role (USER|MODERATOR|ADMIN), trustScore, xp, level,
                 winStreak, longestWinStreak, streakFreezes (0-2), lastStreakDate,
                 darkCornerEnabled, darkCornerConfirmedAt?,
@@ -514,7 +520,8 @@ UserInterest    userId + categoryId (PK)
 NotificationPreference userId + type (PK), push (bool), inApp (bool)
 FeatureFlag     key (PK), enabled, rules (json), updatedAt
 AppSetting      key (PK), value (json), updatedById, updatedAt     (instelbare drempels: 500 MAU, ambassadeur-level/trust, max. groepsleden)
-Group           id, name, avatarUrl?, description?, ownerId, maxMembers, seasonStartsAt, createdAt, deletedAt?
+Group           id, name, avatarUrl?, description?, ownerId, maxMembers (default 25), seasonLengthMonths (1|3|6), seasonStartsAt, createdAt, deletedAt?
+FraudSignal     id, userId, ipHash (gezouten), deviceHint, ipCountry, day, createdAt   (na 30 dagen verwijderd)
 GroupMember     groupId + userId (PK), role (OWNER|ADMIN|MEMBER), points, joinedAt, consentAt, leftAt?
 GroupInvite     id, groupId, code, createdById, expiresAt, revokedAt?
 GroupStake      questionId + userId (PK), optionId?, amount, stakeNote?

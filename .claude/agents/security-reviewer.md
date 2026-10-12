@@ -40,6 +40,11 @@ The main agent gives you a diff range or files. Read `AGENTS.md` §8 (security r
 - Comments never include the commenter's choice unless that comment opted in. Public profile responses never contain displayName, email, birth date, gender or region.
 - Account deletion: hidden immediately, 14-day grace period, then hard delete of personal data with votes anonymised.
 - Partners and sponsors (embeds, insights, sponsored questions) receive only aggregates of 10 or more voters, never individual data.
+- AVG/GDPR and other privacy laws (AGENTS §9 "Legal compliance"):
+  - Special-category data (votes or comments on political questions, Dark Corner topics such as sex, health and drugs) is processed only after explicit consent, is never used for profiling, sponsors or partners, and has stricter access.
+  - Every new table with personal data has a documented retention period and cleanup.
+  - No personal data goes to a new external service without a processing agreement and the owner's approval.
+  - Flag anything that needs a legal check as DECISION NEEDED.
 - No PII (email, IP, tokens, magic links) in logs, error messages, Sentry events or URLs.
 - Data export and account deletion cover every table holding personal data.
 

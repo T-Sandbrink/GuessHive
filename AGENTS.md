@@ -14,7 +14,7 @@ Read this file fully before starting any task. `PLAN.md` holds the work to be do
 
 Product principles. Use them to decide when something is unclear:
 
-1. **Vote first, then see results.** Results and comments stay hidden until the user has voted, forecast, or explicitly skipped. Skipping reveals results but locks out voting on that question. (Exception: share cards show results, see PLAN.md "UX-beslissingen".) Guests can browse all public questions (never the Dark Corner or private groups), and their first tap opens the sign-up sheet, after which the vote is submitted for them.
+1. **Vote first, then see results.** Results and comments stay hidden until the user has voted, forecast, or explicitly skipped. Skipping reveals results but locks out voting on that question. (Exceptions: share cards show results, and once a question has closed everyone sees its results, including guests and search engines; see PLAN.md "UX-beslissingen".) Guests can browse all public questions (never the Dark Corner or private groups), and their first tap opens the sign-up sheet, after which the vote is submitted for them.
 2. **Fast and fun beats complete.** Voting must take one tap. Every extra step costs users. The tone is playful and warm (honey yellow, rounded shapes, a bee mascot). See "UX-beslissingen", "Extra functies" and "Verdienmodel" in PLAN.md, which are binding for UI work.
 3. **Local feels local.** Country questions are in the local language and about local topics.
 4. **Trustworthy numbers.** One person gets one vote, there are no fake accounts, and small demographic groups (fewer than 10 voters) are never exposed (see privacy rules).
@@ -373,14 +373,53 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Set security headers: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`.
 - Keep secrets only in env vars or the secret store. If you find a secret in code, stop and tell the owner.
 
-## 9. Privacy rules (GDPR, EU-first)
+## 9. Privacy rules (AVG/GDPR and other privacy laws, EU-first)
+
+### Legal compliance (hard requirement)
+
+GuessHive must comply with these laws. They are requirements, not nice-to-haves:
+
+- the **AVG/GDPR**, including the Dutch implementing act (UAVG);
+- the **ePrivacy/cookie rules** (Telecommunicatiewet);
+- the **Digital Services Act (DSA)** for platform moderation;
+- the privacy law of **every country where we offer local content** (Belgium now; check others before switching `localEnabled` on, including non-EU laws such as UK GDPR).
+
+Agents are not lawyers. When a feature processes personal data in a new way, flag it to the owner for a legal check under "Open vragen". Never guess that something is allowed.
+
+- **Privacy by design and by default (art. 25)**:
+  - collect the minimum;
+  - default to the most private setting;
+  - use data only for its stated purpose;
+  - give every table with personal data a documented retention period, and delete or anonymise after it.
+- **Lawful basis and processing register (art. 30)**: every processing purpose has a documented legal basis, recorded in `docs/privacy/processing-register.md` (verwerkingsregister):
+  - **agreement** for the account, voting and forecasting;
+  - **consent** for optional demographics, push, the Dark Corner and special categories;
+  - **legitimate interest** for fraud prevention and security.
+- **Special categories (art. 9)**: political questions, and Dark Corner questions about sex life, sexual orientation, health or drugs, can reveal special-category data through votes, forecasts and comments. Process them only with **explicit consent**:
+  - a clear one-time consent screen per category before the first vote, withdrawable in settings;
+  - store them with stricter access;
+  - never use them for profiling, ads, sponsors, embeds or partner insights, except as aggregates of 10 or more voters;
+  - cover them in the DPIA.
+- **DPIA (art. 35)** before building high-risk features: special categories, the Dark Corner, minors (16–17), demographic breakdowns, fraud signals and AI moderation. Keep it in `docs/privacy/dpia.md`, and the owner has it checked.
+- **Data subject rights**: users can exercise access/export, rectification, erasure, restriction, objection and portability in the app or through a documented support route. Requests are answered within one month.
+- **Processors and transfers**: every external service that touches personal data needs a processing agreement (verwerkersovereenkomst) and EU data residency where possible. Today that means hosting, Resend, Cloudflare/R2, Sentry, analytics, Mollie and the Anthropic API.
+  - Transfers outside the EU only with a valid mechanism (adequacy decision / EU-US Data Privacy Framework, or SCCs).
+  - Never send personal data to a new service without the owner's approval.
+- **Data breaches**: follow the documented procedure.
+  - The owner notifies the Autoriteit Persoonsgegevens within 72 hours when required, and the affected users when the risk is high.
+  - Agents report any suspected leak to the owner immediately.
+- **DSA**: provide notice-and-action for illegal content, a statement of reasons when content is removed or an account is restricted, an appeal route and a point of contact. Moderation and sponsored content ("Gesponsord door …") are transparent. No targeted ads, and no profiling of minors or of special-category data.
+- **AI (AI Act transparency)**: tell users when AI moderates or suggests content. AI alone never bans or suspends an account.
+
+### Product rules
 
 - **Individual votes are private by default.** Others only see aggregates and agreement percentages, unless the user explicitly makes a vote public.
 - **k-anonymity threshold**: never show a demographic or geographic breakdown for a group smaller than **10 voters**. Show "not enough votes yet" instead. Enforce this in the api, not only in the UI.
 - **Private groups are the one exception**: inside a private group, members see each other's votes and forecasts, because they explicitly consented when joining (`GroupMember.consentAt`). Nothing from a group may leak to public feeds, search, SEO or share cards.
 - Demographic fields (birth date, gender, region) are **optional** and used only for aggregate breakdowns. Birth date is also used for the 18+ check. Never expose it, only the age bucket.
 - Minimum age is 16. The **Dark Corner is 18+**: invisible to guests, minors and anyone who has not opted in, never indexed, never in share cards or push.
-- Uploaded images are only shown after moderation (automated scan plus a CSAM hash check plus human review for flagged items). Strip EXIF metadata.
+- Uploaded images are only shown after moderation: every image, including admin uploads, gets an automated scan plus a CSAM hash check. Clean user images are auto-approved, and flagged ones go to a human. Dark Corner images always get human review. Strip EXIF metadata.
+- Fraud signals store only a salted IP hash, a coarse device hint and the IP country per day, kept for 30 days. Never store raw IP addresses.
 - Users can export all their data and delete their account. The account is hidden immediately, there is a disclosed 14-day grace period (logging in again restores it), and after that personal data is hard-deleted and votes are kept anonymised for aggregates.
 - Comments never reveal the commenter's choice unless they opt in for that comment. Public profiles identify the user by username only: never a real name (displayName) or city.
 - No third-party tracking cookies, so no cookie wall is needed. Use cookieless analytics only.
