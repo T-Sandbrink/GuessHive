@@ -114,7 +114,8 @@ pnpm --filter api db:seed      # seed local data
 6. **Keep the owner's Google Drive copy current.** The owner reads the plan and mockups in Google Drive (folder "GuessHive"; on this PC `G:\Mijn Drive\Administratie\T&M Labs\GuessHive`, synced by Drive for desktop).
    - **PLAN.md** is copied there by a local post-commit hook (later a husky hook, see PLAN.md 0.9). So **commit PLAN.md changes promptly**: an uncommitted change never reaches Drive. If the hook is missing, copy the file by hand and restore the hook.
    - **Mockups**: the Google Doc "GuessHive – Mockups" in that folder links to the design canvas, which is updated in place, so normal canvas edits need no Drive action. If the canvas gets a new URL or new sections, update that Doc. That needs the Google Docs connector; without it, tell the owner instead of creating a second file.
-   - Never trash or replace files in the owner's Drive.
+   - **Mockups PDF**: "GuessHive – Mockups.pdf" in that folder is a PDF export of the canvas. After changing the canvas, re-export it: open the canvas in the built-in browser (the owner must be signed in to claude.ai there), then Deel › Exporteren › PDF › all artboards. Downloading needs the owner's OK. Then copy the file from `Downloads` over the existing PDF (same name, so Drive keeps the same link).
+   - Never trash or replace files in the owner's Drive, other than overwriting these mirrored copies.
 7. **Record decisions.** Any significant technical choice (new dependency of consequence, architectural change) gets a short ADR in `docs/decisions/`.
 8. **Do not add dependencies casually.** Prefer the platform and existing deps. When adding one, say why in the commit message.
 9. **Leave the repo runnable.** Never leave `main` broken, and never commit commented-out code or stray debug logs.
