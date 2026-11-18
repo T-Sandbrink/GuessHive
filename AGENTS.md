@@ -403,7 +403,7 @@ Agents are not lawyers. When a feature processes personal data in a new way, fla
   - cover them in the DPIA.
 - **DPIA (art. 35)** before building high-risk features: special categories, the Dark Corner, minors (16–17), demographic breakdowns, fraud signals and AI moderation. Keep it in `docs/privacy/dpia.md`, and the owner has it checked.
 - **Data subject rights**: users can exercise access/export, rectification, erasure, restriction, objection and portability in the app or through a documented support route. Requests are answered within one month.
-- **Processors and transfers**: every external service that touches personal data needs a processing agreement (verwerkersovereenkomst) and EU data residency where possible. Today that means hosting, Resend, Cloudflare/R2, Sentry, analytics, Mollie and the Anthropic API.
+- **Processors and transfers**: every external service that touches personal data needs a processing agreement (verwerkersovereenkomst) and EU data residency where possible. Today that means hosting, Resend, Cloudflare/R2, Sentry, analytics, Mollie, the Anthropic API and, if the owner enables it, a moderation API for the AI check.
   - Transfers outside the EU only with a valid mechanism (adequacy decision / EU-US Data Privacy Framework, or SCCs).
   - Never send personal data to a new service without the owner's approval.
 - **Data breaches**: follow the documented procedure.
