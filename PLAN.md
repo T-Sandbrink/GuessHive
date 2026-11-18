@@ -184,7 +184,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [x] 0.1 `.gitignore` aanvullen, `.gitattributes` (`* text=auto eol=lf`, tegen CRLF-gedoe op Windows), `.editorconfig`, `.nvmrc` (Node 24 LTS) en `packageManager`-veld (pnpm) toevoegen
 - [x] 0.2 pnpm workspace (`pnpm-workspace.yaml`) + Turborepo (`turbo.json`) met de taken `dev`, `build`, `lint`, `typecheck`, `test`
 - [x] 0.3 `packages/config`: gedeelde `tsconfig.base.json` (strict), ESLint flat config en Prettier config
-- [ ] 0.4 `apps/web` aanmaken met `npx sv create` (SvelteKit, TypeScript, Tailwind v4, ESLint, Prettier, Vitest, Playwright)
+- [x] 0.4 `apps/web` aanmaken met `npx sv create` (SvelteKit, TypeScript, Tailwind v4, ESLint, Prettier, Vitest, Playwright)
 - [ ] 0.5 `apps/api` aanmaken met de Nest CLI (strict TS, Jest), aangesloten op de gedeelde config
 - [ ] 0.6 `packages/shared` aanmaken (zod, build via tsup: ESM + CJS met types) en vanuit web en api importeren als smoke test
 - [ ] 0.7 `docker-compose.yml`: postgres, postgres-test, redis, mailpit en minio, met healthchecks en named volumes
