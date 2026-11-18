@@ -20,7 +20,7 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 - **Review gate nog nodig:** —
 - **Niet-gecommitte bestanden:** —
 - **Open punten:** —
-- **Hervat op:** 18-11-2026 18:45 via `guesshive-resume`. Run van 16:41 stopte direct: 5-uursvenster op 76% (reset 18:40), taak 0.1 nog niet begonnen.
+- **Hervat op:** 18-11-2026 18:45 via `guesshive-resume`. Run van 16:41 stopte direct: 5-uursvenster op 76% (reset 18:40), taak 0.1 nog niet begonnen. Let op: `guesshive-resume` kon niet automatisch worden verzet (goedkeuring nodig); de watchdog `guesshive-watchdog` pakt het op na 18:45.
 
 ---
 
