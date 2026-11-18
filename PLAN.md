@@ -13,14 +13,14 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
-- **Status:** ⏸ **Bouwen staat UIT op verzoek van de eigenaar** tot het plan helemaal af is. De geplande taken `guesshive-resume` en `guesshive-watchdog` zijn uitgeschakeld en `.agent-state.json` staat op `off`. Pas starten als de eigenaar expliciet zegt dat er gebouwd mag worden.
-- **Huidige taak:** — (nog niet begonnen, start bij 0.1)
+- **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
+- **Huidige taak:** 0.1 (nog niet begonnen; maak eerst `phase/0-foundation` vanaf `main`)
 - **Klaar:** —
 - **Nog te doen in deze taak:** —
 - **Review gate nog nodig:** —
 - **Niet-gecommitte bestanden:** —
 - **Open punten:** —
-- **Hervat op:** —
+- **Hervat op:** 18-11-2026 16:40 via `guesshive-resume` (verse sessie). Let op: het 5-uursvenster stond op 72% (reset 18:40)
 
 ---
 
