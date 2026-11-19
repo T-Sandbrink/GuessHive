@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { defineConfig } from 'prisma/config';
 
 // Prisma 7 never reads .env itself; load apps/api/.env for CLI commands (migrate, studio).
+// Mirrors loadDotEnvFile in src/env.ts; keep both in sync.
 // Self-contained on purpose: importing src/env.ts would pull in @guesshive/shared, whose
 // build may not exist yet when turbo runs `db:generate`.
 try {
@@ -17,5 +18,5 @@ export default defineConfig({
   migrations: { path: 'prisma/migrations' },
   // `prisma generate` needs no database, so an empty URL is fine there;
   // migrate/studio then fail on the missing DATABASE_URL.
-  datasource: { url: process.env['DATABASE_URL'] ?? '' },
+  datasource: { url: (process.env['DATABASE_URL'] ?? '').trim() },
 });
