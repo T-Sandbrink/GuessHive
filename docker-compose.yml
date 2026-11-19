@@ -1,0 +1,102 @@
+# Local development services for GuessHive (see AGENTS.md §4).
+# All ports bind to 127.0.0.1 only. Credentials below are local-only defaults;
+# override them in a root .env file if you like (never commit it).
+# Postgres uses 5440/5441 on the host (not 5432) so it can run next to other
+# local projects; change them with POSTGRES_PORT / POSTGRES_TEST_PORT.
+name: guesshive
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-guesshive}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guesshive}
+      POSTGRES_DB: ${POSTGRES_DB:-guesshive}
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5440}:5432'
+    volumes:
+      # Postgres 18 images keep their data under /var/lib/postgresql/<major>/.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Throwaway database for integration tests. Data lives in tmpfs, so every
+  # container restart starts empty and tests stay fast.
+  postgres-test:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: guesshive
+      POSTGRES_PASSWORD: guesshive
+      POSTGRES_DB: guesshive_test
+    ports:
+      - '127.0.0.1:${POSTGRES_TEST_PORT:-5441}:5432'
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U guesshive -d guesshive_test']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Catches all outgoing email locally. Web UI: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025'
+      - '127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025'
+    volumes:
+      - mailpit-data:/data
+    environment:
+      MP_DATABASE: /data/mailpit.db
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # S3-compatible storage (stands in for Cloudflare R2). MinIO no longer ships
+  # Docker images, so local dev uses SeaweedFS (owner decision, 2026-11-19).
+  # S3 endpoint: http://localhost:8333
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.54
+    restart: unless-stopped
+    command:
+      ['server', '-dir=/data', '-s3', '-s3.port=8333', '-s3.allowedOrigins=http://localhost:5173']
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-guesshive}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-guesshive-dev-only}
+    ports:
+      - '127.0.0.1:${S3_PORT:-8333}:8333'
+    volumes:
+      - seaweedfs-data:/data
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8333/healthz']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
+  redis-data:
+  mailpit-data:
+  seaweedfs-data:

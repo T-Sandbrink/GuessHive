@@ -1,0 +1,49 @@
+{
+  "name": "@guesshive/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#lib": "./src/lib/index.js",
+    "#lib/*": "./src/lib/*"
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepare": "svelte-kit sync || echo ''",
+    "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "lint": "prettier --check . && eslint .",
+    "format": "prettier --write .",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@guesshive/config": "workspace:*",
+    "@guesshive/shared": "workspace:*",
+    "@playwright/test": "^1.65.1",
+    "@sveltejs/adapter-node": "^6.0.2",
+    "@sveltejs/kit": "^3.3.1",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/node": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-svelte": "^3.24.1",
+    "globals": "catalog:",
+    "playwright": "^1.65.1",
+    "prettier": "catalog:",
+    "prettier-plugin-svelte": "^4.1.1",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.8",
+    "tailwindcss": "^4.3.5",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "vitest-browser-svelte": "^3.1.0",
+    "zod": "catalog:"
+  }
+}

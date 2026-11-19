@@ -1,0 +1,13 @@
+# Generated or vendored
+pnpm-lock.yaml
+**/node_modules/
+**/dist/
+**/build/
+**/.svelte-kit/
+**/.turbo/
+**/coverage/
+**/tsup.config.bundled_*
+
+# Owner-facing planning docs keep their hand-made layout (tables, line breaks)
+*.md
+.claude/

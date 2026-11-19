@@ -1,0 +1,15 @@
+# SvelteKit / Vite output
+/.svelte-kit
+/build
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Tests
+/test-results
+/playwright-report
+/coverage
+
+# Env (see root .gitignore; never commit real env files)
+.env
+.env.*
+!.env.example

@@ -14,13 +14,13 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** 0.1 (nog niet begonnen; maak eerst `phase/0-foundation` vanaf `main`)
-- **Klaar:** —
+- **Huidige taak:** 1.1 (fase 1, nog niet begonnen; maak eerst `phase/1-database` vanaf `main`)
+- **Klaar:** fase 0 volledig: gemerged in `main` met tag `phase-0-done` (19-11-2026). Phase gate gedraaid, zie "Phase review" onder fase 0.
 - **Nog te doen in deze taak:** —
-- **Review gate nog nodig:** —
-- **Niet-gecommitte bestanden:** —
-- **Open punten:** —
-- **Hervat op:** 18-11-2026 18:45 via `guesshive-resume`. Run van 16:41 stopte direct: 5-uursvenster op 76% (reset 18:40), taak 0.1 nog niet begonnen. Let op: `guesshive-resume` kon niet automatisch worden verzet (goedkeuring nodig); de watchdog `guesshive-watchdog` pakt het op na 18:45.
+- **Review gate nog nodig:** — (vanaf fase 1 per taak, AGENTS.md §6)
+- **Niet-gecommitte bestanden:** — (lokaal `.env` met `GUESSHIVE_DRIVE_DIR`, bewust gitignored)
+- **Open punten:** eigenaarsacties in "Open vragen": systeem-PATH repareren, Node 24 LTS installeren, Renovate-app installeren. Taak 1.2 (UUIDv7) is al beslist en hoeft alleen nog een ADR.
+- **Hervat op:** —
 
 ---
 
@@ -29,7 +29,7 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Onderwerp | Beslissing |
 |---|---|
 | Naam / domeinen | GuessHive: `guesshive.com` (hoofd), `.net`, `.eu` en `.nl` als redirects (`.nl` → `/nl`) |
-| Frontend | SvelteKit + Svelte 5, Tailwind v4, shadcn-svelte |
+| Frontend | SvelteKit 3 + Svelte 5, Tailwind v4, shadcn-svelte |
 | Backend | NestJS + Prisma + PostgreSQL + Redis/BullMQ |
 | Monorepo | pnpm workspaces + Turborepo, gedeelde zod-schema's |
 | Login | Google, Apple, e-mail magic link, e-mail + wachtwoord |
@@ -40,6 +40,15 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Vragen maken | Admins (startcontent) + **iedereen met een bevestigd e-mailadres** stelt direct een vraag, ook om vrienden te werven. Na een automatische AI-check staat hij meteen openbaar; politiek en Dark Corner gaan altijd eerst langs een moderator (zie "Vraag stellen"). Fase 9 blijft vóór lancering |
 | Admin-paneel | Alle drempels en limieten zijn instelbaar in een admin-paneel (`AppSetting`): per instelling een standaardwaarde, uitleg en een **veilige onder- en bovengrens in de code**, en elke wijziging in de audit log. Wachtwoord: **standaard minimaal 12 tekens**, instelbaar van 8 tot 64. **Wettelijke en privacyregels staan vast in de code en zijn niet instelbaar**: minimumleeftijd 16, Dark Corner 18+, minimaal 10 stemmers voor uitsplitsingen en de AVG-bewaartermijnen |
 | Git | Branch per fase + per taak (AGENTS.md §5). Agent commit, merget en pusht zelf. `main` alleen na een afgeronde fase |
+| Webframework | **SvelteKit 3** (sinds 1-10-2026 de standaard; versie 2 krijgt alleen onderhoud) met Svelte 5 runes, config in `vite.config.ts` (eigenaar, 18-11-2026) |
+| Shared-pakket | `packages/shared` wordt gebouwd met **tsup** (eigenaar, 18-11-2026). Omdat de api ook ESM is, is ESM met types genoeg; CommonJS-uitvoer is niet meer nodig |
+| Lokale S3-opslag | **SeaweedFS** in docker compose, omdat MinIO geen Docker-images meer publiceert; productie blijft Cloudflare R2 (eigenaar, 19-11-2026) |
+| Dependency-audit | CI draait een **volledige, blokkerende** `pnpm audit --audit-level high` (ook devDependencies, want de web-app bundelt die in de server). Uitzonderingen die alleen dev-tools raken komen met reden in `pnpm-workspace.yaml` (`auditConfig.ignoreGhsas`). Nieuwe pakketversies worden pas na 1 dag geïnstalleerd (`minimumReleaseAge`), ook beveiligingsupdates; Renovate wacht voor gewone updates 3 dagen. Een echt spoedeisende fix gaat via een eenmalige `minimumReleaseAgeExclude` (eigenaar, 19-11-2026) |
+| tsup | Blijft voorlopig, ook al wordt het niet meer actief onderhouden (opvolger: tsdown). Herzien in fase 1 (eigenaar, 19-11-2026) |
+| GitHub-bescherming | Ruleset op `main` en de `phase-*-done`-tags: geen force-push en niet verwijderen (eigenaar, 19-11-2026) |
+| Api-tooling | De api volgt NestJS 12: **ESM-only**, tests met **Vitest** (zoals web en shared), linten met de **gedeelde ESLint-config** in plaats van oxlint (eigenaar, 19-11-2026; ADR 0002) |
+| Dependency-updates | **Renovate** (eigenaar, 18-11-2026). De agent zet `renovate.json` klaar; de eigenaar installeert de Renovate GitHub-app op de repo |
+| ID's | **UUIDv7** als primaire sleutel (native Postgres-`uuid`, op tijd sorteerbaar); publieke URL's krijgen daarnaast een korte id (eigenaar, 18-11-2026; ADR in taak 1.2) |
 
 ### UX-beslissingen
 
@@ -150,6 +159,9 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Bijzondere persoonsgegevens laten toetsen** (eigenaar, vóór fase 9 en 9b): stemmen op politieke vragen en Dark Corner-vragen over seks, gezondheid of drugs kunnen bijzondere persoonsgegevens zijn (AVG art. 9). Voorstel: uitdrukkelijke toestemming per categorie vóór de eerste stem, strengere toegang, nooit voor sponsors of partners behalve als totaal vanaf 10. Een jurist of privacy-adviseur bevestigt dit, of stuurt bij.
 - [ ] **Moderatorvoorwaarden voor Wachtbijen** (eigenaar, vóór fase 9): de tekst waarmee community-moderatoren akkoord gaan (geheimhouding, neutraliteit, geen privégegevens delen, gevolgen van misbruik).
 - [ ] **Vrijspeel-schema** (fase 8b): de agent stelt voor welke bij-onderdelen, kleuren en titels bij welk level of welke badge horen (de mockup "Jouw bij" toont een eerste idee), en de eigenaar keurt goed of stuurt bij.
+- [ ] **Node 24 LTS op deze pc** (eigenaar, aanbevolen): hier draait Node 25.0.0, een niet-LTS-versie die al end-of-life is, terwijl CI en `.nvmrc` Node 24 gebruiken. De NestJS-tools melden daarom "Unsupported engine". Installeer Node 24 LTS (nodejs.org, of `winget install OpenJS.NodeJS.LTS`), zodat lokaal en CI gelijk lopen. Daarna `pnpm install` opnieuw draaien.
+- [ ] **Systeem-PATH repareren** (eigenaar, nu): in het systeem-PATH van deze pc staat de kapotte regel `C:\Program Files (x86)\cloudflared"` (met een losse `"`). Turborepo stopt daardoor met zoeken naar pnpm (`Unable to find package manager binary`), dus `pnpm dev`/`pnpm lint` werken niet en geplande runs lopen vast. Oplossing: Windows-instellingen › "Omgevingsvariabelen voor het systeem bewerken" › Systeemvariabelen › Path › verwijder alleen die regel (de goede `C:\Program Files (x86)\cloudflared\` blijft staan) › OK, en start daarna de Claude-app opnieuw. Tot die tijd zet de agent de npm-map vooraan in zijn eigen PATH.
+- [ ] **Renovate GitHub-app installeren** (eigenaar, na taak 0.10b): installeer de gratis Renovate-app op `T-Sandbrink/GuessHive` (github.com/apps/renovate). De config `renovate.json` staat dan al klaar.
 - [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), analytics-dienst Umami of Plausible (fase 11), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor de AI-check op nieuwe vragen (fase 9) en de AI-nieuwssuggesties (na lancering), en eventueel een moderatie-API (bijv. OpenAI) als tweede keuze voor de AI-check (fase 9). Elke dienst die vragen te zien krijgt, heeft een verwerkersovereenkomst nodig.
 
 ---
@@ -175,30 +187,37 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 0 — Fundament (monorepo & tooling)
 
-- [ ] 0.1 `.gitignore` aanvullen, `.gitattributes` (`* text=auto eol=lf`, tegen CRLF-gedoe op Windows), `.editorconfig`, `.nvmrc` (Node 24 LTS) en `packageManager`-veld (pnpm) toevoegen
-- [ ] 0.2 pnpm workspace (`pnpm-workspace.yaml`) + Turborepo (`turbo.json`) met de taken `dev`, `build`, `lint`, `typecheck`, `test`
-- [ ] 0.3 `packages/config`: gedeelde `tsconfig.base.json` (strict), ESLint flat config en Prettier config
-- [ ] 0.4 `apps/web` aanmaken met `npx sv create` (SvelteKit, TypeScript, Tailwind v4, ESLint, Prettier, Vitest, Playwright)
-- [ ] 0.5 `apps/api` aanmaken met de Nest CLI (strict TS, Jest), aangesloten op de gedeelde config
-- [ ] 0.6 `packages/shared` aanmaken (zod, build via tsup of TS project references) en vanuit web en api importeren als smoke test
-- [ ] 0.7 `docker-compose.yml`: postgres, postgres-test, redis, mailpit en minio, met healthchecks en named volumes
-- [ ] 0.8 `.env.example` in de root en per app. Env-validatie met zod in api en web
-- [ ] 0.9 husky + lint-staged (prettier + eslint op staged files). **Let op:** husky verandert `core.hooksPath`, waardoor de huidige lokale `.git/hooks/post-commit` (Drive-kopie van PLAN.md) stopt. Zet die daarom over naar een husky `post-commit` die `node scripts/sync-drive.mjs` draait: kopieert PLAN.md naar de map uit de env-variabele `GUESSHIVE_DRIVE_DIR`, en doet niets als die niet bestaat. Controleer daarna dat de Drive-kopie na een commit bijgewerkt is
-- [ ] 0.10 GitHub Actions CI: install (met cache) → lint → typecheck → test → build, op elke push/PR
-- [ ] 0.10b Security in CI vanaf dag 1: secret-scanning (gitleaks), CodeQL (JS/TS), `pnpm audit --prod` (faalt bij high/critical), Dependabot of Renovate
-- [ ] 0.10c Subagents in `.claude/agents/` controleren tegen de echte scripts en paden. De review gate (AGENTS.md §6) geldt vanaf fase 1
-- [ ] 0.11 `README.md`: korte projectbeschrijving + "lokaal draaien in 5 stappen"
-- [ ] 0.12 ADR `docs/decisions/0001-stack.md`: waarom SvelteKit + NestJS + Prisma (samenvatting van de keuzes hierboven)
-- [ ] 0.13 `AGENTS.md` §4 (commands) controleren en bijwerken naar de echte scripts
+- [x] 0.1 `.gitignore` aanvullen, `.gitattributes` (`* text=auto eol=lf`, tegen CRLF-gedoe op Windows), `.editorconfig`, `.nvmrc` (Node 24 LTS) en `packageManager`-veld (pnpm) toevoegen
+- [x] 0.2 pnpm workspace (`pnpm-workspace.yaml`) + Turborepo (`turbo.json`) met de taken `dev`, `build`, `lint`, `typecheck`, `test`
+- [x] 0.3 `packages/config`: gedeelde `tsconfig.base.json` (strict), ESLint flat config en Prettier config
+- [x] 0.4 `apps/web` aanmaken met `npx sv create` (SvelteKit, TypeScript, Tailwind v4, ESLint, Prettier, Vitest, Playwright)
+- [x] 0.5 `apps/api` aanmaken met de Nest CLI (strict TS, ESM, Vitest), aangesloten op de gedeelde config
+- [x] 0.6 `packages/shared` aanmaken (zod, build via tsup: ESM met types) en vanuit web en api importeren als smoke test
+- [x] 0.7 `docker-compose.yml`: postgres, postgres-test, redis, mailpit en seaweedfs (S3, in plaats van MinIO), met healthchecks en named volumes
+  - *Notitie (19-11):* Postgres 18 (heeft `uuidv7()` ingebouwd), op hostpoort **5440** (test: **5441**) zodat het naast andere lokale projecten op 5432 kan draaien. S3 op `localhost:8333`. Alle poorten alleen op 127.0.0.1; aan te passen via de root-`.env`.
+- [x] 0.8 `.env.example` in de root en per app. Env-validatie met zod in api en web
+  - *Notitie (19-11):* de api valideert met `parseEnv` uit `@guesshive/shared` (fouten noemen de variabele, nooit de waarde). De web-app gebruikt de ingebouwde env-validatie van SvelteKit 3 (`src/env.ts` met `defineEnvVars` en zod-schema's, uitlezen via `$app/env/private`). Let op: SvelteKit 3 heeft `$lib` vervangen door `#lib` (met extensie, bijv. `#lib/foo.js`) en `$env/*` door `$app/env/*`.
+- [x] 0.9 husky + lint-staged (prettier + eslint op staged files). **Let op:** husky verandert `core.hooksPath`, waardoor de huidige lokale `.git/hooks/post-commit` (Drive-kopie van PLAN.md) stopt. Zet die daarom over naar een husky `post-commit` die `node scripts/sync-drive.mjs` draait: kopieert PLAN.md naar de map uit de env-variabele `GUESSHIVE_DRIVE_DIR`, en doet niets als die niet bestaat. Controleer daarna dat de Drive-kopie na een commit bijgewerkt is
+  - *Notitie (19-11):* de Drive-map staat lokaal in de gitignored root-`.env` (`GUESSHIVE_DRIVE_DIR`, zie `.env.example`); de oude `.git/hooks/post-commit` draait niet meer. Getest: na een commit is de Drive-kopie gelijk aan PLAN.md.
+- [x] 0.10 GitHub Actions CI: install (met cache) → lint → typecheck → test → build, op elke push/PR
+- [x] 0.10b Security in CI vanaf dag 1: secret-scanning (gitleaks), CodeQL (JS/TS), `pnpm audit --prod` (faalt bij high/critical), Renovate (`renovate.json`)
+  - *Notitie (19-11):* workflow `security.yml` draait ook wekelijks (maandag). Renovate-PR's richten zich op `main`; de agent merget die nooit zelf, dat doet de eigenaar.
+  - *Notitie (19-11, phase gate):* gitleaks scant nu de **volledige geschiedenis** met de CLI (de action scande door onze `--no-ff`-merges 0 commits) en faalt als hij niets scant. Audit is nu volledig en blokkerend (zie "Dependency-audit"). Alle actions zijn op commit-SHA vastgezet.
+- [x] 0.10c Subagents in `.claude/agents/` controleren tegen de echte scripts en paden. De review gate (AGENTS.md §6) geldt vanaf fase 1
+- [x] 0.11 `README.md`: korte projectbeschrijving + "lokaal draaien in 5 stappen"
+- [x] 0.12 ADR `docs/decisions/0001-stack.md`: waarom SvelteKit + NestJS + Prisma (samenvatting van de keuzes hierboven)
+- [x] 0.13 `AGENTS.md` §4 (commands) controleren en bijwerken naar de echte scripts
 
 **Acceptatie:** `pnpm install && docker compose up -d && pnpm dev` start web (localhost:5173) en api (localhost:3000). `pnpm lint typecheck test build` is groen, lokaal en in CI.
+
+**Phase review (19-11-2026):** security-reviewer 1 🔴 (gitleaks scande 0 commits) en 3 🟡, code-reviewer 0 🔴 en 7 🟡; alles opgelost in `task/0-gate-fixes`, niets uitgesteld. Twee eigenaarsbeslissingen genomen (volledige audit, tsup houden) en een ruleset op `main` ingesteld. Acceptatie lokaal gecontroleerd: `pnpm dev` gaf web 200 op :5173 en api op :3000.
 
 ---
 
 ## Fase 1 — Database & API-skelet
 
 - [ ] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
-- [ ] 1.2 ID-strategie (cuid2 of UUIDv7) voorstellen aan de eigenaar en na akkoord vastleggen in een ADR
+- [ ] 1.2 ID-strategie vastleggen in een ADR: UUIDv7 (gekozen door de eigenaar, 18-11-2026), met een korte publieke id voor URL's
 - [ ] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken, inclusief de verdienmodel-velden en -tabellen (voorheen 13.1: `User.plan`, `premiumUntil`, `Subscription`, `Partner`, `EmbedKey`, `Sponsor`, `Question.sponsorId`), alles standaard uit
 - [ ] 1.4 Seed-script: alle landen (ISO), met `localEnabled` aan voor NL en BE en regio's voor NL en BE; de 10 categorieën uit "Lancering & landen" (NL+EN, Politiek met `sensitive = true`); 1 admin-gebruiker; ~20 voorbeeldvragen van alle types (development-data, niet de startcontent)
 - [ ] 1.5 Globale Nest-setup: config-module (zod), `ZodValidationPipe`, exception filter met `{ code, message }`, request-logging (pino) zonder PII
@@ -206,7 +225,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 1.7 `health`-module: `/health` controleert db en redis
 - [ ] 1.8 Redis-module + BullMQ-basis (queue-registratie, eerste dummy-job)
 - [ ] 1.9 Rate-limiting (`@nestjs/throttler` met Redis-storage), standaardlimiet + per-route overrides
-- [ ] 1.10 Testopzet: Jest-integratietests tegen de `postgres-test`-container (reset per testbestand)
+- [ ] 1.10 Testopzet: Vitest-integratietests tegen de `postgres-test`-container (reset per testbestand)
 - [ ] 1.11 Feature-flag-systeem (per omgeving en per gebruiker, tabel `FeatureFlag`), nodig voor 7b.6 en fase 13 (voorheen 13.2)
 - [ ] 1.12 Instellingenregister (`AppSetting`) in `packages/shared`: per instelling een key, type, standaardwaarde, **harde min/max**, categorie en uitleg NL+EN, gevalideerd met zod. De api cachet waarden in Redis en ververst na een wijziging; elke wijziging gaat in de `AuditLog` (oud → nieuw). Wettelijke en privacyregels (16+, 18+, k = 10, bewaartermijnen) zijn constanten in de code, nooit een instelling. Latere taken registreren hun eigen instellingen hier
 
@@ -228,7 +247,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 2.10 Rate limits op login, registratie en magic link
 - [ ] 2.11 Onboarding-gegevens (kort): unieke `username`, `countryCode` (voorstel via IP-geolocatie, gebruiker bevestigt), interesses, plus akkoord voorwaarden + 16+-bevestiging. Regio, geboortedatum en geslacht zijn optioneel en worden later via `PATCH /me` aangevuld (zie 6.9)
 - [ ] 2.14 Gast-stem afronden: een "pending vote/skip" (vraag-id, optie(s), zekerheid) die vóór aanmelden is gekozen, wordt na aanmelden/onboarding één keer server-side ingediend (gevalideerd alsof de gebruiker het nu doet, de vraag moet nog open zijn)
-- [ ] 2.12 `GET/PATCH /me`, avatar-upload naar S3/MinIO als `MediaAsset` (status `PENDING`, resize, max-grootte, alleen JPG/PNG/WebP, EXIF eraf). Tot 9b.4 er is, worden geüploade avatars niet getoond (standaard-avatar)
+- [ ] 2.12 `GET/PATCH /me`, avatar-upload naar S3 (lokaal SeaweedFS) als `MediaAsset` (status `PENDING`, resize, max-grootte, alleen JPG/PNG/WebP, EXIF eraf). Tot 9b.4 er is, worden geüploade avatars niet getoond (standaard-avatar)
 - [ ] 2.13 Tests: registratie → verificatie → login, magic link, guard-gedrag en rate limits
 
 **Acceptatie:** een nieuwe gebruiker kan zich op alle 4 manieren aanmelden, onboarding afronden en `/me` ophalen. Niet-ingelogd krijgt 401 op beschermde routes.

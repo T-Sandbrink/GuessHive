@@ -1,0 +1,45 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits", "helpers:pinGitHubActionDigests"],
+  "timezone": "Europe/Amsterdam",
+  "schedule": ["before 7am on monday"],
+  "baseBranchPatterns": ["main"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "rangeStrategy": "bump",
+  "automerge": false,
+  "minimumReleaseAge": "3 days",
+  "osvVulnerabilityAlerts": true,
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"],
+    "minimumReleaseAge": null
+  },
+  "packageRules": [
+    {
+      "description": "Group non-major updates of dev tooling into one PR",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dev tooling (non-major)"
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Keep the pinned gitleaks CLI current. Its PR fails the checksum step until GITLEAKS_SHA256 is updated from the release's checksums file (a deliberate human check).",
+      "managerFilePatterns": ["/^\\.github/workflows/security\\.yml$/"],
+      "matchStrings": ["GITLEAKS_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "gitleaks/gitleaks",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ]
+}

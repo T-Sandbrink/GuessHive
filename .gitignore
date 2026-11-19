@@ -1,5 +1,24 @@
 # Dependencies
 node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.svelte-kit/
+.turbo/
+*.tsbuildinfo
+
+# Tests and coverage
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
 
 # Env & secrets
 .env

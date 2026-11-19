@@ -25,8 +25,8 @@ Product principles. Use them to decide when something is unclear:
 | Layer | Choice |
 |---|---|
 | Monorepo | pnpm workspaces + Turborepo |
-| Runtime | Node.js LTS (24.x), TypeScript `strict` everywhere |
-| Frontend | SvelteKit 2 + **Svelte 5 (runes)**, SSR on, `adapter-node` (or `adapter-vercel`, decided at launch) |
+| Runtime | Node.js LTS (24.x), TypeScript 6.0 `strict` everywhere (TS 7 once svelte-check and typescript-eslint support it) |
+| Frontend | SvelteKit 3 + **Svelte 5 (runes)**, SSR on, `adapter-node` (or `adapter-vercel`, decided at launch) |
 | UI | Tailwind CSS v4 + shadcn-svelte (Bits UI), lucide-svelte icons, self-hosted fonts (Fredoka + Nunito via @fontsource, never a font CDN) |
 | i18n | Paraglide JS (via `sv add paraglide`), locale-prefixed routes `/nl/...`, `/en/...` |
 | Backend | NestJS (latest major), REST, OpenAPI via `@nestjs/swagger` |
@@ -35,9 +35,9 @@ Product principles. Use them to decide when something is unclear:
 | Cache/jobs | Redis + BullMQ (rate limits, leaderboards, scheduled jobs, notifications) |
 | Auth | Better Auth in the api: Google, Apple, email magic link, email + password |
 | Email | Resend (prod), Mailpit (local) |
-| Files | S3-compatible storage (Cloudflare R2), MinIO locally |
+| Files | S3-compatible storage (Cloudflare R2), SeaweedFS locally (MinIO no longer ships Docker images) |
 | Bot protection | Cloudflare Turnstile on sign-up and sensitive actions |
-| Tests | Vitest (web, shared), Jest (api, NestJS default), Playwright (e2e) |
+| Tests | Vitest everywhere (web, shared, api), Playwright (e2e). The api is ESM-only, like NestJS 12 itself (ADR 0002) |
 | Quality | ESLint + Prettier, husky + lint-staged, GitHub Actions CI |
 | Observability | Sentry (errors), Umami or Plausible (cookieless analytics) |
 
@@ -59,7 +59,7 @@ GuessHive/
 │  └─ decisions/           ADRs: NNNN-short-title.md
 ├─ .claude/
 │  └─ agents/              specialised subagents (see §6)
-├─ docker-compose.yml      postgres, redis, mailpit, minio for local dev
+├─ docker-compose.yml      postgres, postgres-test, redis, mailpit, seaweedfs for local dev
 ├─ AGENTS.md               this file
 ├─ CLAUDE.md               points to this file
 └─ PLAN.md                 the roadmap and task checklist
@@ -83,27 +83,32 @@ Use one module per domain: `auth`, `users`, `questions`, `votes`, `forecasts`, `
 
 ## 4. Commands
 
-These become available after PLAN.md phase 0. Keep this section up to date when scripts change.
+Keep this section up to date when scripts change. Package filters accept the short names `web`, `api` and `shared`.
 
 ```bash
-pnpm install              # install everything
-docker compose up -d      # start postgres, redis, mailpit, minio
-pnpm dev                  # run web + api in watch mode (turbo)
-pnpm lint                 # eslint all packages
-pnpm typecheck            # tsc / svelte-check all packages
-pnpm test                 # unit + integration tests
-pnpm test:e2e             # playwright
+pnpm install              # install everything (also sets up the husky git hooks)
+docker compose up -d      # start postgres (:5440), postgres-test (:5441), redis, mailpit, seaweedfs
+pnpm dev                  # run shared (watch) + web (:5173) + api (:3000) via turbo
+pnpm format:check         # prettier --check over the whole repo (root files included; CI runs it)
+pnpm lint                 # prettier --check + eslint in every package
+pnpm typecheck            # tsc / svelte-check in every package
+pnpm test                 # Vitest in every package (web component tests run in Chromium)
+pnpm test:e2e             # Playwright (web) + supertest HTTP tests (api)
 pnpm build                # production build
-pnpm --filter api db:migrate   # create/apply a prisma migration (dev)
-pnpm --filter api db:seed      # seed local data
+pnpm format               # prettier --write over the whole repo
+pnpm --filter web exec playwright install chromium   # one-time: browser for web tests
 ```
+
+Added in phase 1: `pnpm --filter api db:migrate` (create/apply a Prisma migration) and `pnpm --filter api db:seed` (seed local data).
+
+On Windows, Turborepo needs `pnpm` resolvable on `PATH` without hitting a malformed entry first (see README "Troubleshooting").
 
 ## 5. How to work
 
 1. **Follow `PLAN.md` in order.** Pick the first unchecked task unless the owner says otherwise, and never while PLAN.md "Laatste stand" says building is OFF (see "Master switch" below). Read the whole phase before starting it.
 2. **One task at a time.** Finish it, verify it, tick the box `[x]` in PLAN.md, then move on.
 3. **Definition of done** for every task:
-   - Code compiles: `pnpm typecheck` and `pnpm lint` pass.
+   - Code compiles: `pnpm typecheck`, `pnpm lint` and `pnpm format:check` pass.
    - Tests are written or updated, and `pnpm test` passes.
    - The review gate from §6 has passed, with no open 🔴 findings.
    - UI changes are checked in a browser (desktop and mobile width, light and dark).
@@ -343,11 +348,12 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Env vars are parsed once at startup with a zod schema. Fail fast on missing config. Keep `.env.example` up to date and never commit `.env`.
 - Dates are stored as UTC `timestamptz`. Display them in the user's locale and timezone.
 - Countries use ISO 3166-1 alpha-2 (`NL`, `BE`, `DE`). Regions use ISO 3166-2 (`NL-UT`). Locales use BCP 47 (`nl`, `en`).
-- IDs are `cuid2` or UUIDv7 strings (decided in phase 1 and then used everywhere). Never expose auto-increment ids.
+- IDs are UUIDv7 (native Postgres `uuid`, owner decision), plus a short public id for URLs. Never expose auto-increment ids.
 - Public URLs use slugs plus a short id: `/nl/q/beste-voetballer-ooit-k3x9`.
 
 ### Svelte / SvelteKit
 - Svelte 5 runes only. Components are `PascalCase.svelte`.
+- SvelteKit 3 specifics: import shared code from `#lib/...` with the file extension (`#lib/foo.js`; `$lib` no longer exists). Declare env vars in `apps/web/src/env.ts` (`defineEnvVars` with zod schemas) and read them from `$app/env/private` or `$app/env/public`. Hook types come from `@sveltejs/kit/hooks`. Look up the Kit 3 docs before using any other `$app/*` or `@sveltejs/kit/*` API.
 - Data loading happens in `+page.server.ts` / `+layout.server.ts`. Use form actions with progressive enhancement (`use:enhance`) for mutations where possible.
 - Put shared UI in `apps/web/src/lib/components/`, with shadcn-svelte primitives under `lib/components/ui/`.
 - Every public page sets `<title>`, a meta description, canonical, hreflang alternates and OG tags. Private pages (Dark Corner, groups, settings, notifications, admin) set `noindex`, stay out of the sitemap, and use a generic OG image without question text or results.
