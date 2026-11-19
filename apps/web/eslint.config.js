@@ -5,6 +5,9 @@ import ts from 'typescript-eslint';
 
 export default [
   ...base,
+  {
+    languageOptions: { parserOptions: { tsconfigRootDir: import.meta.dirname } },
+  },
   ...svelte.configs.recommended,
   ...svelte.configs.prettier,
   {

@@ -7,17 +7,14 @@
 import { copyFileSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseEnv } from 'node:util';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 function readDotEnv(name) {
   const file = join(root, '.env');
   if (!existsSync(file)) return undefined;
-  for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
-    const match = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line);
-    if (match?.[1] === name) return match[2].replace(/^(['"])(.*)\1$/, '$2');
-  }
-  return undefined;
+  return parseEnv(readFileSync(file, 'utf8'))[name]?.trim();
 }
 
 const target = process.env.GUESSHIVE_DRIVE_DIR ?? readDotEnv('GUESSHIVE_DRIVE_DIR');
