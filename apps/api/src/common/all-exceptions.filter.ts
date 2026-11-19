@@ -10,6 +10,7 @@ import { HttpAdapterHost } from '@nestjs/core';
 import type { ApiErrorBody, ApiErrorCode } from '@guesshive/shared';
 import { rememberRouteTemplate } from '../logging/route-template.js';
 import { ApiException } from './api.exception.js';
+import { ValidationFailedException } from './validation.js';
 
 /** Codes the filter itself produces for errors that are not ApiExceptions. */
 type GenericErrorCode = Extract<
@@ -69,10 +70,23 @@ function isErrorStatus(status: number): boolean {
   return Number.isInteger(status) && status >= 400 && status <= 599;
 }
 
-/** Maps any thrown value to a status and the `{ code, message }` body (AGENTS.md §7). */
+/**
+ * Maps any thrown value to a status and the `{ code, message }` body (AGENTS.md §7), plus
+ * `issues` for request validation failures (ADR 0003).
+ */
 export function toErrorResponse(exception: unknown): { status: number; body: ApiErrorBody } {
   if (exception instanceof HttpException && !isErrorStatus(exception.getStatus())) {
     return INTERNAL_ERROR_RESPONSE;
+  }
+  if (exception instanceof ValidationFailedException) {
+    return {
+      status: exception.getStatus(),
+      body: {
+        code: 'VALIDATION_FAILED',
+        message: MESSAGE_BY_CODE.VALIDATION_FAILED,
+        issues: exception.issues,
+      },
+    };
   }
   if (exception instanceof ApiException) {
     const response = exception.getResponse() as ApiErrorBody;
