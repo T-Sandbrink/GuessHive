@@ -17,7 +17,7 @@ How we work: [AGENTS.md](AGENTS.md) (conventions and rules) and [PLAN.md](PLAN.m
 
 ## Run it locally in 5 steps
 
-**Prerequisites:** Node.js 24 LTS (24.15 or newer), pnpm 10 and Docker Desktop.
+**Prerequisites:** Node.js 26 LTS, pnpm 10 and Docker Desktop.
 
 1. **Install dependencies**
 
