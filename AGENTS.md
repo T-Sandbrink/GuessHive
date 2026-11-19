@@ -83,20 +83,24 @@ Use one module per domain: `auth`, `users`, `questions`, `votes`, `forecasts`, `
 
 ## 4. Commands
 
-These become available after PLAN.md phase 0. Keep this section up to date when scripts change.
+Keep this section up to date when scripts change. Package filters accept the short names `web`, `api` and `shared`.
 
 ```bash
-pnpm install              # install everything
-docker compose up -d      # start postgres, postgres-test, redis, mailpit, seaweedfs
-pnpm dev                  # run web + api in watch mode (turbo)
-pnpm lint                 # eslint all packages
-pnpm typecheck            # tsc / svelte-check all packages
-pnpm test                 # unit + integration tests
-pnpm test:e2e             # playwright
+pnpm install              # install everything (also sets up the husky git hooks)
+docker compose up -d      # start postgres (:5440), postgres-test (:5441), redis, mailpit, seaweedfs
+pnpm dev                  # run shared (watch) + web (:5173) + api (:3000) via turbo
+pnpm lint                 # prettier --check + eslint in every package
+pnpm typecheck            # tsc / svelte-check in every package
+pnpm test                 # Vitest in every package (web component tests run in Chromium)
+pnpm test:e2e             # Playwright (web) + supertest HTTP tests (api)
 pnpm build                # production build
-pnpm --filter api db:migrate   # create/apply a prisma migration (dev)
-pnpm --filter api db:seed      # seed local data
+pnpm format               # prettier --write over the whole repo
+pnpm --filter web exec playwright install chromium   # one-time: browser for web tests
 ```
+
+Added in phase 1: `pnpm --filter api db:migrate` (create/apply a Prisma migration) and `pnpm --filter api db:seed` (seed local data).
+
+On Windows, Turborepo needs `pnpm` resolvable on `PATH` without hitting a malformed entry first (see README "Troubleshooting").
 
 ## 5. How to work
 
