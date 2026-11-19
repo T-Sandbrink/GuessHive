@@ -1,0 +1,13 @@
+// GuessHive database schema. Models arrive in PLAN.md task 1.3 (see "Datamodel").
+// The connection URL comes from prisma.config.ts (DATABASE_URL), not from here.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}

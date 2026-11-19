@@ -6,6 +6,7 @@ pnpm-lock.yaml
 **/.svelte-kit/
 **/.turbo/
 **/coverage/
+**/src/generated/
 **/tsup.config.bundled_*
 
 # Owner-facing planning docs keep their hand-made layout (tables, line breaks)

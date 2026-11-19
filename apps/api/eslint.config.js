@@ -2,6 +2,7 @@ import base from '@guesshive/config/eslint';
 
 export default [
   ...base,
+  { ignores: ['src/generated/**'] },
   {
     languageOptions: { parserOptions: { tsconfigRootDir: import.meta.dirname } },
   },
