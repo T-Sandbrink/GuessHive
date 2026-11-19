@@ -7,8 +7,15 @@
   "labels": ["dependencies"],
   "prConcurrentLimit": 5,
   "rangeStrategy": "bump",
+  "automerge": false,
+  "minimumReleaseAge": "3 days",
+  "osvVulnerabilityAlerts": true,
   "lockFileMaintenance": { "enabled": true },
-  "vulnerabilityAlerts": { "enabled": true, "schedule": ["at any time"] },
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"],
+    "minimumReleaseAge": null
+  },
   "packageRules": [
     {
       "description": "Group non-major updates of dev tooling into one PR",
