@@ -2,6 +2,7 @@ import { Injectable, Module } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../app.module.js';
+import { ConfigModule } from '../config/config.module.js';
 import { PrismaModule } from './prisma.module.js';
 import { PrismaService } from './prisma.service.js';
 
@@ -18,7 +19,9 @@ describe('PrismaService', () => {
   });
 
   it('connects when the Nest app starts and disconnects when it closes', async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [PrismaModule] }).compile();
+    const moduleRef = await Test.createTestingModule({
+      imports: [ConfigModule, PrismaModule],
+    }).compile();
     const prisma = moduleRef.get(PrismaService);
     const connect = vi.spyOn(prisma, '$connect').mockResolvedValue();
     const probe = vi.spyOn(prisma, '$queryRaw').mockResolvedValue([]);
@@ -34,7 +37,9 @@ describe('PrismaService', () => {
   });
 
   it('probes the database with SELECT 1 after connecting', async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [PrismaModule] }).compile();
+    const moduleRef = await Test.createTestingModule({
+      imports: [ConfigModule, PrismaModule],
+    }).compile();
     const prisma = moduleRef.get(PrismaService);
     const calls: string[] = [];
     vi.spyOn(prisma, '$connect').mockImplementation(() => {
@@ -54,7 +59,9 @@ describe('PrismaService', () => {
   });
 
   it('fails startup when the database cannot be reached', async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [PrismaModule] }).compile();
+    const moduleRef = await Test.createTestingModule({
+      imports: [ConfigModule, PrismaModule],
+    }).compile();
     const prisma = moduleRef.get(PrismaService);
     vi.spyOn(prisma, '$connect').mockResolvedValue();
     vi.spyOn(prisma, '$queryRaw').mockRejectedValue(new Error('connection refused'));
@@ -63,7 +70,9 @@ describe('PrismaService', () => {
   });
 
   it('fails startup without probing when $connect itself fails', async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [PrismaModule] }).compile();
+    const moduleRef = await Test.createTestingModule({
+      imports: [ConfigModule, PrismaModule],
+    }).compile();
     const prisma = moduleRef.get(PrismaService);
     vi.spyOn(prisma, '$connect').mockRejectedValue(new Error('adapter failure'));
     const probe = vi.spyOn(prisma, '$queryRaw').mockResolvedValue([]);
@@ -73,7 +82,9 @@ describe('PrismaService', () => {
   });
 
   it('closes the pool via onApplicationShutdown and surfaces disconnect errors', async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [PrismaModule] }).compile();
+    const moduleRef = await Test.createTestingModule({
+      imports: [ConfigModule, PrismaModule],
+    }).compile();
     const prisma = moduleRef.get(PrismaService);
     const disconnect = vi.spyOn(prisma, '$disconnect').mockResolvedValueOnce();
 
@@ -84,22 +95,23 @@ describe('PrismaService', () => {
     await expect(prisma.onApplicationShutdown()).rejects.toThrow('pool already closed');
   });
 
-  it('refuses to start without a valid DATABASE_URL', () => {
-    vi.stubEnv('DATABASE_URL', '');
+  const compileWithUrl = (url: string) => {
+    vi.stubEnv('DATABASE_URL', url);
+    return Test.createTestingModule({ imports: [ConfigModule, PrismaModule] }).compile();
+  };
 
-    expect(() => new PrismaService()).toThrow(/DATABASE_URL/);
+  it('refuses to start without a valid DATABASE_URL', async () => {
+    await expect(compileWithUrl('')).rejects.toThrow(/DATABASE_URL/);
   });
 
-  it('refuses a non-postgres DATABASE_URL', () => {
-    vi.stubEnv('DATABASE_URL', 'mysql://user:pass@localhost:3306/guesshive');
-
-    expect(() => new PrismaService()).toThrow(/DATABASE_URL/);
+  it('refuses a non-postgres DATABASE_URL', async () => {
+    await expect(compileWithUrl('mysql://user:pass@localhost:3306/guesshive')).rejects.toThrow(
+      /DATABASE_URL/,
+    );
   });
 
-  it('does not leak DATABASE_URL credentials in the startup error', () => {
-    vi.stubEnv('DATABASE_URL', 'mysql://admin:s3cr3t-pw@db.internal/guesshive');
-
-    expect(() => new PrismaService()).toThrow(
+  it('does not leak DATABASE_URL credentials in the startup error', async () => {
+    await expect(compileWithUrl('mysql://admin:s3cr3t-pw@db.internal/guesshive')).rejects.toThrow(
       expect.objectContaining({ message: expect.not.stringContaining('s3cr3t-pw') as unknown }),
     );
   });
@@ -130,7 +142,7 @@ describe('PrismaModule wiring', () => {
 
   it('makes one shared PrismaService injectable in modules that do not import it', async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [PrismaModule, FeatureModule],
+      imports: [ConfigModule, PrismaModule, FeatureModule],
     }).compile();
 
     const prisma = moduleRef.get(PrismaService);

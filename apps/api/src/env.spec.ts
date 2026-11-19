@@ -57,6 +57,21 @@ describe('loadEnv (api)', () => {
     );
   });
 
+  it('leaves LOG_LEVEL unset by default so the logger picks a per-env default', () => {
+    expect(loadEnv({ DATABASE_URL }).LOG_LEVEL).toBeUndefined();
+  });
+
+  it.each(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])(
+    'accepts LOG_LEVEL=%s',
+    (level) => {
+      expect(loadEnv({ DATABASE_URL, LOG_LEVEL: level }).LOG_LEVEL).toBe(level);
+    },
+  );
+
+  it.each(['verbose', 'INFO', '', 'log'])('rejects LOG_LEVEL=%j', (level) => {
+    expect(() => loadEnv({ DATABASE_URL, LOG_LEVEL: level })).toThrow(/LOG_LEVEL/);
+  });
+
   it('fails fast on invalid values', () => {
     expect(() => loadEnv({ DATABASE_URL, PORT: '70000' })).toThrow(/PORT/);
     expect(() => loadEnv({ DATABASE_URL, NODE_ENV: 'staging' })).toThrow(/NODE_ENV/);
