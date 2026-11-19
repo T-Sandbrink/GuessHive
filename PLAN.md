@@ -14,13 +14,13 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** fase 0 afronden: phase-gate-fixes mergen, daarna `phase/0-foundation` → `main` met tag `phase-0-done`. Daarna fase 1 (taak 1.1).
-- **Klaar:** alle taken van fase 0; phase gate gedraaid (zie "Phase review" onder fase 0).
-- **Nog te doen in deze taak:** CI groen zien op de gate-fixes, mergen naar `main`, taggen, pushen.
-- **Review gate nog nodig:** — (vanaf fase 1 per taak).
+- **Huidige taak:** 1.1 (fase 1, nog niet begonnen; maak eerst `phase/1-database` vanaf `main`)
+- **Klaar:** fase 0 volledig: gemerged in `main` met tag `phase-0-done` (19-11-2026). Phase gate gedraaid, zie "Phase review" onder fase 0.
+- **Nog te doen in deze taak:** —
+- **Review gate nog nodig:** — (vanaf fase 1 per taak, AGENTS.md §6)
 - **Niet-gecommitte bestanden:** — (lokaal `.env` met `GUESSHIVE_DRIVE_DIR`, bewust gitignored)
-- **Open punten:** eigenaarsacties in "Open vragen": systeem-PATH repareren, Node 24 LTS installeren, Renovate-app installeren.
-- **Hervat op:** — (interactieve sessie werkt door)
+- **Open punten:** eigenaarsacties in "Open vragen": systeem-PATH repareren, Node 24 LTS installeren, Renovate-app installeren. Taak 1.2 (UUIDv7) is al beslist en hoeft alleen nog een ADR.
+- **Hervat op:** —
 
 ---
 
