@@ -33,7 +33,7 @@ business rules and database access. This keeps cookies first-party and avoids CO
 
 ## Alternatives considered
 
-- **Next.js / React**: larger client bundles, and the owner prefers Svelte. Rejected.
+- **Next.js / React**: larger client bundles for a phone-first app; AGENTS.md rules out React. Rejected.
 - **SvelteKit-only (no separate api)**: simpler at first, but business rules, jobs and the
   future native apps and partner embeds are cleaner behind a dedicated api. Rejected.
 - **tRPC instead of REST**: tighter coupling to TypeScript clients; partners and embeds need a
