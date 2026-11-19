@@ -1,0 +1,7 @@
+# Reviewed gitleaks false positives. One fingerprint per line, each with a reason.
+# Never add a real secret here: rotate it instead.
+
+# Public CircleCI status-badge token from the NestJS scaffold README (a NestJS
+# project badge, not a GuessHive credential). The file was deleted in dbe72cb;
+# the commit stays in history because pushed history is never rewritten.
+89e062148701a6584610d15e83c4d0f9c788932f:apps/api/README.md:generic-api-key:5
