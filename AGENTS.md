@@ -37,7 +37,7 @@ Product principles. Use them to decide when something is unclear:
 | Email | Resend (prod), Mailpit (local) |
 | Files | S3-compatible storage (Cloudflare R2), MinIO locally |
 | Bot protection | Cloudflare Turnstile on sign-up and sensitive actions |
-| Tests | Vitest (web, shared), Jest (api, NestJS default), Playwright (e2e) |
+| Tests | Vitest everywhere (web, shared, api), Playwright (e2e). The api is ESM-only, like NestJS 12 itself (ADR 0002) |
 | Quality | ESLint + Prettier, husky + lint-staged, GitHub Actions CI |
 | Observability | Sentry (errors), Umami or Plausible (cookieless analytics) |
 

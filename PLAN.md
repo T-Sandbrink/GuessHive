@@ -40,7 +40,8 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Admin-paneel | Alle drempels en limieten zijn instelbaar in een admin-paneel (`AppSetting`): per instelling een standaardwaarde, uitleg en een **veilige onder- en bovengrens in de code**, en elke wijziging in de audit log. Wachtwoord: **standaard minimaal 12 tekens**, instelbaar van 8 tot 64. **Wettelijke en privacyregels staan vast in de code en zijn niet instelbaar**: minimumleeftijd 16, Dark Corner 18+, minimaal 10 stemmers voor uitsplitsingen en de AVG-bewaartermijnen |
 | Git | Branch per fase + per taak (AGENTS.md §5). Agent commit, merget en pusht zelf. `main` alleen na een afgeronde fase |
 | Webframework | **SvelteKit 3** (sinds 1-10-2026 de standaard; versie 2 krijgt alleen onderhoud) met Svelte 5 runes, config in `vite.config.ts` (eigenaar, 18-11-2026) |
-| Shared-pakket | `packages/shared` wordt gebouwd met **tsup** (ESM + CommonJS met types), zodat SvelteKit en NestJS/Jest het allebei direct laden (eigenaar, 18-11-2026) |
+| Shared-pakket | `packages/shared` wordt gebouwd met **tsup** (eigenaar, 18-11-2026). Omdat de api ook ESM is, is ESM met types genoeg; CommonJS-uitvoer is niet meer nodig |
+| Api-tooling | De api volgt NestJS 12: **ESM-only**, tests met **Vitest** (zoals web en shared), linten met de **gedeelde ESLint-config** in plaats van oxlint (eigenaar, 19-11-2026; ADR 0002) |
 | Dependency-updates | **Renovate** (eigenaar, 18-11-2026). De agent zet `renovate.json` klaar; de eigenaar installeert de Renovate GitHub-app op de repo |
 | ID's | **UUIDv7** als primaire sleutel (native Postgres-`uuid`, op tijd sorteerbaar); publieke URL's krijgen daarnaast een korte id (eigenaar, 18-11-2026; ADR in taak 1.2) |
 
@@ -139,7 +140,6 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze hier neer.
 
 - [ ] **Docker Desktop start niet** (eigenaar, blokkeert 0.7 en daarna fase 1): Docker Desktop 4.57 stopt bij het opstarten met "initializing Inference manager: listening on unix://…\Docker\run\dockerInference: remove …" (een achtergebleven bestand van Docker Model Runner). Oplossing: Docker Desktop afsluiten (Quit, **niet** "Reset to factory defaults"), het bestand `%LOCALAPPDATA%\Docker\run\dockerInference` verwijderen en Docker Desktop opnieuw starten; zet eventueel in Settings › AI "Docker Model Runner" uit. De agent mag niets buiten de repo verwijderen, dus dit moet jij doen.
-- [ ] **Testrunner en linter voor de api** (blokkeert 0.5, en daarmee 0.6, 0.8-api en 0.10): de Nest CLI 12 maakt nu standaard een **ESM-only** project met **Vitest** en **oxlint**. PLAN/AGENTS zeggen Jest ("NestJS default") en de gedeelde ESLint-config. Opties: (a) **Vitest + gedeelde ESLint** (aanbevolen): sluit aan bij Nest 12 (alle `@nestjs/*`-pakketten zijn ESM-only, Jest kan daar slecht mee overweg) en is dezelfde runner als `apps/web`; oxlint vervangen door de gedeelde ESLint-config, zodat de hele repo één linter heeft. AGENTS.md §2/§6/§11 en de `test-writer`-agent worden aangepast. (b) Jest + gedeelde ESLint, zoals gepland: werkt alleen met experimentele ESM-modus van Jest of door de api terug naar CommonJS te zetten, tegen de Nest 12-standaard in. (c) Vitest + oxlint zoals de CLI het maakt: snelst, maar twee linters in de repo. Ruwe scaffold staat op branch `task/0.5-api`.
 - [ ] **Productie-hosting**: (a) Hetzner VPS + Coolify/Docker (goedkoop, EU, meer zelf beheren), (b) Railway/Render EU-regio (simpel, duurder), of (c) web op Vercel + api/db elders. Beslissen vóór fase 12. Tot die tijd blijft alles Docker-portable.
 - [ ] **XP-voorstel** (fase 8): de agent schrijft een tabel met XP per actie, de levelcurve en het dagplafond (in `packages/shared`), bouwt die alvast, en de eigenaar keurt goed of stuurt bij.
 - [ ] **Puntensysteem voorspellingen**: de agent schrijft in fase 5 een voorstel (tijdgewogen Brier-score t.o.v. de massa) en bouwt dat alvast. De eigenaar keurt het goed of stuurt bij.
@@ -186,8 +186,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [x] 0.2 pnpm workspace (`pnpm-workspace.yaml`) + Turborepo (`turbo.json`) met de taken `dev`, `build`, `lint`, `typecheck`, `test`
 - [x] 0.3 `packages/config`: gedeelde `tsconfig.base.json` (strict), ESLint flat config en Prettier config
 - [x] 0.4 `apps/web` aanmaken met `npx sv create` (SvelteKit, TypeScript, Tailwind v4, ESLint, Prettier, Vitest, Playwright)
-- [ ] 0.5 `apps/api` aanmaken met de Nest CLI (strict TS, Jest), aangesloten op de gedeelde config
-- [ ] 0.6 `packages/shared` aanmaken (zod, build via tsup: ESM + CJS met types) en vanuit web en api importeren als smoke test
+- [x] 0.5 `apps/api` aanmaken met de Nest CLI (strict TS, ESM, Vitest), aangesloten op de gedeelde config
+- [ ] 0.6 `packages/shared` aanmaken (zod, build via tsup: ESM met types) en vanuit web en api importeren als smoke test
 - [ ] 0.7 `docker-compose.yml`: postgres, postgres-test, redis, mailpit en minio, met healthchecks en named volumes
 - [ ] 0.8 `.env.example` in de root en per app. Env-validatie met zod in api en web
 - [x] 0.9 husky + lint-staged (prettier + eslint op staged files). **Let op:** husky verandert `core.hooksPath`, waardoor de huidige lokale `.git/hooks/post-commit` (Drive-kopie van PLAN.md) stopt. Zet die daarom over naar een husky `post-commit` die `node scripts/sync-drive.mjs` draait: kopieert PLAN.md naar de map uit de env-variabele `GUESSHIVE_DRIVE_DIR`, en doet niets als die niet bestaat. Controleer daarna dat de Drive-kopie na een commit bijgewerkt is
@@ -215,7 +215,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 1.7 `health`-module: `/health` controleert db en redis
 - [ ] 1.8 Redis-module + BullMQ-basis (queue-registratie, eerste dummy-job)
 - [ ] 1.9 Rate-limiting (`@nestjs/throttler` met Redis-storage), standaardlimiet + per-route overrides
-- [ ] 1.10 Testopzet: Jest-integratietests tegen de `postgres-test`-container (reset per testbestand)
+- [ ] 1.10 Testopzet: Vitest-integratietests tegen de `postgres-test`-container (reset per testbestand)
 - [ ] 1.11 Feature-flag-systeem (per omgeving en per gebruiker, tabel `FeatureFlag`), nodig voor 7b.6 en fase 13 (voorheen 13.2)
 - [ ] 1.12 Instellingenregister (`AppSetting`) in `packages/shared`: per instelling een key, type, standaardwaarde, **harde min/max**, categorie en uitleg NL+EN, gevalideerd met zod. De api cachet waarden in Redis en ververst na een wijziging; elke wijziging gaat in de `AuditLog` (oud → nieuw). Wettelijke en privacyregels (16+, 18+, k = 10, bewaartermijnen) zijn constanten in de code, nooit een instelling. Latere taken registreren hun eigen instellingen hier
 
