@@ -41,6 +41,7 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Git | Branch per fase + per taak (AGENTS.md §5). Agent commit, merget en pusht zelf. `main` alleen na een afgeronde fase |
 | Webframework | **SvelteKit 3** (sinds 1-10-2026 de standaard; versie 2 krijgt alleen onderhoud) met Svelte 5 runes, config in `vite.config.ts` (eigenaar, 18-11-2026) |
 | Shared-pakket | `packages/shared` wordt gebouwd met **tsup** (eigenaar, 18-11-2026). Omdat de api ook ESM is, is ESM met types genoeg; CommonJS-uitvoer is niet meer nodig |
+| Lokale S3-opslag | **SeaweedFS** in docker compose, omdat MinIO geen Docker-images meer publiceert; productie blijft Cloudflare R2 (eigenaar, 19-11-2026) |
 | Api-tooling | De api volgt NestJS 12: **ESM-only**, tests met **Vitest** (zoals web en shared), linten met de **gedeelde ESLint-config** in plaats van oxlint (eigenaar, 19-11-2026; ADR 0002) |
 | Dependency-updates | **Renovate** (eigenaar, 18-11-2026). De agent zet `renovate.json` klaar; de eigenaar installeert de Renovate GitHub-app op de repo |
 | ID's | **UUIDv7** als primaire sleutel (native Postgres-`uuid`, op tijd sorteerbaar); publieke URL's krijgen daarnaast een korte id (eigenaar, 18-11-2026; ADR in taak 1.2) |
@@ -188,7 +189,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [x] 0.4 `apps/web` aanmaken met `npx sv create` (SvelteKit, TypeScript, Tailwind v4, ESLint, Prettier, Vitest, Playwright)
 - [x] 0.5 `apps/api` aanmaken met de Nest CLI (strict TS, ESM, Vitest), aangesloten op de gedeelde config
 - [x] 0.6 `packages/shared` aanmaken (zod, build via tsup: ESM met types) en vanuit web en api importeren als smoke test
-- [ ] 0.7 `docker-compose.yml`: postgres, postgres-test, redis, mailpit en minio, met healthchecks en named volumes
+- [x] 0.7 `docker-compose.yml`: postgres, postgres-test, redis, mailpit en seaweedfs (S3, in plaats van MinIO), met healthchecks en named volumes
+  - *Notitie (19-11):* Postgres 18 (heeft `uuidv7()` ingebouwd), op hostpoort **5440** (test: **5441**) zodat het naast andere lokale projecten op 5432 kan draaien. S3 op `localhost:8333`. Alle poorten alleen op 127.0.0.1; aan te passen via de root-`.env`.
 - [x] 0.8 `.env.example` in de root en per app. Env-validatie met zod in api en web
   - *Notitie (19-11):* de api valideert met `parseEnv` uit `@guesshive/shared` (fouten noemen de variabele, nooit de waarde). De web-app gebruikt de ingebouwde env-validatie van SvelteKit 3 (`src/env.ts` met `defineEnvVars` en zod-schema's, uitlezen via `$app/env/private`). Let op: SvelteKit 3 heeft `$lib` vervangen door `#lib` (met extensie, bijv. `#lib/foo.js`) en `$env/*` door `$app/env/*`.
 - [x] 0.9 husky + lint-staged (prettier + eslint op staged files). **Let op:** husky verandert `core.hooksPath`, waardoor de huidige lokale `.git/hooks/post-commit` (Drive-kopie van PLAN.md) stopt. Zet die daarom over naar een husky `post-commit` die `node scripts/sync-drive.mjs` draait: kopieert PLAN.md naar de map uit de env-variabele `GUESSHIVE_DRIVE_DIR`, en doet niets als die niet bestaat. Controleer daarna dat de Drive-kopie na een commit bijgewerkt is
@@ -238,7 +240,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 2.10 Rate limits op login, registratie en magic link
 - [ ] 2.11 Onboarding-gegevens (kort): unieke `username`, `countryCode` (voorstel via IP-geolocatie, gebruiker bevestigt), interesses, plus akkoord voorwaarden + 16+-bevestiging. Regio, geboortedatum en geslacht zijn optioneel en worden later via `PATCH /me` aangevuld (zie 6.9)
 - [ ] 2.14 Gast-stem afronden: een "pending vote/skip" (vraag-id, optie(s), zekerheid) die vóór aanmelden is gekozen, wordt na aanmelden/onboarding één keer server-side ingediend (gevalideerd alsof de gebruiker het nu doet, de vraag moet nog open zijn)
-- [ ] 2.12 `GET/PATCH /me`, avatar-upload naar S3/MinIO als `MediaAsset` (status `PENDING`, resize, max-grootte, alleen JPG/PNG/WebP, EXIF eraf). Tot 9b.4 er is, worden geüploade avatars niet getoond (standaard-avatar)
+- [ ] 2.12 `GET/PATCH /me`, avatar-upload naar S3 (lokaal SeaweedFS) als `MediaAsset` (status `PENDING`, resize, max-grootte, alleen JPG/PNG/WebP, EXIF eraf). Tot 9b.4 er is, worden geüploade avatars niet getoond (standaard-avatar)
 - [ ] 2.13 Tests: registratie → verificatie → login, magic link, guard-gedrag en rate limits
 
 **Acceptatie:** een nieuwe gebruiker kan zich op alle 4 manieren aanmelden, onboarding afronden en `/me` ophalen. Niet-ingelogd krijgt 401 op beschermde routes.

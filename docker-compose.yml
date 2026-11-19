@@ -1,20 +1,23 @@
 # Local development services for GuessHive (see AGENTS.md §4).
 # All ports bind to 127.0.0.1 only. Credentials below are local-only defaults;
 # override them in a root .env file if you like (never commit it).
+# Postgres uses 5440/5441 on the host (not 5432) so it can run next to other
+# local projects; change them with POSTGRES_PORT / POSTGRES_TEST_PORT.
 name: guesshive
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-guesshive}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guesshive}
       POSTGRES_DB: ${POSTGRES_DB:-guesshive}
     ports:
-      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+      - '127.0.0.1:${POSTGRES_PORT:-5440}:5432'
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # Postgres 18 images keep their data under /var/lib/postgresql/<major>/.
+      - postgres-data:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
       interval: 5s
@@ -24,16 +27,16 @@ services:
   # Throwaway database for integration tests. Data lives in tmpfs, so every
   # container restart starts empty and tests stay fast.
   postgres-test:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: guesshive
       POSTGRES_PASSWORD: guesshive
       POSTGRES_DB: guesshive_test
     ports:
-      - '127.0.0.1:${POSTGRES_TEST_PORT:-5433}:5432'
+      - '127.0.0.1:${POSTGRES_TEST_PORT:-5441}:5432'
     tmpfs:
-      - /var/lib/postgresql/data
+      - /var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U guesshive -d guesshive_test']
       interval: 5s
@@ -71,21 +74,22 @@ services:
       timeout: 3s
       retries: 10
 
-  # S3-compatible storage (stands in for Cloudflare R2). Console: http://localhost:9001
-  minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+  # S3-compatible storage (stands in for Cloudflare R2). MinIO no longer ships
+  # Docker images, so local dev uses SeaweedFS (owner decision, 2026-11-19).
+  # S3 endpoint: http://localhost:8333
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.54
     restart: unless-stopped
-    command: ['server', '/data', '--console-address', ':9001']
+    command: ['server', '-dir=/data', '-s3', '-s3.port=8333']
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-guesshive}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-guesshive-dev-only}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-guesshive}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-guesshive-dev-only}
     ports:
-      - '127.0.0.1:${MINIO_API_PORT:-9000}:9000'
-      - '127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001'
+      - '127.0.0.1:${S3_PORT:-8333}:8333'
     volumes:
-      - minio-data:/data
+      - seaweedfs-data:/data
     healthcheck:
-      test: ['CMD', 'mc', 'ready', 'local']
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8333/healthz']
       interval: 10s
       timeout: 5s
       retries: 10
@@ -94,4 +98,4 @@ volumes:
   postgres-data:
   redis-data:
   mailpit-data:
-  minio-data:
+  seaweedfs-data:
