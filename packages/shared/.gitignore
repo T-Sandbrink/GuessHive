@@ -1,1 +1,3 @@
 /dist
+# Temporary file tsup writes while it loads its config
+tsup.config.bundled_*

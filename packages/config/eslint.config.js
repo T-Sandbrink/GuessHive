@@ -14,6 +14,8 @@ export const ignores = {
     '**/coverage/**',
     '**/playwright-report/**',
     '**/test-results/**',
+    // Temporary bundled config tsup writes during a build (can race with lint).
+    '**/*.bundled_*.mjs',
   ],
 };
 
