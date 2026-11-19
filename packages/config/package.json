@@ -10,7 +10,8 @@
     "./prettier": "./prettier.config.js"
   },
   "scripts": {
-    "lint": "eslint ."
+    "lint": "prettier --check . && eslint .",
+    "format": "prettier --write ."
   },
   "peerDependencies": {
     "eslint": "^10.0.0",
@@ -20,12 +21,12 @@
   "dependencies": {
     "@eslint/js": "^10.0.1",
     "eslint-config-prettier": "^10.1.8",
-    "globals": "^17.14.0",
-    "typescript-eslint": "^8.73.0"
+    "globals": "catalog:",
+    "typescript-eslint": "catalog:"
   },
   "devDependencies": {
-    "eslint": "^10",
-    "prettier": "^3.10.1",
-    "typescript": "~6.0.3"
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
   }
 }
