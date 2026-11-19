@@ -47,6 +47,8 @@ const base = [
   {
     ...tseslint.configs.disableTypeChecked,
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
+    // Svelte runes modules (*.svelte.js) keep type-aware rules.
+    ignores: ['**/*.svelte.js'],
   },
   prettier,
 ];

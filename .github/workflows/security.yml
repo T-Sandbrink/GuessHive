@@ -38,12 +38,13 @@ jobs:
             "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
           tar -xzf gitleaks.tar.gz gitleaks
-      # Scans every commit on every branch (merge-heavy history included), not
-      # only the pushed range, and fails if it scanned nothing.
+      # Scans every commit on every branch, merge commits included (their diff
+      # against the first parent), not only the pushed range, and fails if it
+      # scanned nothing.
       - name: Scan full git history
         shell: bash
         run: |
-          ./gitleaks git --redact --verbose --exit-code 1 --log-opts="--all" . 2>&1 | tee gitleaks.log
+          ./gitleaks git --redact --verbose --exit-code 1 --log-opts="--all --diff-merges=first-parent" . 2>&1 | tee gitleaks.log
           grep -Eq '[1-9][0-9]* commits scanned' gitleaks.log || {
             echo "gitleaks scanned 0 commits; the scan is not working" >&2
             exit 1

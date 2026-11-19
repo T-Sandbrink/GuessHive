@@ -3,12 +3,16 @@ packages:
   - packages/*
 
 # Do not install a package version until it has been public for a day, so a
-# hijacked release is usually caught before it reaches the lockfile.
+# hijacked release is usually caught before it reaches the lockfile. This also
+# applies to security fixes; for a truly urgent one, add that package to
+# minimumReleaseAgeExclude in the same PR and remove it again afterwards.
 minimumReleaseAge: 1440
 
 # One version range per shared dependency; packages refer to it as "catalog:".
 catalog:
   '@types/node': ^24.19.2
+  '@vitest/browser-playwright': ^5.1.1
+  '@vitest/coverage-v8': ^5.1.1
   eslint: ^10.15.0
   globals: ^17.14.0
   prettier: ^3.10.1

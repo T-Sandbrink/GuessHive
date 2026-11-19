@@ -44,7 +44,7 @@ How we work: [AGENTS.md](AGENTS.md) (conventions and rules) and [PLAN.md](PLAN.m
    pnpm dev
    ```
 
-5. **Open the app**: web on <http://localhost:5173>, api on <http://localhost:3000>.
+5. **Open the app**: web on <http://localhost:5173>, api on <http://localhost:3000> (it answers 404 until the health endpoint arrives in phase 1).
 
 ### Local services
 

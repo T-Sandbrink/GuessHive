@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /** Where the api runs during local development (`pnpm dev`). */
-export const LOCAL_API_URL = 'http://localhost:3000';
+export const LOCAL_API_URL = 'http://127.0.0.1:3000';
 
 /**
  * Internal base URL of the NestJS api, used by server load functions and the /api proxy.

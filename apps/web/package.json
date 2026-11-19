@@ -28,7 +28,7 @@
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tailwindcss/vite": "^4.3.5",
     "@types/node": "catalog:",
-    "@vitest/browser-playwright": "^5.1.0",
+    "@vitest/browser-playwright": "catalog:",
     "eslint": "catalog:",
     "eslint-plugin-svelte": "^3.24.1",
     "globals": "catalog:",
