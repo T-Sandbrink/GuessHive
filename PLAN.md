@@ -14,13 +14,12 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** 1.1 (fase 1, nog niet begonnen; maak eerst `phase/1-database` vanaf `main`)
-- **Klaar:** fase 0 volledig: gemerged in `main` met tag `phase-0-done` (19-11-2026). Phase gate gedraaid, zie "Phase review" onder fase 0.
-- **Nog te doen in deze taak:** —
-- **Review gate nog nodig:** — (vanaf fase 1 per taak, AGENTS.md §6)
-- **Niet-gecommitte bestanden:** — (lokaal `.env` met `GUESSHIVE_DRIVE_DIR`, bewust gitignored)
-- **Open punten:** eigenaarsacties in "Open vragen": systeem-PATH repareren, Node 24 LTS installeren, Renovate-app installeren. Taak 1.2 (UUIDv7) is al beslist en hoeft alleen nog een ADR.
-- **Hervat op:** —
+- **Huidige taak:** 1.5 (globale Nest-setup), vanaf `phase/1-database`. 1.2 en 1.3 (en dus 1.4) wachten op de eigenaarsvraag "Waar worden UUIDv7-id's gemaakt?" in "Open vragen"; tot dan gaat de agent door met 1.5–1.9.
+- **Klaar:** fase 0 (tag `phase-0-done`), taak 1.1 (Prisma 7 + PrismaService, review gate gehaald, gemerged in `phase/1-database`).
+- **Review gate nog nodig:** —
+- **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored)
+- **Open punten:** eigenaarsvragen in "Open vragen": UUIDv7-generatie (blokkeert 1.2/1.3), TLS in productie, systeem-PATH repareren, Node 24 LTS installeren, Renovate-app installeren.
+- **Hervat op:** — (sessie loopt)
 
 ---
 
@@ -162,6 +161,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Node 24 LTS op deze pc** (eigenaar, aanbevolen): hier draait Node 25.0.0, een niet-LTS-versie die al end-of-life is, terwijl CI en `.nvmrc` Node 24 gebruiken. De NestJS-tools melden daarom "Unsupported engine". Installeer Node 24 LTS (nodejs.org, of `winget install OpenJS.NodeJS.LTS`), zodat lokaal en CI gelijk lopen. Daarna `pnpm install` opnieuw draaien.
 - [ ] **Systeem-PATH repareren** (eigenaar, nu): in het systeem-PATH van deze pc staat de kapotte regel `C:\Program Files (x86)\cloudflared"` (met een losse `"`). Turborepo stopt daardoor met zoeken naar pnpm (`Unable to find package manager binary`), dus `pnpm dev`/`pnpm lint` werken niet en geplande runs lopen vast. Oplossing: Windows-instellingen › "Omgevingsvariabelen voor het systeem bewerken" › Systeemvariabelen › Path › verwijder alleen die regel (de goede `C:\Program Files (x86)\cloudflared\` blijft staan) › OK, en start daarna de Claude-app opnieuw. Tot die tijd zet de agent de npm-map vooraan in zijn eigen PATH.
 - [ ] **Renovate GitHub-app installeren** (eigenaar, na taak 0.10b): installeer de gratis Renovate-app op `T-Sandbrink/GuessHive` (github.com/apps/renovate). De config `renovate.json` staat dan al klaar.
+- [ ] **Waar worden UUIDv7-id's gemaakt?** (blokkeert taak 1.2 en 1.3, gevonden door de db-reviewer bij 1.1). AGENTS.md zegt "PostgreSQL 16+", maar de ingebouwde functie `uuidv7()` bestaat pas vanaf Postgres 18 (lokaal draait al 18). (A) **In de database** (`uuidv7()` als standaardwaarde) en AGENTS.md wordt "PostgreSQL 18+": één bron van waarheid, ook seeds en losse SQL krijgen vanzelf een id; productie-hosting moet dan PG 18 bieden (de grote EU-aanbieders doen dat). (B) **In de app** (Prisma maakt de id): werkt op PG 16–18, maar alles wat buiten Prisma om schrijft moet zelf een id meegeven. (C) Beide: zelfde PG 18-eis als A, weinig extra winst. **Aanbeveling: A**, tenzij je verwacht dat de hosting op PG 16/17 uitkomt; dan B. Tot het antwoord er is, gaat de agent door met 1.5–1.9.
+- [ ] **TLS verplicht voor de databaseverbinding in productie?** (vóór fase 12, gevonden door de security-reviewer bij 1.1). (A) In productie eist de api `sslmode=verify-full` in `DATABASE_URL` (behalve socket/localhost), anders start hij niet. (B) Alleen TLS eisen als de host niet privé/lokaal is. (C) Aan de hostingconfiguratie overlaten, geen controle in code. **Aanbeveling: A**: veiligste standaard, één regel validatie, en een fout valt direct op in plaats van stil onversleuteld te draaien. Blokkeert nu niets.
 - [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), analytics-dienst Umami of Plausible (fase 11), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor de AI-check op nieuwe vragen (fase 9) en de AI-nieuwssuggesties (na lancering), en eventueel een moderatie-API (bijv. OpenAI) als tweede keuze voor de AI-check (fase 9). Elke dienst die vragen te zien krijgt, heeft een verwerkersovereenkomst nodig.
 
 ---
@@ -216,7 +217,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 1 — Database & API-skelet
 
-- [ ] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
+- [x] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
+  - *Notitie (19-11):* Prisma 7.10.1 met pg-adapter. Review gate: code- en security-reviewer PASS; db-reviewer vond 1 🔴 (`db:generate` hing via `prisma.config.ts` af van de shared-build) en 1 🟡 (geen connect-timeout op de pg-pool), code-reviewer 1 🟡 (pool sloot vóór lopende requests klaar waren). Alle drie opgelost: `prisma.config.ts` is zelfstandig, pool met 5 s connect-timeout en max 10, `$disconnect` in `onApplicationShutdown`. Re-review PASS. Open 🔵-nits voor later: `db:deploy`-script (1.3/1.10), env één keer parsen via een Nest-provider, test op `enableShutdownHooks`, Sentry-scrubber voor pg-fouten (fase 11), schema-engine-binary cachen in CI. Twee eigenaarsvragen in "Open vragen" (UUIDv7-generatie, TLS in productie).
 - [ ] 1.2 ID-strategie vastleggen in een ADR: UUIDv7 (gekozen door de eigenaar, 18-11-2026), met een korte publieke id voor URL's
 - [ ] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken, inclusief de verdienmodel-velden en -tabellen (voorheen 13.1: `User.plan`, `premiumUntil`, `Subscription`, `Partner`, `EmbedKey`, `Sponsor`, `Question.sponsorId`), alles standaard uit
 - [ ] 1.4 Seed-script: alle landen (ISO), met `localEnabled` aan voor NL en BE en regio's voor NL en BE; de 10 categorieën uit "Lancering & landen" (NL+EN, Politiek met `sensitive = true`); 1 admin-gebruiker; ~20 voorbeeldvragen van alle types (development-data, niet de startcontent)

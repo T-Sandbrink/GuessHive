@@ -7,6 +7,11 @@ export const apiEnvSchema = z.object({
   /** Interface to listen on. Loopback by default; containers set 0.0.0.0. */
   HOST: z.string().min(1).default('127.0.0.1'),
   PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
+  /** PostgreSQL connection string (local default: docker compose on port 5440). */
+  DATABASE_URL: z
+    .string()
+    .trim()
+    .pipe(z.url({ protocol: /^postgres(ql)?$/ })),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

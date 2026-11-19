@@ -99,7 +99,7 @@ pnpm format               # prettier --write over the whole repo
 pnpm --filter web exec playwright install chromium   # one-time: browser for web tests
 ```
 
-Added in phase 1: `pnpm --filter api db:migrate` (create/apply a Prisma migration) and `pnpm --filter api db:seed` (seed local data).
+Database (Prisma 7, `apps/api`): `pnpm --filter api db:generate` (regenerate the client into `src/generated`, gitignored; turbo runs it before build/lint/typecheck/test), `pnpm --filter api db:migrate` (create/apply a migration; needs `apps/api/.env` with `DATABASE_URL`). Added in task 1.4: `pnpm --filter api db:seed`.
 
 On Windows, Turborepo needs `pnpm` resolvable on `PATH` without hitting a malformed entry first (see README "Troubleshooting").
 
