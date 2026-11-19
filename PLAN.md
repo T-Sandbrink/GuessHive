@@ -14,13 +14,13 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** 1.1 (fase 1, nog niet begonnen; maak eerst `phase/1-database` vanaf `main`)
-- **Klaar:** fase 0 volledig: gemerged in `main` met tag `phase-0-done` (19-11-2026). Phase gate gedraaid, zie "Phase review" onder fase 0.
-- **Nog te doen in deze taak:** —
-- **Review gate nog nodig:** — (vanaf fase 1 per taak, AGENTS.md §6)
-- **Niet-gecommitte bestanden:** — (lokaal `.env` met `GUESSHIVE_DRIVE_DIR`, bewust gitignored)
-- **Open punten:** eigenaarsacties in "Open vragen": systeem-PATH repareren, Node 24 LTS installeren, Renovate-app installeren. Taak 1.2 (UUIDv7) is al beslist en hoeft alleen nog een ADR.
-- **Hervat op:** —
+- **Huidige taak:** 1.1 `[~]` op branch `task/1.1-prisma` (gepusht), vanaf `phase/1-database`.
+- **Klaar:** fase 0 (tag `phase-0-done`). Taak 1.1 is gebouwd en gecommit (65f1080): Prisma 7.10.1 met pg-adapter, `PrismaService` (verbindt + `SELECT 1` bij opstarten, sluit af via `enableShutdownHooks`), globale `PrismaModule`, `DATABASE_URL` in het env-schema, turbo-taak `db:generate`. Lint, typecheck, test, build en e2e zijn groen; handmatig getest tegen Postgres in Docker (start OK, en stopt direct als de database onbereikbaar is).
+- **Nog te doen in deze taak:** de review gate (AGENTS.md §6): `test-writer`, daarna parallel `code-reviewer`, `db-reviewer` (schema.prisma) en `security-reviewer` (env, nieuwe dependencies). Bevindingen oplossen, `[x]` zetten, mergen in `phase/1-database`, pushen.
+- **Review gate nog nodig:** ja, zie hierboven.
+- **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored)
+- **Open punten:** eigenaarsacties in "Open vragen": systeem-PATH repareren, Node 24 LTS installeren, Renovate-app installeren.
+- **Hervat op:** 19-11-2026 13:15 via `guesshive-resume` (5-uursvenster stond op 69%; de review gate zou boven 90% uitkomen).
 
 ---
 
@@ -216,7 +216,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 1 — Database & API-skelet
 
-- [ ] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
+- [~] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
 - [ ] 1.2 ID-strategie vastleggen in een ADR: UUIDv7 (gekozen door de eigenaar, 18-11-2026), met een korte publieke id voor URL's
 - [ ] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken, inclusief de verdienmodel-velden en -tabellen (voorheen 13.1: `User.plan`, `premiumUntil`, `Subscription`, `Partner`, `EmbedKey`, `Sponsor`, `Question.sponsorId`), alles standaard uit
 - [ ] 1.4 Seed-script: alle landen (ISO), met `localEnabled` aan voor NL en BE en regio's voor NL en BE; de 10 categorieën uit "Lancering & landen" (NL+EN, Politiek met `sensitive = true`); 1 admin-gebruiker; ~20 voorbeeldvragen van alle types (development-data, niet de startcontent)
