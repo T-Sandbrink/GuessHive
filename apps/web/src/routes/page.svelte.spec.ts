@@ -5,7 +5,7 @@ import Page from './+page.svelte';
 
 describe('/+page.svelte', () => {
   it('renders the GuessHive heading', async () => {
-    render(Page);
+    await render(Page);
 
     await expect.element(page.getByRole('heading', { level: 1 })).toHaveTextContent('GuessHive');
   });

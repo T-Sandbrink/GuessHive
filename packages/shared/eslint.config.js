@@ -1,1 +1,8 @@
-export { default } from '@guesshive/config/eslint';
+import base from '@guesshive/config/eslint';
+
+export default [
+  ...base,
+  {
+    languageOptions: { parserOptions: { tsconfigRootDir: import.meta.dirname } },
+  },
+];

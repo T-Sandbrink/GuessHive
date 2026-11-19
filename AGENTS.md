@@ -89,6 +89,7 @@ Keep this section up to date when scripts change. Package filters accept the sho
 pnpm install              # install everything (also sets up the husky git hooks)
 docker compose up -d      # start postgres (:5440), postgres-test (:5441), redis, mailpit, seaweedfs
 pnpm dev                  # run shared (watch) + web (:5173) + api (:3000) via turbo
+pnpm format:check         # prettier --check over the whole repo (root files included; CI runs it)
 pnpm lint                 # prettier --check + eslint in every package
 pnpm typecheck            # tsc / svelte-check in every package
 pnpm test                 # Vitest in every package (web component tests run in Chromium)
@@ -107,7 +108,7 @@ On Windows, Turborepo needs `pnpm` resolvable on `PATH` without hitting a malfor
 1. **Follow `PLAN.md` in order.** Pick the first unchecked task unless the owner says otherwise, and never while PLAN.md "Laatste stand" says building is OFF (see "Master switch" below). Read the whole phase before starting it.
 2. **One task at a time.** Finish it, verify it, tick the box `[x]` in PLAN.md, then move on.
 3. **Definition of done** for every task:
-   - Code compiles: `pnpm typecheck` and `pnpm lint` pass.
+   - Code compiles: `pnpm typecheck`, `pnpm lint` and `pnpm format:check` pass.
    - Tests are written or updated, and `pnpm test` passes.
    - The review gate from §6 has passed, with no open 🔴 findings.
    - UI changes are checked in a browser (desktop and mobile width, light and dark).
@@ -347,7 +348,7 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Env vars are parsed once at startup with a zod schema. Fail fast on missing config. Keep `.env.example` up to date and never commit `.env`.
 - Dates are stored as UTC `timestamptz`. Display them in the user's locale and timezone.
 - Countries use ISO 3166-1 alpha-2 (`NL`, `BE`, `DE`). Regions use ISO 3166-2 (`NL-UT`). Locales use BCP 47 (`nl`, `en`).
-- IDs are `cuid2` or UUIDv7 strings (decided in phase 1 and then used everywhere). Never expose auto-increment ids.
+- IDs are UUIDv7 (native Postgres `uuid`, owner decision), plus a short public id for URLs. Never expose auto-increment ids.
 - Public URLs use slugs plus a short id: `/nl/q/beste-voetballer-ooit-k3x9`.
 
 ### Svelte / SvelteKit

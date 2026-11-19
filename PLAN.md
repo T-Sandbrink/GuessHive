@@ -14,13 +14,14 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** 0.5 (geparkeerd: wacht op keuze testrunner/linter, zie "Open vragen")
-- **Klaar (watchdog-run 19-11-2026 03:15):** 0.9, 0.10, 0.10b en 0.12 gemerged in `phase/0-foundation`. CI (lint/typecheck/test/build) en de Security-workflow (gitleaks, CodeQL, `pnpm audit`) zijn groen op GitHub.
-- **Nog te doen:** 0.5 (ruwe Nest 12-scaffold staat op `task/0.5-api`), 0.6, 0.7 (`docker-compose.yml` staat op `task/0.7-docker`, nog niet getest omdat Docker Desktop niet start), 0.8, 0.10c, 0.11, 0.13. Al deze taken hangen af van 0.5 of van Docker.
-- **Review gate nog nodig:** — (geldt vanaf fase 1, zie 0.10c). Fase-gate van fase 0 nog te doen.
+- **Huidige taak:** fase 0 afronden: phase-gate-fixes mergen, daarna `phase/0-foundation` → `main` met tag `phase-0-done`. Daarna fase 1 (taak 1.1).
+- **Klaar:** alle taken van fase 0; phase gate gedraaid (zie "Phase review" onder fase 0).
+- **Nog te doen in deze taak:** CI groen zien op de gate-fixes, mergen naar `main`, taggen, pushen.
+- **Review gate nog nodig:** — (vanaf fase 1 per taak).
 - **Niet-gecommitte bestanden:** — (lokaal `.env` met `GUESSHIVE_DRIVE_DIR`, bewust gitignored)
-- **Open punten:** de twee vragen bovenaan "Open vragen" (testrunner api; Docker Desktop repareren).
-- **Hervat op:** niet gepland. Status `blocked`: geen taak meer die zonder de eigenaar kan. Zeg in de chat welke optie je kiest, dan gaat het bouwen verder.
+- **Open punten:** eigenaarsacties in "Open vragen": systeem-PATH repareren, Node 24 LTS installeren, Renovate-app installeren.
+- **Hervat op:** — (interactieve sessie werkt door)
+
 ---
 
 ## Vastgelegde beslissingen
@@ -42,6 +43,9 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Webframework | **SvelteKit 3** (sinds 1-10-2026 de standaard; versie 2 krijgt alleen onderhoud) met Svelte 5 runes, config in `vite.config.ts` (eigenaar, 18-11-2026) |
 | Shared-pakket | `packages/shared` wordt gebouwd met **tsup** (eigenaar, 18-11-2026). Omdat de api ook ESM is, is ESM met types genoeg; CommonJS-uitvoer is niet meer nodig |
 | Lokale S3-opslag | **SeaweedFS** in docker compose, omdat MinIO geen Docker-images meer publiceert; productie blijft Cloudflare R2 (eigenaar, 19-11-2026) |
+| Dependency-audit | CI draait een **volledige, blokkerende** `pnpm audit --audit-level high` (ook devDependencies, want de web-app bundelt die in de server). Uitzonderingen die alleen dev-tools raken komen met reden in `pnpm-workspace.yaml` (`auditConfig.ignoreGhsas`). Nieuwe pakketversies worden pas na 1 dag geïnstalleerd (`minimumReleaseAge`), ook beveiligingsupdates; Renovate wacht voor gewone updates 3 dagen. Een echt spoedeisende fix gaat via een eenmalige `minimumReleaseAgeExclude` (eigenaar, 19-11-2026) |
+| tsup | Blijft voorlopig, ook al wordt het niet meer actief onderhouden (opvolger: tsdown). Herzien in fase 1 (eigenaar, 19-11-2026) |
+| GitHub-bescherming | Ruleset op `main` en de `phase-*-done`-tags: geen force-push en niet verwijderen (eigenaar, 19-11-2026) |
 | Api-tooling | De api volgt NestJS 12: **ESM-only**, tests met **Vitest** (zoals web en shared), linten met de **gedeelde ESLint-config** in plaats van oxlint (eigenaar, 19-11-2026; ADR 0002) |
 | Dependency-updates | **Renovate** (eigenaar, 18-11-2026). De agent zet `renovate.json` klaar; de eigenaar installeert de Renovate GitHub-app op de repo |
 | ID's | **UUIDv7** als primaire sleutel (native Postgres-`uuid`, op tijd sorteerbaar); publieke URL's krijgen daarnaast een korte id (eigenaar, 18-11-2026; ADR in taak 1.2) |
@@ -140,7 +144,6 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 
 Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze hier neer.
 
-- [ ] **Docker Desktop start niet** (eigenaar, blokkeert 0.7 en daarna fase 1): Docker Desktop 4.57 stopt bij het opstarten met "initializing Inference manager: listening on unix://…\Docker\run\dockerInference: remove …" (een achtergebleven bestand van Docker Model Runner). Oplossing: Docker Desktop afsluiten (Quit, **niet** "Reset to factory defaults"), het bestand `%LOCALAPPDATA%\Docker\run\dockerInference` verwijderen en Docker Desktop opnieuw starten; zet eventueel in Settings › AI "Docker Model Runner" uit. De agent mag niets buiten de repo verwijderen, dus dit moet jij doen.
 - [ ] **Productie-hosting**: (a) Hetzner VPS + Coolify/Docker (goedkoop, EU, meer zelf beheren), (b) Railway/Render EU-regio (simpel, duurder), of (c) web op Vercel + api/db elders. Beslissen vóór fase 12. Tot die tijd blijft alles Docker-portable.
 - [ ] **XP-voorstel** (fase 8): de agent schrijft een tabel met XP per actie, de levelcurve en het dagplafond (in `packages/shared`), bouwt die alvast, en de eigenaar keurt goed of stuurt bij.
 - [ ] **Puntensysteem voorspellingen**: de agent schrijft in fase 5 een voorstel (tijdgewogen Brier-score t.o.v. de massa) en bouwt dat alvast. De eigenaar keurt het goed of stuurt bij.
@@ -156,6 +159,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Bijzondere persoonsgegevens laten toetsen** (eigenaar, vóór fase 9 en 9b): stemmen op politieke vragen en Dark Corner-vragen over seks, gezondheid of drugs kunnen bijzondere persoonsgegevens zijn (AVG art. 9). Voorstel: uitdrukkelijke toestemming per categorie vóór de eerste stem, strengere toegang, nooit voor sponsors of partners behalve als totaal vanaf 10. Een jurist of privacy-adviseur bevestigt dit, of stuurt bij.
 - [ ] **Moderatorvoorwaarden voor Wachtbijen** (eigenaar, vóór fase 9): de tekst waarmee community-moderatoren akkoord gaan (geheimhouding, neutraliteit, geen privégegevens delen, gevolgen van misbruik).
 - [ ] **Vrijspeel-schema** (fase 8b): de agent stelt voor welke bij-onderdelen, kleuren en titels bij welk level of welke badge horen (de mockup "Jouw bij" toont een eerste idee), en de eigenaar keurt goed of stuurt bij.
+- [ ] **Node 24 LTS op deze pc** (eigenaar, aanbevolen): hier draait Node 25.0.0, een niet-LTS-versie die al end-of-life is, terwijl CI en `.nvmrc` Node 24 gebruiken. De NestJS-tools melden daarom "Unsupported engine". Installeer Node 24 LTS (nodejs.org, of `winget install OpenJS.NodeJS.LTS`), zodat lokaal en CI gelijk lopen. Daarna `pnpm install` opnieuw draaien.
 - [ ] **Systeem-PATH repareren** (eigenaar, nu): in het systeem-PATH van deze pc staat de kapotte regel `C:\Program Files (x86)\cloudflared"` (met een losse `"`). Turborepo stopt daardoor met zoeken naar pnpm (`Unable to find package manager binary`), dus `pnpm dev`/`pnpm lint` werken niet en geplande runs lopen vast. Oplossing: Windows-instellingen › "Omgevingsvariabelen voor het systeem bewerken" › Systeemvariabelen › Path › verwijder alleen die regel (de goede `C:\Program Files (x86)\cloudflared\` blijft staan) › OK, en start daarna de Claude-app opnieuw. Tot die tijd zet de agent de npm-map vooraan in zijn eigen PATH.
 - [ ] **Renovate GitHub-app installeren** (eigenaar, na taak 0.10b): installeer de gratis Renovate-app op `T-Sandbrink/GuessHive` (github.com/apps/renovate). De config `renovate.json` staat dan al klaar.
 - [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), analytics-dienst Umami of Plausible (fase 11), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor de AI-check op nieuwe vragen (fase 9) en de AI-nieuwssuggesties (na lancering), en eventueel een moderatie-API (bijv. OpenAI) als tweede keuze voor de AI-check (fase 9). Elke dienst die vragen te zien krijgt, heeft een verwerkersovereenkomst nodig.
@@ -198,12 +202,15 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [x] 0.10 GitHub Actions CI: install (met cache) → lint → typecheck → test → build, op elke push/PR
 - [x] 0.10b Security in CI vanaf dag 1: secret-scanning (gitleaks), CodeQL (JS/TS), `pnpm audit --prod` (faalt bij high/critical), Renovate (`renovate.json`)
   - *Notitie (19-11):* workflow `security.yml` draait ook wekelijks (maandag). Renovate-PR's richten zich op `main`; de agent merget die nooit zelf, dat doet de eigenaar.
+  - *Notitie (19-11, phase gate):* gitleaks scant nu de **volledige geschiedenis** met de CLI (de action scande door onze `--no-ff`-merges 0 commits) en faalt als hij niets scant. Audit is nu volledig en blokkerend (zie "Dependency-audit"). Alle actions zijn op commit-SHA vastgezet.
 - [x] 0.10c Subagents in `.claude/agents/` controleren tegen de echte scripts en paden. De review gate (AGENTS.md §6) geldt vanaf fase 1
 - [x] 0.11 `README.md`: korte projectbeschrijving + "lokaal draaien in 5 stappen"
 - [x] 0.12 ADR `docs/decisions/0001-stack.md`: waarom SvelteKit + NestJS + Prisma (samenvatting van de keuzes hierboven)
 - [x] 0.13 `AGENTS.md` §4 (commands) controleren en bijwerken naar de echte scripts
 
 **Acceptatie:** `pnpm install && docker compose up -d && pnpm dev` start web (localhost:5173) en api (localhost:3000). `pnpm lint typecheck test build` is groen, lokaal en in CI.
+
+**Phase review (19-11-2026):** security-reviewer 1 🔴 (gitleaks scande 0 commits) en 3 🟡, code-reviewer 0 🔴 en 7 🟡; alles opgelost in `task/0-gate-fixes`, niets uitgesteld. Twee eigenaarsbeslissingen genomen (volledige audit, tsup houden) en een ruleset op `main` ingesteld. Acceptatie lokaal gecontroleerd: `pnpm dev` gaf web 200 op :5173 en api op :3000.
 
 ---
 

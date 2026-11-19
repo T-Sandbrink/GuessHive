@@ -4,6 +4,8 @@ import { z } from 'zod';
 /** Every environment variable the api reads. Keep apps/api/.env.example in sync. */
 export const apiEnvSchema = z.object({
   NODE_ENV: nodeEnvSchema,
+  /** Interface to listen on. Loopback by default; containers set 0.0.0.0. */
+  HOST: z.string().min(1).default('127.0.0.1'),
   PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
 });
 

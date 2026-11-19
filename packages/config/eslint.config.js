@@ -18,17 +18,19 @@ export const ignores = {
 };
 
 /**
- * Base flat config for every GuessHive package (AGENTS.md §7):
- * no `any`, no non-null assertions, no stray console logs.
- * Apps spread this array and add framework-specific configs after it.
+ * Base flat config for every GuessHive package (AGENTS.md §7): type-aware strict rules
+ * (no `any`, no floating promises, no non-null assertions) and no stray console logs.
+ * Packages spread this array, then add `tsconfigRootDir: import.meta.dirname` and
+ * any framework-specific configs after it. Plain JS config files are linted without types.
  */
 const base = [
   ignores,
   js.configs.recommended,
-  ...tseslint.configs.strict,
+  ...tseslint.configs.strictTypeChecked,
   {
     languageOptions: {
       globals: { ...globals.node },
+      parserOptions: { projectService: true },
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
@@ -41,6 +43,12 @@ const base = [
       'no-console': ['error', { allow: ['warn', 'error'] }],
       eqeqeq: ['error', 'always'],
     },
+  },
+  {
+    ...tseslint.configs.disableTypeChecked,
+    files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
+    // Svelte runes modules (*.svelte.js) keep type-aware rules.
+    ignores: ['**/*.svelte.js'],
   },
   prettier,
 ];

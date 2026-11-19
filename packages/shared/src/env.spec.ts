@@ -28,12 +28,12 @@ describe('parseEnv', () => {
   it('never includes the rejected values in the error', () => {
     let message = '';
     try {
-      parseEnv(schema, { SECRET: 'short' });
+      parseEnv(schema, { SECRET: 'x7Qv' });
     } catch (error) {
       message = error instanceof Error ? error.message : String(error);
     }
 
     expect(message).toContain('SECRET');
-    expect(message).not.toContain('short');
+    expect(message).not.toContain('x7Qv');
   });
 });

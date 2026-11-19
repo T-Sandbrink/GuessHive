@@ -1,13 +1,7 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
-// for information about these interfaces
+// App.Locals, App.PageData and friends are declared here once they exist (phase 2+).
 declare global {
-  namespace App {
-    // interface Error {}
-    // interface Locals {}
-    // interface PageData {}
-    // interface PageState {}
-    // interface Platform {}
-  }
+  namespace App {}
 }
 
 export {};

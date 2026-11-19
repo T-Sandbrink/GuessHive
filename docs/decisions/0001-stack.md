@@ -21,7 +21,7 @@ type-safe end to end, cheap to host in the EU, and boring enough to maintain for
 | UI | Tailwind CSS v4 + shadcn-svelte, self-hosted fonts | Fast iteration on a custom, playful look without a heavy component framework |
 | i18n | Paraglide JS, locale-prefixed routes | Type-safe, tree-shaken messages; NL + EN at launch |
 | API | NestJS, REST + OpenAPI | Clear module boundaries per domain, guards for default-deny authorization, mature ecosystem (throttler, BullMQ, swagger) |
-| Validation | zod schemas in `packages/shared` (built with tsup, ESM + CJS) | One schema for web forms, api DTOs and OpenAPI |
+| Validation | zod schemas in `packages/shared` (built with tsup, ESM + types; see ADR 0002) | One schema for web forms, api DTOs and OpenAPI |
 | Database | PostgreSQL + Prisma Migrate | Relational data with strong constraints (one vote per user per question); readable schema and safe migrations |
 | IDs | UUIDv7 primary keys + short public ids for URLs | Time-sortable, native `uuid` type, no exposed counters (details in a later ADR, task 1.2) |
 | Cache / jobs | Redis + BullMQ | Rate limits, leaderboards, scheduled resolution and notifications |

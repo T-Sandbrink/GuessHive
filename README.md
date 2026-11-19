@@ -44,7 +44,7 @@ How we work: [AGENTS.md](AGENTS.md) (conventions and rules) and [PLAN.md](PLAN.m
    pnpm dev
    ```
 
-5. **Open the app**: web on <http://localhost:5173>, api on <http://localhost:3000>.
+5. **Open the app**: web on <http://localhost:5173>, api on <http://localhost:3000> (it answers 404 until the health endpoint arrives in phase 1).
 
 ### Local services
 
@@ -69,6 +69,9 @@ pnpm build       # production build
 ```
 
 ## Troubleshooting
+
+- **Turborepo telemetry.** Turborepo sends anonymous usage data by default. CI turns it off;
+  locally, run `pnpm turbo telemetry disable` once.
 
 - **`Unable to find package manager binary: cannot find binary path` (Windows).** Turborepo
   could not find `pnpm` on your `PATH`. Check that `where pnpm` finds it, and look for a broken

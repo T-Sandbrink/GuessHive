@@ -20,8 +20,8 @@
     "@guesshive/config": "workspace:*",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.1",
-    "prettier": "^3.10.1",
-    "turbo": "2.11.13"
+    "prettier": "catalog:",
+    "turbo": "2.11.12"
   },
   "type": "module"
 }
