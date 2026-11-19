@@ -1,12 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
 import {
+  type CanActivate,
   Controller,
+  ForbiddenException,
   Get,
   HttpStatus,
   type INestApplication,
+  Injectable,
   NotFoundException,
   Param,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import request from 'supertest';
 import { type App } from 'supertest/types.js';
@@ -14,6 +19,27 @@ import { AppModule } from '../src/app.module.js';
 import { ApiException } from '../src/common/api.exception.js';
 import { REQUEST_ID_HEADER } from '../src/logging/logger.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+
+@Injectable()
+class DenyGuard implements CanActivate {
+  canActivate(): boolean {
+    throw new ForbiddenException('user jan@example.com is not a member');
+  }
+}
+
+@Injectable()
+class FalseGuard implements CanActivate {
+  canActivate(): boolean {
+    return false;
+  }
+}
+
+@Injectable()
+class UnauthenticatedGuard implements CanActivate {
+  canActivate(): boolean {
+    throw new UnauthorizedException('missing session cookie abc123');
+  }
+}
 
 @Controller('test-errors')
 class ErrorsController {
@@ -30,6 +56,24 @@ class ErrorsController {
   @Get('crash/:secret')
   crash(@Param('secret') secret: string): never {
     throw new Error(`database password is ${secret}`);
+  }
+
+  @Get('guarded')
+  @UseGuards(DenyGuard)
+  guarded(): string {
+    return 'unreachable';
+  }
+
+  @Get('guard-false')
+  @UseGuards(FalseGuard)
+  guardFalse(): string {
+    return 'unreachable';
+  }
+
+  @Get('unauthenticated')
+  @UseGuards(UnauthenticatedGuard)
+  unauthenticated(): string {
+    return 'unreachable';
   }
 }
 
@@ -77,6 +121,30 @@ describe('App (e2e)', () => {
   it('replaces HttpException messages with a fixed message per code', async () => {
     const res = await request(app.getHttpServer()).get('/test-errors/http').expect(404);
     expect(res.body).toEqual({ code: 'NOT_FOUND', message: 'Not found' });
+  });
+
+  it('answers a guard that throws ForbiddenException with 403 FORBIDDEN', async () => {
+    const res = await request(app.getHttpServer()).get('/test-errors/guarded').expect(403);
+    expect(res.body).toEqual({ code: 'FORBIDDEN', message: 'Forbidden' });
+  });
+
+  it('answers a guard that returns false with 403 FORBIDDEN', async () => {
+    const res = await request(app.getHttpServer()).get('/test-errors/guard-false').expect(403);
+    expect(res.body).toEqual({ code: 'FORBIDDEN', message: 'Forbidden' });
+  });
+
+  it('answers a guard that throws UnauthorizedException with 401 UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer()).get('/test-errors/unauthenticated').expect(401);
+    expect(res.body).toEqual({ code: 'UNAUTHORIZED', message: 'Unauthorized' });
+  });
+
+  it('answers a malformed JSON body with 400 BAD_REQUEST', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/nope')
+      .set('Content-Type', 'application/json')
+      .send('{"broken":');
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ code: 'BAD_REQUEST', message: 'Bad request' });
   });
 
   it('hides unexpected errors behind INTERNAL_ERROR', async () => {

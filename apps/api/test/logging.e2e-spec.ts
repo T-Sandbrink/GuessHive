@@ -1,6 +1,16 @@
 import { Writable } from 'node:stream';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { Controller, Get, type INestApplication, Module, Param } from '@nestjs/common';
+import {
+  type CanActivate,
+  Controller,
+  ForbiddenException,
+  Get,
+  type INestApplication,
+  Injectable,
+  Module,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
@@ -11,11 +21,29 @@ import { loadEnv } from '../src/env.js';
 import { pinoParams } from '../src/logging/logger.module.js';
 import { RouteTemplateInterceptor } from '../src/logging/route-template.interceptor.js';
 
+@Injectable()
+class DenyGuard implements CanActivate {
+  canActivate(): boolean {
+    throw new ForbiddenException('user jan@example.com may not see group secret-group');
+  }
+}
+
 @Controller('questions')
 class QuestionsController {
   @Get(':id')
   get(@Param('id') id: string): { id: string } {
     return { id };
+  }
+
+  @Get(':id/private')
+  @UseGuards(DenyGuard)
+  private(@Param('id') id: string): { id: string } {
+    return { id };
+  }
+
+  @Get(':id/crash')
+  crash(): never {
+    throw new Error('database password is hunter2');
   }
 }
 
@@ -90,6 +118,36 @@ describe('request logging', () => {
     ]) {
       expect(all).not.toContain(secret);
     }
+  });
+
+  it('logs the route template when a guard rejects the request', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/questions/k3x9/private?token=secret-token')
+      .expect(403);
+    expect(res.body).toEqual({ code: 'FORBIDDEN', message: 'Forbidden' });
+
+    const entries = lines.map((line) => JSON.parse(line) as Record<string, unknown>);
+    const entry = entries.find((log) => log['req'] !== undefined);
+    expect(entry?.['route']).toBe('/questions/:id/private');
+    expect(entry?.['res']).toEqual({ statusCode: 403 });
+    expect(entry?.['level']).toBe(40);
+
+    const all = lines.join('\n');
+    expect(all.match(/"route":/g)).toHaveLength(1);
+    for (const secret of ['k3x9', 'secret-token', 'jan@example.com', 'secret-group']) {
+      expect(all).not.toContain(secret);
+    }
+  });
+
+  it('logs 5xx responses at error level without the error message in the response', async () => {
+    const res = await request(app.getHttpServer()).get('/questions/boom/crash').expect(500);
+    expect(res.body).toEqual({ code: 'INTERNAL_ERROR', message: 'Internal server error' });
+
+    const entry = lines
+      .map((line) => JSON.parse(line) as Record<string, unknown>)
+      .find((log) => log['req'] !== undefined);
+    expect(entry?.['route']).toBe('/questions/:id/crash');
+    expect(entry?.['level']).toBe(50);
   });
 
   it('logs unmatched routes without their path', async () => {
