@@ -348,6 +348,7 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 
 ### Svelte / SvelteKit
 - Svelte 5 runes only. Components are `PascalCase.svelte`.
+- SvelteKit 3 specifics: import shared code from `#lib/...` with the file extension (`#lib/foo.js`; `$lib` no longer exists). Declare env vars in `apps/web/src/env.ts` (`defineEnvVars` with zod schemas) and read them from `$app/env/private` or `$app/env/public`. Hook types come from `@sveltejs/kit/hooks`. Look up the Kit 3 docs before using any other `$app/*` or `@sveltejs/kit/*` API.
 - Data loading happens in `+page.server.ts` / `+layout.server.ts`. Use form actions with progressive enhancement (`use:enhance`) for mutations where possible.
 - Put shared UI in `apps/web/src/lib/components/`, with shadcn-svelte primitives under `lib/components/ui/`.
 - Every public page sets `<title>`, a meta description, canonical, hreflang alternates and OG tags. Private pages (Dark Corner, groups, settings, notifications, admin) set `noindex`, stay out of the sitemap, and use a generic OG image without question text or results.
