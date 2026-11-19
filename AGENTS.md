@@ -35,7 +35,7 @@ Product principles. Use them to decide when something is unclear:
 | Cache/jobs | Redis + BullMQ (rate limits, leaderboards, scheduled jobs, notifications) |
 | Auth | Better Auth in the api: Google, Apple, email magic link, email + password |
 | Email | Resend (prod), Mailpit (local) |
-| Files | S3-compatible storage (Cloudflare R2), MinIO locally |
+| Files | S3-compatible storage (Cloudflare R2), SeaweedFS locally (MinIO no longer ships Docker images) |
 | Bot protection | Cloudflare Turnstile on sign-up and sensitive actions |
 | Tests | Vitest everywhere (web, shared, api), Playwright (e2e). The api is ESM-only, like NestJS 12 itself (ADR 0002) |
 | Quality | ESLint + Prettier, husky + lint-staged, GitHub Actions CI |
@@ -59,7 +59,7 @@ GuessHive/
 │  └─ decisions/           ADRs: NNNN-short-title.md
 ├─ .claude/
 │  └─ agents/              specialised subagents (see §6)
-├─ docker-compose.yml      postgres, redis, mailpit, minio for local dev
+├─ docker-compose.yml      postgres, postgres-test, redis, mailpit, seaweedfs for local dev
 ├─ AGENTS.md               this file
 ├─ CLAUDE.md               points to this file
 └─ PLAN.md                 the roadmap and task checklist
@@ -87,7 +87,7 @@ These become available after PLAN.md phase 0. Keep this section up to date when 
 
 ```bash
 pnpm install              # install everything
-docker compose up -d      # start postgres, redis, mailpit, minio
+docker compose up -d      # start postgres, postgres-test, redis, mailpit, seaweedfs
 pnpm dev                  # run web + api in watch mode (turbo)
 pnpm lint                 # eslint all packages
 pnpm typecheck            # tsc / svelte-check all packages
