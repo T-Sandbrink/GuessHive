@@ -187,7 +187,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [x] 0.3 `packages/config`: gedeelde `tsconfig.base.json` (strict), ESLint flat config en Prettier config
 - [x] 0.4 `apps/web` aanmaken met `npx sv create` (SvelteKit, TypeScript, Tailwind v4, ESLint, Prettier, Vitest, Playwright)
 - [x] 0.5 `apps/api` aanmaken met de Nest CLI (strict TS, ESM, Vitest), aangesloten op de gedeelde config
-- [ ] 0.6 `packages/shared` aanmaken (zod, build via tsup: ESM met types) en vanuit web en api importeren als smoke test
+- [x] 0.6 `packages/shared` aanmaken (zod, build via tsup: ESM met types) en vanuit web en api importeren als smoke test
 - [ ] 0.7 `docker-compose.yml`: postgres, postgres-test, redis, mailpit en minio, met healthchecks en named volumes
 - [ ] 0.8 `.env.example` in de root en per app. Env-validatie met zod in api en web
 - [x] 0.9 husky + lint-staged (prettier + eslint op staged files). **Let op:** husky verandert `core.hooksPath`, waardoor de huidige lokale `.git/hooks/post-commit` (Drive-kopie van PLAN.md) stopt. Zet die daarom over naar een husky `post-commit` die `node scripts/sync-drive.mjs` draait: kopieert PLAN.md naar de map uit de env-variabele `GUESSHIVE_DRIVE_DIR`, en doet niets als die niet bestaat. Controleer daarna dat de Drive-kopie na een commit bijgewerkt is

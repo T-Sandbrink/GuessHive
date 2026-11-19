@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@guesshive/config": "workspace:*",
+    "@guesshive/shared": "workspace:*",
     "@playwright/test": "^1.65.1",
     "@sveltejs/adapter-node": "^6.0.2",
     "@sveltejs/kit": "^3.3.1",
