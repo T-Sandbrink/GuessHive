@@ -189,7 +189,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [x] 0.5 `apps/api` aanmaken met de Nest CLI (strict TS, ESM, Vitest), aangesloten op de gedeelde config
 - [x] 0.6 `packages/shared` aanmaken (zod, build via tsup: ESM met types) en vanuit web en api importeren als smoke test
 - [ ] 0.7 `docker-compose.yml`: postgres, postgres-test, redis, mailpit en minio, met healthchecks en named volumes
-- [ ] 0.8 `.env.example` in de root en per app. Env-validatie met zod in api en web
+- [x] 0.8 `.env.example` in de root en per app. Env-validatie met zod in api en web
+  - *Notitie (19-11):* de api valideert met `parseEnv` uit `@guesshive/shared` (fouten noemen de variabele, nooit de waarde). De web-app gebruikt de ingebouwde env-validatie van SvelteKit 3 (`src/env.ts` met `defineEnvVars` en zod-schema's, uitlezen via `$app/env/private`). Let op: SvelteKit 3 heeft `$lib` vervangen door `#lib` (met extensie, bijv. `#lib/foo.js`) en `$env/*` door `$app/env/*`.
 - [x] 0.9 husky + lint-staged (prettier + eslint op staged files). **Let op:** husky verandert `core.hooksPath`, waardoor de huidige lokale `.git/hooks/post-commit` (Drive-kopie van PLAN.md) stopt. Zet die daarom over naar een husky `post-commit` die `node scripts/sync-drive.mjs` draait: kopieert PLAN.md naar de map uit de env-variabele `GUESSHIVE_DRIVE_DIR`, en doet niets als die niet bestaat. Controleer daarna dat de Drive-kopie na een commit bijgewerkt is
   - *Notitie (19-11):* de Drive-map staat lokaal in de gitignored root-`.env` (`GUESSHIVE_DRIVE_DIR`, zie `.env.example`); de oude `.git/hooks/post-commit` draait niet meer. Getest: na een commit is de Drive-kopie gelijk aan PLAN.md.
 - [x] 0.10 GitHub Actions CI: install (met cache) → lint → typecheck → test → build, op elke push/PR
