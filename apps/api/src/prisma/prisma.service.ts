@@ -17,6 +17,8 @@ export const POOL_MAX = 10;
 export class PrismaService extends PrismaClient implements OnModuleInit, OnApplicationShutdown {
   constructor(@Inject(API_ENV) env: ApiEnv) {
     super({
+      // Short error messages without the rendered query and its argument values.
+      errorFormat: 'minimal',
       adapter: new PrismaPg({
         connectionString: env.DATABASE_URL,
         // pg defaults to no connect timeout, so an unreachable host would hang the

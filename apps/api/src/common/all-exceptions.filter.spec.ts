@@ -19,8 +19,8 @@ import {
 import type { HttpAdapterHost } from '@nestjs/core';
 import { API_ERROR_CODES } from '@guesshive/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { routeTemplate } from '../logging/logger.module.js';
-import { AllExceptionsFilter, toErrorResponse } from './all-exceptions.filter.js';
+import { routeTemplate } from '../logging/route-template.js';
+import { AllExceptionsFilter, describeError, toErrorResponse } from './all-exceptions.filter.js';
 import { ApiException } from './api.exception.js';
 
 describe('toErrorResponse', () => {
@@ -133,21 +133,57 @@ describe('toErrorResponse', () => {
   });
 });
 
+describe('describeError', () => {
+  it('keeps type, code and stack frames but never the message', () => {
+    const error = Object.assign(new Error('invalid input for jan@example.com'), { code: 'P2002' });
+    const described = describeError(error);
+    expect(described).toMatchObject({ errType: 'Error', errCode: 'P2002' });
+    expect(described['frames']).toEqual(expect.arrayContaining([expect.stringMatching(/^at /)]));
+    expect(JSON.stringify(described)).not.toContain('jan@example.com');
+  });
+
+  it('describes non-Error throwables by type only', () => {
+    expect(describeError('secret string')).toEqual({ errType: 'string' });
+    expect(describeError({ password: 'x' })).toEqual({ errType: 'object' });
+  });
+});
+
+describe('toErrorResponse with non-error statuses', () => {
+  it.each([200, 302, 600])('maps an HttpException with status %i to 500', (status) => {
+    expect(toErrorResponse(new HttpException('x', status))).toEqual({
+      status: 500,
+      body: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
+    });
+  });
+
+  it('maps an ApiException with a 2xx status to 500', () => {
+    expect(toErrorResponse(new ApiException(HttpStatus.OK, 'CONFLICT', 'x')).status).toBe(500);
+  });
+});
+
 describe('AllExceptionsFilter', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  function setup(route?: { path?: unknown }) {
+  function setup(
+    route?: { path?: unknown },
+    options: { type?: string; headersSent?: boolean } = {},
+  ) {
     const reply = vi.fn();
-    const adapterHost = { httpAdapter: { reply } } as unknown as HttpAdapterHost;
+    const end = vi.fn();
+    const isHeadersSent = vi.fn(() => options.headersSent ?? false);
+    const adapterHost = {
+      httpAdapter: { reply, end, isHeadersSent },
+    } as unknown as HttpAdapterHost;
     const req = { route } as unknown as IncomingMessage;
     const res = {};
     const host = {
+      getType: () => options.type ?? 'http',
       switchToHttp: () => ({ getRequest: () => req, getResponse: () => res }),
     } as unknown as ArgumentsHost;
     const logError = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
-    return { filter: new AllExceptionsFilter(adapterHost), reply, req, res, host, logError };
+    return { filter: new AllExceptionsFilter(adapterHost), reply, end, req, res, host, logError };
   }
 
   it('replies with the mapped status and body', () => {
@@ -163,12 +199,15 @@ describe('AllExceptionsFilter', () => {
     expect(logError).not.toHaveBeenCalled();
   });
 
-  it('logs the stack of unexpected errors', () => {
+  it('logs unexpected errors without their message', () => {
     const { filter, host, logError } = setup();
-    const error = new Error('kaboom');
-    filter.catch(error, host);
+    filter.catch(new Error('database password is hunter2'), host);
     expect(logError).toHaveBeenCalledOnce();
-    expect(logError).toHaveBeenCalledWith(error.stack);
+    expect(logError).toHaveBeenCalledWith(
+      expect.objectContaining({ errType: 'Error' }),
+      'Unhandled error',
+    );
+    expect(JSON.stringify(logError.mock.calls)).not.toContain('hunter2');
   });
 
   it('logs 5xx HttpExceptions too', () => {
@@ -177,10 +216,10 @@ describe('AllExceptionsFilter', () => {
     expect(logError).toHaveBeenCalledOnce();
   });
 
-  it('logs non-Error throwables as strings', () => {
+  it('answers non-Error throwables with INTERNAL_ERROR', () => {
     const { filter, host, logError, reply, res } = setup();
     filter.catch('plain string', host);
-    expect(logError).toHaveBeenCalledWith('plain string');
+    expect(logError).toHaveBeenCalledWith({ errType: 'string' }, 'Unhandled error');
     expect(reply).toHaveBeenCalledWith(
       res,
       { code: 'INTERNAL_ERROR', message: 'Internal server error' },
@@ -192,5 +231,21 @@ describe('AllExceptionsFilter', () => {
     const { filter, host, req } = setup({ path: '/questions/:id' });
     filter.catch(new ForbiddenException(), host);
     expect(routeTemplate(req)).toBe('/questions/:id');
+  });
+
+  it('only ends the response when headers were already sent', () => {
+    const { filter, host, reply, end, res } = setup(undefined, { headersSent: true });
+    filter.catch(new Error('late'), host);
+    expect(reply).not.toHaveBeenCalled();
+    expect(end).toHaveBeenCalledWith(res);
+  });
+
+  it('rethrows in non-HTTP contexts instead of replying', () => {
+    const { filter, host, reply } = setup(undefined, { type: 'rpc' });
+    const error = new Error('job failed');
+    expect(() => {
+      filter.catch(error, host);
+    }).toThrow(error);
+    expect(reply).not.toHaveBeenCalled();
   });
 });

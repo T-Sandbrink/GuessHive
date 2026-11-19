@@ -6,7 +6,7 @@ import {
   type NestInterceptor,
 } from '@nestjs/common';
 import type { Observable } from 'rxjs';
-import { rememberRouteTemplate } from './logger.module.js';
+import { rememberRouteTemplate } from './route-template.js';
 
 /** Stores the matched route template on the request, for the request log line. */
 @Injectable()

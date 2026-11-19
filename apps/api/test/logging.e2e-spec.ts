@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
-import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
+import { Logger, LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 import request from 'supertest';
 import { type App } from 'supertest/types.js';
 import { AllExceptionsFilter } from '../src/common/all-exceptions.filter.js';
@@ -81,7 +81,8 @@ describe('request logging', () => {
 
     const moduleRef = await Test.createTestingModule({ imports: [LoggingTestModule] }).compile();
     app = moduleRef.createNestApplication();
-    app.useLogger(false);
+    // Route Nest's own Logger (used by the exception filter) to the same pino stream.
+    app.useLogger(app.get(Logger));
     await app.init();
   });
 
@@ -98,7 +99,7 @@ describe('request logging', () => {
 
     const entry = lines
       .map((line) => JSON.parse(line) as Record<string, unknown>)
-      .find((log) => log['req'] !== undefined);
+      .find((log) => log['res'] !== undefined);
     expect(entry).toBeDefined();
     expect(entry?.['req']).toEqual({ id: expect.any(String) as unknown, method: 'GET' });
     expect(entry?.['route']).toBe('/questions/:id');
@@ -127,7 +128,7 @@ describe('request logging', () => {
     expect(res.body).toEqual({ code: 'FORBIDDEN', message: 'Forbidden' });
 
     const entries = lines.map((line) => JSON.parse(line) as Record<string, unknown>);
-    const entry = entries.find((log) => log['req'] !== undefined);
+    const entry = entries.find((log) => log['res'] !== undefined);
     expect(entry?.['route']).toBe('/questions/:id/private');
     expect(entry?.['res']).toEqual({ statusCode: 403 });
     expect(entry?.['level']).toBe(40);
@@ -139,15 +140,19 @@ describe('request logging', () => {
     }
   });
 
-  it('logs 5xx responses at error level without the error message in the response', async () => {
+  it('logs 5xx responses at error level without the error message anywhere', async () => {
     const res = await request(app.getHttpServer()).get('/questions/boom/crash').expect(500);
     expect(res.body).toEqual({ code: 'INTERNAL_ERROR', message: 'Internal server error' });
 
     const entry = lines
       .map((line) => JSON.parse(line) as Record<string, unknown>)
-      .find((log) => log['req'] !== undefined);
+      .find((log) => log['res'] !== undefined);
     expect(entry?.['route']).toBe('/questions/:id/crash');
     expect(entry?.['level']).toBe(50);
+
+    const all = lines.join('\n');
+    expect(all).toContain('Unhandled error');
+    expect(all).not.toContain('hunter2');
   });
 
   it('logs unmatched routes without their path', async () => {

@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http';
 import type { CallHandler, ExecutionContext } from '@nestjs/common';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
-import { routeTemplate } from './logger.module.js';
+import { routeTemplate } from './route-template.js';
 import { RouteTemplateInterceptor } from './route-template.interceptor.js';
 
 function context(type: string, req: IncomingMessage) {

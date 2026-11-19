@@ -2,12 +2,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Options } from 'pino-http';
 import { describe, expect, it } from 'vitest';
 import { type ApiEnv, loadEnv } from '../env.js';
-import {
-  pinoParams,
-  REQUEST_ID_HEADER,
-  rememberRouteTemplate,
-  routeTemplate,
-} from './logger.module.js';
+import { pinoParams, REQUEST_ID_HEADER } from './logger.module.js';
+import { rememberRouteTemplate, routeTemplate } from './route-template.js';
 
 const baseEnv = loadEnv({ DATABASE_URL: 'postgresql://u:p@localhost/db' });
 

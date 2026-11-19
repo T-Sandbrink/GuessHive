@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * Machine-readable error codes in every api error body (`{ code, message }`, AGENTS.md §7).
  * The web app maps a code to a translated message; `message` is English and for developers only.
@@ -20,8 +22,10 @@ export const API_ERROR_CODES = [
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
-/** The JSON body of every api error response. */
-export interface ApiErrorBody {
-  code: ApiErrorCode;
-  message: string;
-}
+/** The JSON body of every api error response; the web app validates it at the boundary. */
+export const apiErrorBodySchema = z.object({
+  code: z.enum(API_ERROR_CODES),
+  message: z.string(),
+});
+
+export type ApiErrorBody = z.infer<typeof apiErrorBodySchema>;

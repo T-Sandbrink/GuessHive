@@ -6,39 +6,10 @@ import { LoggerModule as PinoLoggerModule, type Params } from 'nestjs-pino';
 import { API_ENV } from '../config/config.module.js';
 import type { ApiEnv } from '../env.js';
 import { RouteTemplateInterceptor } from './route-template.interceptor.js';
+import { routeTemplate } from './route-template.js';
 
 /** Response header that carries the request id, so a user-reported error can be found in the logs. */
 export const REQUEST_ID_HEADER = 'X-Request-Id';
-
-/** Where the matched route template is stored on the request for the log line. */
-const ROUTE_TEMPLATE = Symbol('routeTemplate');
-
-interface RoutedRequest extends IncomingMessage {
-  route?: { path?: unknown };
-  [ROUTE_TEMPLATE]?: string;
-}
-
-/**
- * Records the matched route template (`/questions/:id`) on the request. Called while the
- * Nest handler runs (interceptor, exception filter), because when pino-http logs at
- * response end, Express 5 reports its own wildcard middleware route instead.
- */
-export function rememberRouteTemplate(req: IncomingMessage): void {
-  const routed = req as RoutedRequest;
-  const path = routed.route?.path;
-  // Wildcard paths are catch-alls (Nest's own not-found route), not a matched endpoint.
-  if (typeof path === 'string' && !path.includes('*')) {
-    routed[ROUTE_TEMPLATE] = path;
-  }
-}
-
-/**
- * The route template for the log line, never the raw URL: query strings and path
- * parameters can hold tokens or personal data (AGENTS.md §8).
- */
-export function routeTemplate(req: IncomingMessage): string {
-  return (req as RoutedRequest)[ROUTE_TEMPLATE] ?? 'unmatched';
-}
 
 /**
  * pino-http options. Logs only request id, method, route template, status and response
@@ -67,7 +38,8 @@ export function pinoParams(env: ApiEnv): Params {
         return 'info';
       },
       serializers: {
-        // Serialized when the request starts, before routing: the route comes from customProps.
+        // Serialized when the request starts, before routing; customSuccessObject and
+        // customErrorObject add the route at response end.
         req: (req: { id: unknown; method: unknown }) => ({ id: req.id, method: req.method }),
         res: (res: { statusCode: unknown }) => ({ statusCode: res.statusCode }),
       },
