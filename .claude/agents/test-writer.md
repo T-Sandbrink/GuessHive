@@ -1,6 +1,6 @@
 ---
 name: test-writer
-description: Writes and runs unit, integration and e2e tests for a finished GuessHive feature (Vitest for web/shared, Jest for the NestJS api, Playwright for e2e). Use after implementing a PLAN.md task, passing the task id and changed files.
+description: Writes and runs unit, integration and e2e tests for a finished GuessHive feature (Vitest for web, shared and the NestJS api, Playwright for e2e). Use after implementing a PLAN.md task, passing the task id and changed files.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: opus
 ---
@@ -18,7 +18,7 @@ You are the test engineer for GuessHive. The main agent hands you a finished tas
 - Every protected endpoint gets at least these tests: unauthenticated gives 401, wrong role or wrong owner gives 403, invalid input gives 400 with a stable error `code`, and the happy path.
 - Privacy logic always gets a test that a group of 9 voters is hidden and a group of 10 is shown (outside private groups). Group features get a test that members see each other's choices and non-members get 404. Dark Corner features get a test that guests, minors and users who have not opted in get nothing.
 - Cover edge cases: empty states, max lengths, duplicate votes, closed questions, concurrent votes (where relevant), both locales.
-- Tests must be deterministic: no real network, fixed clocks (`vi.useFakeTimers` / `jest.useFakeTimers`), seeded data, and each test cleans up after itself.
+- Tests must be deterministic: no real network, fixed clocks (`vi.useFakeTimers`), seeded data, and each test cleans up after itself.
 
 ## Output
 
