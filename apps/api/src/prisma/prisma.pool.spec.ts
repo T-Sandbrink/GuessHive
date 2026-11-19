@@ -15,6 +15,7 @@ vi.mock('@prisma/adapter-pg', async (importOriginal) => {
 });
 
 const { CONNECTION_TIMEOUT_MS, POOL_MAX, PrismaService } = await import('./prisma.service.js');
+const { loadEnv } = await import('../env.js');
 
 describe('PrismaService pool config', () => {
   afterEach(() => {
@@ -23,7 +24,7 @@ describe('PrismaService pool config', () => {
 
   it('sets a connect timeout and an explicit pool size', () => {
     vi.stubEnv('DATABASE_URL', 'postgresql://user:pass@localhost:5440/guesshive');
-    new PrismaService();
+    new PrismaService(loadEnv());
 
     expect(CONNECTION_TIMEOUT_MS).toBeGreaterThan(0);
     expect(adapterOptions.at(-1)).toMatchObject({

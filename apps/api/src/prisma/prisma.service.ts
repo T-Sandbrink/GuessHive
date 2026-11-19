@@ -1,6 +1,7 @@
-import { Injectable, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { loadEnv } from '../env.js';
+import { API_ENV } from '../config/config.module.js';
+import type { ApiEnv } from '../env.js';
 import { PrismaClient } from '../generated/prisma/client.js';
 
 /** How long to wait for a new database connection before failing. */
@@ -14,10 +15,10 @@ export const POOL_MAX = 10;
  */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnApplicationShutdown {
-  constructor() {
+  constructor(@Inject(API_ENV) env: ApiEnv) {
     super({
       adapter: new PrismaPg({
-        connectionString: loadEnv().DATABASE_URL,
+        connectionString: env.DATABASE_URL,
         // pg defaults to no connect timeout, so an unreachable host would hang the
         // startup probe forever instead of failing fast.
         connectionTimeoutMillis: CONNECTION_TIMEOUT_MS,
