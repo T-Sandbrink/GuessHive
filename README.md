@@ -70,6 +70,9 @@ pnpm build       # production build
 
 ## Troubleshooting
 
+- **Turborepo telemetry.** Turborepo sends anonymous usage data by default. CI turns it off;
+  locally, run `pnpm turbo telemetry disable` once.
+
 - **`Unable to find package manager binary: cannot find binary path` (Windows).** Turborepo
   could not find `pnpm` on your `PATH`. Check that `where pnpm` finds it, and look for a broken
   entry in your system `PATH` (for example a stray `"`): Turborepo stops searching at the first

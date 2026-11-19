@@ -347,7 +347,7 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Env vars are parsed once at startup with a zod schema. Fail fast on missing config. Keep `.env.example` up to date and never commit `.env`.
 - Dates are stored as UTC `timestamptz`. Display them in the user's locale and timezone.
 - Countries use ISO 3166-1 alpha-2 (`NL`, `BE`, `DE`). Regions use ISO 3166-2 (`NL-UT`). Locales use BCP 47 (`nl`, `en`).
-- IDs are `cuid2` or UUIDv7 strings (decided in phase 1 and then used everywhere). Never expose auto-increment ids.
+- IDs are UUIDv7 (native Postgres `uuid`, owner decision), plus a short public id for URLs. Never expose auto-increment ids.
 - Public URLs use slugs plus a short id: `/nl/q/beste-voetballer-ooit-k3x9`.
 
 ### Svelte / SvelteKit
