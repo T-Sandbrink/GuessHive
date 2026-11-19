@@ -27,6 +27,31 @@ describe('loadEnv (api)', () => {
     );
   });
 
+  it('accepts postgres URLs with query parameters and socket paths', () => {
+    const withParams = 'postgresql://user:pass@db.example.com:5432/guesshive?sslmode=require';
+    expect(loadEnv({ DATABASE_URL: withParams }).DATABASE_URL).toBe(withParams);
+    const socket = 'postgresql:///guesshive?host=/var/run/postgresql';
+    expect(loadEnv({ DATABASE_URL: socket }).DATABASE_URL).toBe(socket);
+  });
+
+  it.each([
+    ['an empty string', ''],
+    ['an http URL', 'http://localhost:5440/guesshive'],
+    ['a look-alike scheme (suffix)', 'postgresqlx://localhost/db'],
+    ['a look-alike scheme (prefix)', 'xpostgres://localhost/db'],
+    ['a URL without a scheme', 'localhost:5440/guesshive'],
+  ])('rejects %s as DATABASE_URL', (_label, value) => {
+    expect(() => loadEnv({ DATABASE_URL: value })).toThrow(/DATABASE_URL/);
+  });
+
+  it('never echoes DATABASE_URL credentials in the validation error', () => {
+    expect(() =>
+      loadEnv({ DATABASE_URL: 'mysql://admin:s3cr3t-pw@db.internal/guesshive' }),
+    ).toThrow(
+      expect.objectContaining({ message: expect.not.stringContaining('s3cr3t-pw') as unknown }),
+    );
+  });
+
   it('fails fast on invalid values', () => {
     expect(() => loadEnv({ DATABASE_URL, PORT: '70000' })).toThrow(/PORT/);
     expect(() => loadEnv({ DATABASE_URL, NODE_ENV: 'staging' })).toThrow(/NODE_ENV/);
