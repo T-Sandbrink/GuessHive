@@ -1,12 +1,10 @@
 import { HttpStatus } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
+import { apiErrorBodySchema, VALIDATION_ISSUE_LIMITS } from '@guesshive/shared';
 import { z } from 'zod';
 import { toErrorResponse } from './all-exceptions.filter.js';
 import {
   createValidationPipe,
-  MAX_PATH_DEPTH,
-  MAX_PATH_KEY_LENGTH,
-  MAX_VALIDATION_ISSUES,
   toValidationIssues,
   ValidationFailedException,
 } from './validation.js';
@@ -58,15 +56,29 @@ describe('validation pipe', () => {
     ]);
   });
 
-  it('never echoes the submitted value in the response body', async () => {
+  it('never echoes the submitted value, even when the issue message quotes it', async () => {
     const secret = 'jan@example.com-hunter2';
-    const schema = z.object({ email: z.email(), pick: z.enum(['a', 'b']) });
-    const error = await rejection({ email: secret, pick: secret }, schema);
+    const schema = z.object({
+      email: z.email({ error: (issue) => `bad email ${String(issue.input)}` }),
+    });
+    const error = await rejection({ email: secret }, schema);
     const { status, body } = toErrorResponse(error);
     expect(status).toBe(400);
-    expect(body.code).toBe('VALIDATION_FAILED');
-    expect(body.message).toBe('Validation failed');
+    expect(body).toEqual({
+      code: 'VALIDATION_FAILED',
+      message: 'Validation failed',
+      issues: [{ path: ['email'], code: 'invalid_format' }],
+    });
     expect(JSON.stringify(body)).not.toContain(secret);
+    expect(apiErrorBodySchema.parse(body)).toEqual(body);
+  });
+
+  it('never echoes user-chosen record keys', async () => {
+    const schema = z.object({ scores: z.record(z.string(), z.number()) });
+    const error = await rejection({ scores: { 'jan@example.com': 'x' } }, schema);
+    const { body } = toErrorResponse(error);
+    expect(body.issues).toEqual([{ path: ['scores', '*'], code: 'invalid_type' }]);
+    expect(JSON.stringify(body)).not.toContain('jan@example.com');
   });
 
   it('reports a non-object body at the root path', async () => {
@@ -76,20 +88,28 @@ describe('validation pipe', () => {
 });
 
 describe('toValidationIssues', () => {
-  it(`keeps at most ${String(MAX_VALIDATION_ISSUES)} issues`, () => {
+  const { maxIssues, maxPathDepth } = VALIDATION_ISSUE_LIMITS;
+
+  it(`keeps at most ${String(maxIssues)} issues`, () => {
     const issues = Array.from({ length: 500 }, (_, i) => ({ message: 'x', path: [i] }));
-    expect(toValidationIssues(issues)).toHaveLength(MAX_VALIDATION_ISSUES);
+    expect(toValidationIssues(issues)).toHaveLength(maxIssues);
   });
 
-  it('cuts long path keys and deep paths', () => {
-    const longKey = 'k'.repeat(1000);
+  it('cuts deep paths', () => {
     const deep = Array.from({ length: 100 }, () => 'a');
-    const [first, second] = toValidationIssues([
-      { message: 'x', path: [longKey] },
-      { message: 'x', path: deep },
-    ]);
-    expect(first?.path).toEqual(['k'.repeat(MAX_PATH_KEY_LENGTH)]);
-    expect(second?.path).toHaveLength(MAX_PATH_DEPTH);
+    expect(toValidationIssues([{ message: 'x', path: deep }])[0]?.path).toHaveLength(maxPathDepth);
+  });
+
+  it('replaces keys that are not field names with a placeholder', () => {
+    const keys = ['k'.repeat(65), 'jan@example.com', 'has space', '', Symbol('s'), -1, 1.5, NaN];
+    expect(toValidationIssues([{ message: 'x', path: keys }])[0]?.path).toEqual(
+      keys.map(() => '*'),
+    );
+  });
+
+  it('keeps field names and array indexes', () => {
+    const path = ['title', 'k'.repeat(64), '_x9', 0, 7];
+    expect(toValidationIssues([{ message: 'x', path }])[0]?.path).toEqual(path);
   });
 
   it('unwraps { key } path segments', () => {
