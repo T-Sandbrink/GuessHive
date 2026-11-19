@@ -199,9 +199,9 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [x] 0.10b Security in CI vanaf dag 1: secret-scanning (gitleaks), CodeQL (JS/TS), `pnpm audit --prod` (faalt bij high/critical), Renovate (`renovate.json`)
   - *Notitie (19-11):* workflow `security.yml` draait ook wekelijks (maandag). Renovate-PR's richten zich op `main`; de agent merget die nooit zelf, dat doet de eigenaar.
 - [x] 0.10c Subagents in `.claude/agents/` controleren tegen de echte scripts en paden. De review gate (AGENTS.md §6) geldt vanaf fase 1
-- [ ] 0.11 `README.md`: korte projectbeschrijving + "lokaal draaien in 5 stappen"
+- [x] 0.11 `README.md`: korte projectbeschrijving + "lokaal draaien in 5 stappen"
 - [x] 0.12 ADR `docs/decisions/0001-stack.md`: waarom SvelteKit + NestJS + Prisma (samenvatting van de keuzes hierboven)
-- [ ] 0.13 `AGENTS.md` §4 (commands) controleren en bijwerken naar de echte scripts
+- [x] 0.13 `AGENTS.md` §4 (commands) controleren en bijwerken naar de echte scripts
 
 **Acceptatie:** `pnpm install && docker compose up -d && pnpm dev` start web (localhost:5173) en api (localhost:3000). `pnpm lint typecheck test build` is groen, lokaal en in CI.
 
