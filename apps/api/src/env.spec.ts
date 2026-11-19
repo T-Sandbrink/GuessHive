@@ -34,6 +34,11 @@ describe('loadEnv (api)', () => {
     expect(loadEnv({ DATABASE_URL: socket }).DATABASE_URL).toBe(socket);
   });
 
+  it('trims surrounding whitespace from DATABASE_URL', () => {
+    const url = 'postgresql://user:pass@localhost:5440/guesshive';
+    expect(loadEnv({ DATABASE_URL: `  ${url}\n` }).DATABASE_URL).toBe(url);
+  });
+
   it.each([
     ['an empty string', ''],
     ['an http URL', 'http://localhost:5440/guesshive'],

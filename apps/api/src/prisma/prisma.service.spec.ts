@@ -72,16 +72,16 @@ describe('PrismaService', () => {
     expect(probe).not.toHaveBeenCalled();
   });
 
-  it('closes the pool via onModuleDestroy and surfaces disconnect errors', async () => {
+  it('closes the pool via onApplicationShutdown and surfaces disconnect errors', async () => {
     const moduleRef = await Test.createTestingModule({ imports: [PrismaModule] }).compile();
     const prisma = moduleRef.get(PrismaService);
     const disconnect = vi.spyOn(prisma, '$disconnect').mockResolvedValueOnce();
 
-    await prisma.onModuleDestroy();
+    await prisma.onApplicationShutdown();
     expect(disconnect).toHaveBeenCalledOnce();
 
     disconnect.mockRejectedValueOnce(new Error('pool already closed'));
-    await expect(prisma.onModuleDestroy()).rejects.toThrow('pool already closed');
+    await expect(prisma.onApplicationShutdown()).rejects.toThrow('pool already closed');
   });
 
   it('refuses to start without a valid DATABASE_URL', () => {
