@@ -66,7 +66,7 @@ const INTERNAL_ERROR_RESPONSE = {
 
 /** Only 4xx and 5xx are error statuses; anything else thrown as an error is a bug. */
 function isErrorStatus(status: number): boolean {
-  return status >= 400 && status <= 599;
+  return Number.isInteger(status) && status >= 400 && status <= 599;
 }
 
 /** Maps any thrown value to a status and the `{ code, message }` body (AGENTS.md §7). */
@@ -99,7 +99,11 @@ export function describeError(exception: unknown): Record<string, unknown> {
     return { errType: typeof exception };
   }
   const code = (exception as { code?: unknown }).code;
-  const frames = (exception.stack ?? '')
+  // Drop the "Name: message" header first: a multi-line message could contain a line that
+  // looks like a frame ("    at jan@example.com").
+  const stack = exception.stack ?? '';
+  const header = String(exception);
+  const frames = (stack.startsWith(header) ? stack.slice(header.length) : '')
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line.startsWith('at '));

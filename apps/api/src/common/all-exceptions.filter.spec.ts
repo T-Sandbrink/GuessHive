@@ -142,6 +142,11 @@ describe('describeError', () => {
     expect(JSON.stringify(described)).not.toContain('jan@example.com');
   });
 
+  it('never treats lines of a multi-line message as stack frames', () => {
+    const described = describeError(new Error('bad input\n    at jan@example.com'));
+    expect(JSON.stringify(described)).not.toContain('jan@example.com');
+  });
+
   it('describes non-Error throwables by type only', () => {
     expect(describeError('secret string')).toEqual({ errType: 'string' });
     expect(describeError({ password: 'x' })).toEqual({ errType: 'object' });
@@ -149,7 +154,7 @@ describe('describeError', () => {
 });
 
 describe('toErrorResponse with non-error statuses', () => {
-  it.each([200, 302, 600])('maps an HttpException with status %i to 500', (status) => {
+  it.each([200, 302, 450.5, 600])('maps an HttpException with status %i to 500', (status) => {
     expect(toErrorResponse(new HttpException('x', status))).toEqual({
       status: 500,
       body: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
