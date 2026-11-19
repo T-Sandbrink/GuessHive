@@ -20,7 +20,7 @@ The main agent gives you a diff range, files, or mockup files. Read:
 - `PLAN.md` "UX-beslissingen", "Lancering & landen", "Extra functies" and "Verdienmodel". These are **binding owner decisions**. Flag deviations; never suggest overturning them as a plain finding (use a DECISION NEEDED block instead);
 - `docs/design/`: the local export of the approved design canvas (PLAN.md task 3.0b), the visual reference for colours, tokens and screens.
 
-Use Bash only for read-only or local checks: `git diff`, `pnpm --filter web exec svelte-check`, `pnpm --filter web test`, and the existing Playwright suite (including any screenshot or axe checks it contains). **Never modify files.**
+Use Bash only for read-only or local checks: `git diff`, `pnpm --filter web typecheck` (svelte-check), `pnpm --filter web test`, and the existing Playwright suite (including any screenshot or axe checks it contains). **Never modify files.**
 
 ## Check
 
