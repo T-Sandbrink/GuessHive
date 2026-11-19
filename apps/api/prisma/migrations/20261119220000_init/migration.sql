@@ -117,7 +117,7 @@ CREATE TABLE "User" (
     "plan" "Plan" NOT NULL DEFAULT 'FREE',
     "premiumUntil" TIMESTAMPTZ(6),
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMPTZ(6),
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -146,7 +146,7 @@ CREATE TABLE "FeatureFlag" (
     "key" VARCHAR(64) NOT NULL,
     "enabled" BOOLEAN NOT NULL DEFAULT false,
     "rules" JSONB NOT NULL DEFAULT '{}',
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "FeatureFlag_pkey" PRIMARY KEY ("key")
 );
@@ -156,7 +156,7 @@ CREATE TABLE "AppSetting" (
     "key" VARCHAR(64) NOT NULL,
     "value" JSONB NOT NULL,
     "updatedById" UUID,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "AppSetting_pkey" PRIMARY KEY ("key")
 );
@@ -319,7 +319,7 @@ CREATE TABLE "EmbedKey" (
     "id" UUID NOT NULL DEFAULT uuidv7(),
     "partnerId" UUID NOT NULL,
     "keyHash" VARCHAR(128) NOT NULL,
-    "allowedOrigins" TEXT[],
+    "allowedOrigins" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "revokedAt" TIMESTAMPTZ(6),
 
     CONSTRAINT "EmbedKey_pkey" PRIMARY KEY ("id")
@@ -498,7 +498,7 @@ CREATE TABLE "Vote" (
     "isPublic" BOOLEAN NOT NULL DEFAULT false,
     "countsFrom" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "snapCountry" VARCHAR(2) NOT NULL,
     "snapRegion" VARCHAR(6),
     "snapAgeBucket" VARCHAR(16),
@@ -532,7 +532,7 @@ CREATE TABLE "Forecast" (
     "optionId" UUID,
     "probability" INTEGER NOT NULL,
     "isPublic" BOOLEAN NOT NULL DEFAULT false,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Forecast_pkey" PRIMARY KEY ("id")
 );
@@ -598,7 +598,7 @@ CREATE TABLE "Agreement" (
     "userBId" UUID NOT NULL,
     "sharedCount" INTEGER NOT NULL DEFAULT 0,
     "agreeCount" INTEGER NOT NULL DEFAULT 0,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Agreement_pkey" PRIMARY KEY ("userAId","userBId")
 );
@@ -675,13 +675,13 @@ CREATE TABLE "UserCustomization" (
     "useBeeAsAvatar" BOOLEAN NOT NULL DEFAULT false,
     "accent" VARCHAR(32),
     "startTab" VARCHAR(32),
-    "hiddenCategoryIds" UUID[],
+    "hiddenCategoryIds" UUID[] DEFAULT ARRAY[]::UUID[],
     "textSize" VARCHAR(16),
     "compactCards" BOOLEAN NOT NULL DEFAULT false,
     "celebrations" JSONB NOT NULL DEFAULT '{}',
-    "featuredBadgeIds" UUID[],
+    "featuredBadgeIds" UUID[] DEFAULT ARRAY[]::UUID[],
     "titleBadgeId" UUID,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "UserCustomization_pkey" PRIMARY KEY ("userId")
 );
@@ -764,7 +764,7 @@ CREATE TABLE "AuditLog" (
     "actorId" UUID,
     "action" VARCHAR(64) NOT NULL,
     "targetType" VARCHAR(32) NOT NULL,
-    "targetId" UUID NOT NULL,
+    "targetId" VARCHAR(64) NOT NULL,
     "meta" JSONB NOT NULL DEFAULT '{}',
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -805,13 +805,13 @@ CREATE INDEX "ModerationCase_decidedById_idx" ON "ModerationCase"("decidedById")
 CREATE INDEX "ModerationReview_userId_idx" ON "ModerationReview"("userId");
 
 -- CreateIndex
-CREATE INDEX "FraudSignal_userId_day_idx" ON "FraudSignal"("userId", "day");
-
--- CreateIndex
 CREATE INDEX "FraudSignal_ipHash_day_idx" ON "FraudSignal"("ipHash", "day");
 
 -- CreateIndex
 CREATE INDEX "FraudSignal_createdAt_idx" ON "FraudSignal"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "FraudSignal_userId_day_ipHash_deviceHint_key" ON "FraudSignal"("userId", "day", "ipHash", "deviceHint");
 
 -- CreateIndex
 CREATE INDEX "Group_ownerId_idx" ON "Group"("ownerId");
@@ -1135,13 +1135,13 @@ ALTER TABLE "GroupStake" ADD CONSTRAINT "GroupStake_questionId_fkey" FOREIGN KEY
 ALTER TABLE "GroupStake" ADD CONSTRAINT "GroupStake_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "GroupStake" ADD CONSTRAINT "GroupStake_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "GroupStake" ADD CONSTRAINT "GroupStake_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "GroupResolution" ADD CONSTRAINT "GroupResolution_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "GroupResolution" ADD CONSTRAINT "GroupResolution_proposedOptionId_fkey" FOREIGN KEY ("proposedOptionId") REFERENCES "Option"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "GroupResolution" ADD CONSTRAINT "GroupResolution_proposedOptionId_fkey" FOREIGN KEY ("proposedOptionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "GroupResolution" ADD CONSTRAINT "GroupResolution_proposedById_fkey" FOREIGN KEY ("proposedById") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1153,7 +1153,7 @@ ALTER TABLE "GroupDisputeVote" ADD CONSTRAINT "GroupDisputeVote_questionId_fkey"
 ALTER TABLE "GroupDisputeVote" ADD CONSTRAINT "GroupDisputeVote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "GroupDisputeVote" ADD CONSTRAINT "GroupDisputeVote_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "GroupDisputeVote" ADD CONSTRAINT "GroupDisputeVote_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1213,13 +1213,13 @@ ALTER TABLE "Question" ADD CONSTRAINT "Question_categoryId_fkey" FOREIGN KEY ("c
 ALTER TABLE "Question" ADD CONSTRAINT "Question_imageAssetId_fkey" FOREIGN KEY ("imageAssetId") REFERENCES "MediaAsset"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Question" ADD CONSTRAINT "Question_resolvedOptionId_fkey" FOREIGN KEY ("resolvedOptionId") REFERENCES "Option"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Question" ADD CONSTRAINT "Question_resolvedOptionId_fkey" FOREIGN KEY ("resolvedOptionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Question" ADD CONSTRAINT "Question_resolvedById_fkey" FOREIGN KEY ("resolvedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Question" ADD CONSTRAINT "Question_proposedOptionId_fkey" FOREIGN KEY ("proposedOptionId") REFERENCES "Option"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Question" ADD CONSTRAINT "Question_proposedOptionId_fkey" FOREIGN KEY ("proposedOptionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "QuestionTranslation" ADD CONSTRAINT "QuestionTranslation_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1237,7 +1237,7 @@ ALTER TABLE "Option" ADD CONSTRAINT "Option_questionId_fkey" FOREIGN KEY ("quest
 ALTER TABLE "Option" ADD CONSTRAINT "Option_imageAssetId_fkey" FOREIGN KEY ("imageAssetId") REFERENCES "MediaAsset"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OptionTranslation" ADD CONSTRAINT "OptionTranslation_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "OptionTranslation" ADD CONSTRAINT "OptionTranslation_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Vote" ADD CONSTRAINT "Vote_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1249,7 +1249,7 @@ ALTER TABLE "Vote" ADD CONSTRAINT "Vote_userId_fkey" FOREIGN KEY ("userId") REFE
 ALTER TABLE "VoteChoice" ADD CONSTRAINT "VoteChoice_voteId_fkey" FOREIGN KEY ("voteId") REFERENCES "Vote"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "VoteChoice" ADD CONSTRAINT "VoteChoice_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "VoteChoice" ADD CONSTRAINT "VoteChoice_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "QuestionSkip" ADD CONSTRAINT "QuestionSkip_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1264,19 +1264,19 @@ ALTER TABLE "Forecast" ADD CONSTRAINT "Forecast_questionId_fkey" FOREIGN KEY ("q
 ALTER TABLE "Forecast" ADD CONSTRAINT "Forecast_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Forecast" ADD CONSTRAINT "Forecast_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Forecast" ADD CONSTRAINT "Forecast_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ForecastHistory" ADD CONSTRAINT "ForecastHistory_forecastId_fkey" FOREIGN KEY ("forecastId") REFERENCES "Forecast"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ForecastHistory" ADD CONSTRAINT "ForecastHistory_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ForecastHistory" ADD CONSTRAINT "ForecastHistory_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CrowdSnapshot" ADD CONSTRAINT "CrowdSnapshot_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CrowdSnapshot" ADD CONSTRAINT "CrowdSnapshot_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CrowdSnapshot" ADD CONSTRAINT "CrowdSnapshot_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PredictionScore" ADD CONSTRAINT "PredictionScore_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1288,7 +1288,7 @@ ALTER TABLE "PredictionScore" ADD CONSTRAINT "PredictionScore_userId_fkey" FOREI
 ALTER TABLE "ResultAggregate" ADD CONSTRAINT "ResultAggregate_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ResultAggregate" ADD CONSTRAINT "ResultAggregate_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ResultAggregate" ADD CONSTRAINT "ResultAggregate_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Follow" ADD CONSTRAINT "Follow_followerId_fkey" FOREIGN KEY ("followerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

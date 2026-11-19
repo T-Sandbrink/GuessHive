@@ -248,7 +248,7 @@ model User {
   plan                  Plan              @default(FREE)
   premiumUntil          DateTime?         @db.Timestamptz(6)
   createdAt             DateTime          @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime          @updatedAt @db.Timestamptz(6)
+  updatedAt             DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
   /// Start of the 14-day grace period; personal data is hard-deleted at deletedAt + 14 days.
   deletedAt             DateTime?         @db.Timestamptz(6)
 
@@ -329,7 +329,7 @@ model FeatureFlag {
   key       String   @id @db.VarChar(64)
   enabled   Boolean  @default(false)
   rules     Json     @default("{}")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 }
 
 /// Values are validated against the bounds registry in packages/shared (task 1.12).
@@ -337,7 +337,7 @@ model AppSetting {
   key         String   @id @db.VarChar(64)
   value       Json
   updatedById String?  @db.Uuid
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
 
@@ -409,7 +409,8 @@ model FraudSignal {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, day])
+  /// One row per user, day, IP hash and device hint; written with upsert.
+  @@unique([userId, day, ipHash, deviceHint])
   @@index([ipHash, day])
   @@index([createdAt])
 }
@@ -480,7 +481,7 @@ model GroupStake {
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  option   Option?  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  option   Option?  @relation(fields: [optionId], references: [id], onDelete: NoAction)
 
   @@id([questionId, userId])
   @@index([userId])
@@ -496,7 +497,7 @@ model GroupResolution {
   status           GroupResolutionStatus @default(PROPOSED)
 
   question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  proposedOption Option   @relation(fields: [proposedOptionId], references: [id], onDelete: Cascade)
+  proposedOption Option   @relation(fields: [proposedOptionId], references: [id], onDelete: NoAction)
   proposedBy     User     @relation(fields: [proposedById], references: [id], onDelete: Cascade)
 
   @@index([proposedOptionId])
@@ -512,7 +513,7 @@ model GroupDisputeVote {
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  option   Option?  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  option   Option?  @relation(fields: [optionId], references: [id], onDelete: NoAction)
 
   @@id([questionId, userId])
   @@index([userId])
@@ -551,7 +552,7 @@ model EmbedKey {
   id             String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   partnerId      String    @db.Uuid
   keyHash        String    @unique @db.VarChar(128)
-  allowedOrigins String[]
+  allowedOrigins String[]  @default([])
   revokedAt      DateTime? @db.Timestamptz(6)
 
   partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
@@ -739,9 +740,9 @@ model Question {
   author         User        @relation("QuestionAuthor", fields: [authorId], references: [id])
   category       Category    @relation(fields: [categoryId], references: [id])
   imageAsset     MediaAsset? @relation("QuestionImage", fields: [imageAssetId], references: [id], onDelete: SetNull)
-  resolvedOption Option?     @relation("ResolvedOption", fields: [resolvedOptionId], references: [id], onDelete: SetNull)
+  resolvedOption Option?     @relation("ResolvedOption", fields: [resolvedOptionId], references: [id], onDelete: NoAction)
   resolvedBy     User?       @relation("QuestionResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
-  proposedOption Option?     @relation("ProposedOption", fields: [proposedOptionId], references: [id], onDelete: SetNull)
+  proposedOption Option?     @relation("ProposedOption", fields: [proposedOptionId], references: [id], onDelete: NoAction)
 
   translations     QuestionTranslation[]
   options          Option[]              @relation("QuestionOptions")
@@ -830,7 +831,7 @@ model OptionTranslation {
   locale   String @db.VarChar(10)
   label    String @db.VarChar(120)
 
-  option Option @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  option Option @relation(fields: [optionId], references: [id], onDelete: NoAction)
 
   @@id([optionId, locale])
 }
@@ -847,7 +848,7 @@ model Vote {
   /// Fraud handling (task 9.16).
   countsFrom    DateTime @default(now()) @db.Timestamptz(6)
   createdAt     DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
   snapCountry   String   @db.VarChar(2)
   snapRegion    String?  @db.VarChar(6)
   snapAgeBucket String?  @db.VarChar(16)
@@ -866,7 +867,7 @@ model VoteChoice {
   optionId String @db.Uuid
 
   vote   Vote   @relation(fields: [voteId], references: [id], onDelete: Cascade)
-  option Option @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  option Option @relation(fields: [optionId], references: [id], onDelete: NoAction)
 
   @@id([voteId, optionId])
   @@index([optionId])
@@ -892,11 +893,11 @@ model Forecast {
   optionId    String?  @db.Uuid
   probability Int
   isPublic    Boolean  @default(false)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   question Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
   user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  option   Option?           @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  option   Option?           @relation(fields: [optionId], references: [id], onDelete: NoAction)
   history  ForecastHistory[]
 
   @@unique([questionId, userId])
@@ -913,7 +914,7 @@ model ForecastHistory {
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
 
   forecast Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
-  option   Option?  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  option   Option?  @relation(fields: [optionId], references: [id], onDelete: NoAction)
 
   @@index([forecastId, createdAt])
   @@index([optionId])
@@ -929,7 +930,7 @@ model CrowdSnapshot {
   takenAt         DateTime @default(now()) @db.Timestamptz(6)
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  option   Option?  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  option   Option?  @relation(fields: [optionId], references: [id], onDelete: NoAction)
 
   @@index([questionId, takenAt])
   @@index([optionId])
@@ -959,7 +960,7 @@ model ResultAggregate {
   count          Int                @default(0)
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  option   Option   @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  option   Option   @relation(fields: [optionId], references: [id], onDelete: NoAction)
 
   @@id([questionId, optionId, dimension, dimensionValue])
   @@index([optionId])
@@ -986,7 +987,7 @@ model Agreement {
   userBId     String   @db.Uuid
   sharedCount Int      @default(0)
   agreeCount  Int      @default(0)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   userA User @relation("AgreementA", fields: [userAId], references: [id], onDelete: Cascade)
   userB User @relation("AgreementB", fields: [userBId], references: [id], onDelete: Cascade)
@@ -1085,13 +1086,13 @@ model UserCustomization {
   /// null means the app default (accent, start tab and text size are set in task 8b.4).
   accent            String?  @db.VarChar(32)
   startTab          String?  @db.VarChar(32)
-  hiddenCategoryIds String[] @db.Uuid
+  hiddenCategoryIds String[] @default([]) @db.Uuid
   textSize          String?  @db.VarChar(16)
   compactCards      Boolean  @default(false)
   celebrations      Json     @default("{}")
-  featuredBadgeIds  String[] @db.Uuid
+  featuredBadgeIds  String[] @default([]) @db.Uuid
   titleBadgeId      String?  @db.Uuid
-  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
+  updatedAt         DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   titleBadge Badge? @relation(fields: [titleBadgeId], references: [id], onDelete: SetNull)
@@ -1195,7 +1196,8 @@ model AuditLog {
   actorId    String?  @db.Uuid
   action     String   @db.VarChar(64)
   targetType String   @db.VarChar(32)
-  targetId   String   @db.Uuid
+  /// A uuid or a string key (AppSetting.key, Country.code, …).
+  targetId   String   @db.VarChar(64)
   meta       Json     @default("{}")
   createdAt  DateTime @default(now()) @db.Timestamptz(6)
 
