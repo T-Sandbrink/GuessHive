@@ -41,6 +41,8 @@ describe('assertSeedAllowed', () => {
     'postgresql://u:secret@db.example.com:5432/db',
     'postgresql://u:secret@10.0.0.5/db',
     'postgresql://u:secret@localhost.evil.com/db',
+    'postgresql://u:secret@localhost/db?host=db.example.com',
+    'postgresql://u:secret@localhost/db?sslmode=disable&hostaddr=10.0.0.5',
   ])('refuses a remote database without leaking the URL', (url) => {
     expect(() => {
       assertSeedAllowed({ DATABASE_URL: url }, 'development', ADMIN);

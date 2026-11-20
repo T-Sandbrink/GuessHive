@@ -20,7 +20,13 @@ export function assertSeedAllowed(
   if (rawNodeEnv.trim() === 'production') {
     throw new Error('Refusing to seed: NODE_ENV=production.');
   }
-  if (!LOOPBACK_HOSTS.has(new URL(env.DATABASE_URL).hostname.toLowerCase())) {
+  const url = new URL(env.DATABASE_URL);
+  // pg lets ?host= / ?hostaddr= override the URL's host, so those are refused outright.
+  if (
+    url.searchParams.has('host') ||
+    url.searchParams.has('hostaddr') ||
+    !LOOPBACK_HOSTS.has(url.hostname.toLowerCase())
+  ) {
     throw new Error('Refusing to seed: DATABASE_URL does not point to localhost.');
   }
   const domain = adminEmail.slice(adminEmail.lastIndexOf('@') + 1).toLowerCase();
