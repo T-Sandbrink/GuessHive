@@ -15,7 +15,7 @@ try {
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
-  // `prisma migrate reset` runs the seed afterwards (task 1.4).
+  // Used by `prisma db seed` (task 1.4); Prisma 7 no longer seeds after migrate dev/reset.
   migrations: { path: 'prisma/migrations', seed: 'pnpm run db:seed' },
   // `prisma generate` needs no database, so an empty URL is fine there;
   // migrate/studio then fail on the missing DATABASE_URL.

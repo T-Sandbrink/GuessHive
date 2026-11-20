@@ -1,3 +1,16 @@
+/** Latin letters without a Unicode decomposition to ASCII. */
+const ASCII_LETTERS: Record<string, string> = {
+  ø: 'o',
+  Ø: 'O',
+  æ: 'ae',
+  Æ: 'AE',
+  ß: 'ss',
+  ł: 'l',
+  Ł: 'L',
+  đ: 'd',
+  Đ: 'D',
+};
+
 /** Longest slug we generate; `Question.slug` allows 120, the rest is headroom. */
 export const SLUG_MAX_LENGTH = 80;
 
@@ -9,6 +22,7 @@ export const SLUG_MAX_LENGTH = 80;
  */
 export function slugify(title: string): string {
   const slug = title
+    .replace(/[øØæÆßłŁđĐ]/g, (letter) => ASCII_LETTERS[letter] ?? '')
     .normalize('NFKD')
     .replace(/\p{M}/gu, '')
     .toLowerCase()

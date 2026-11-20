@@ -64,10 +64,11 @@ export async function seed(prisma: PrismaClient, options: SeedOptions): Promise<
     categoryIds.set(category.slug, row.id);
   }
 
+  // Keyed by email, the auth identity; an existing account with that email becomes ADMIN.
   const username = normalizeUsername(SEED_ADMIN.displayUsername);
   const admin = await prisma.user.upsert({
-    where: { username },
-    update: {},
+    where: { email: options.adminEmail },
+    update: { role: 'ADMIN' },
     create: {
       email: options.adminEmail,
       emailVerified: true,
@@ -136,6 +137,8 @@ async function createQuestion(
         opensAt: at(question.opensInDays),
         closesAt: at(question.closesInDays),
         resolvesAt: question.resolvesInDays === undefined ? null : at(question.resolvesInDays),
+        // Drafts expire after 7 days (schema.prisma, task 9.1).
+        draftExpiresAt: question.status === 'DRAFT' ? at(7) : null,
         translations: {
           create: [
             { locale: 'nl', title: question.title.nl },

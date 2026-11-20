@@ -6,8 +6,9 @@ describe('slugify', () => {
     ['Wie is de beste voetballer ooit?', 'wie-is-de-beste-voetballer-ooit'],
     ['Café of terras?', 'cafe-of-terras'],
     ['  Ajax -- PSV!!  ', 'ajax-psv'],
-    ['Liège en Ørsted', 'liege-en-rsted'],
+    ['Liège en Ørsted', 'liege-en-orsted'],
     ['Wordt 2027 warmer dan 2026?', 'wordt-2027-warmer-dan-2026'],
+    ['Æbleskiver en Straße', 'aebleskiver-en-strasse'],
     ['🐝🍯', ''],
   ])('%j → %j', (title, slug) => {
     expect(slugify(title)).toBe(slug);

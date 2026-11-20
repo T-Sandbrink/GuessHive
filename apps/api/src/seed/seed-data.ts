@@ -11,7 +11,10 @@ export interface SeedCategory {
   sensitive: boolean;
 }
 
-/** The 10 launch categories (PLAN.md "Lancering & landen"), in display order. */
+/**
+ * The 10 launch categories (PLAN.md "Lancering & landen"), in display order. The slug is the
+ * upsert key: never rename one, or a re-run creates an extra category.
+ */
 export const SEED_CATEGORIES: readonly SeedCategory[] = [
   { slug: 'sport', names: { nl: 'Sport', en: 'Sport' }, icon: '⚽', sensitive: false },
   {
