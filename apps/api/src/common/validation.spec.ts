@@ -50,9 +50,9 @@ describe('validation pipe', () => {
     const error = await rejection({ title: 'Hi', options: [{ label: 7 }] });
     expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
     expect(error.issues).toEqual([
-      { path: ['title'], code: 'too_small' },
-      { path: ['options', 0, 'label'], code: 'invalid_type' },
-      { path: ['options'], code: 'too_small' },
+      { location: 'body', path: ['title'], code: 'too_small' },
+      { location: 'body', path: ['options', 0, 'label'], code: 'invalid_type' },
+      { location: 'body', path: ['options'], code: 'too_small' },
     ]);
   });
 
@@ -67,7 +67,7 @@ describe('validation pipe', () => {
     expect(body).toEqual({
       code: 'VALIDATION_FAILED',
       message: 'Validation failed',
-      issues: [{ path: ['email'], code: 'invalid_format' }],
+      issues: [{ location: 'body', path: ['email'], code: 'invalid_format' }],
     });
     expect(JSON.stringify(body)).not.toContain(secret);
     expect(apiErrorBodySchema.parse(body)).toEqual(body);
@@ -77,13 +77,51 @@ describe('validation pipe', () => {
     const schema = z.object({ scores: z.record(z.string(), z.number()) });
     const error = await rejection({ scores: { 'jan@example.com': 'x' } }, schema);
     const { body } = toErrorResponse(error);
-    expect(body.issues).toEqual([{ path: ['scores', '*'], code: 'invalid_type' }]);
+    expect(body.issues).toEqual([
+      { location: 'body', path: ['scores', '*'], code: 'invalid_type' },
+    ]);
     expect(JSON.stringify(body)).not.toContain('jan@example.com');
   });
 
   it('reports a non-object body at the root path', async () => {
     const error = await rejection('not json');
-    expect(error.issues).toEqual([{ path: [], code: 'invalid_type' }]);
+    expect(error.issues).toEqual([{ location: 'body', path: [], code: 'invalid_type' }]);
+  });
+
+  it('names the route param that failed', async () => {
+    const error: unknown = await createValidationPipe()
+      .transform('not-a-uuid', { type: 'param', data: 'id', schema: z.uuid() })
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ValidationFailedException);
+    expect((error as ValidationFailedException).issues).toEqual([
+      { location: 'params', path: ['id'], code: 'invalid_format' },
+    ]);
+  });
+
+  it('reports query issues with the query location', async () => {
+    const schema = z.object({ limit: z.coerce.number().max(50) });
+    const error: unknown = await createValidationPipe()
+      .transform({ limit: '500' }, { type: 'query', schema })
+      .catch((e: unknown) => e);
+    expect((error as ValidationFailedException).issues).toEqual([
+      { location: 'query', path: ['limit'], code: 'too_big' },
+    ]);
+  });
+
+  it('prefixes the path with a named body field', async () => {
+    const error: unknown = await createValidationPipe()
+      .transform('Hi', { type: 'body', data: 'title', schema: z.string().min(3) })
+      .catch((e: unknown) => e);
+    expect((error as ValidationFailedException).issues).toEqual([
+      { location: 'body', path: ['title'], code: 'too_small' },
+    ]);
+  });
+
+  it('leaves custom decorators unvalidated', async () => {
+    const value = 'not-a-uuid';
+    await expect(
+      createValidationPipe().transform(value, { type: 'custom', schema: z.uuid() }),
+    ).resolves.toBe(value);
   });
 });
 
@@ -92,30 +130,44 @@ describe('toValidationIssues', () => {
 
   it(`keeps at most ${String(maxIssues)} issues`, () => {
     const issues = Array.from({ length: 500 }, (_, i) => ({ message: 'x', path: [i] }));
-    expect(toValidationIssues(issues)).toHaveLength(maxIssues);
+    expect(toValidationIssues(issues, 'body')).toHaveLength(maxIssues);
   });
 
   it('cuts deep paths', () => {
     const deep = Array.from({ length: 100 }, () => 'a');
-    expect(toValidationIssues([{ message: 'x', path: deep }])[0]?.path).toHaveLength(maxPathDepth);
+    expect(toValidationIssues([{ message: 'x', path: deep }], 'body')[0]?.path).toHaveLength(
+      maxPathDepth,
+    );
   });
 
   it('replaces keys that are not field names with a placeholder', () => {
     const keys = ['k'.repeat(65), 'jan@example.com', 'has space', '', Symbol('s'), -1, 1.5, NaN];
-    expect(toValidationIssues([{ message: 'x', path: keys }])[0]?.path).toEqual(
+    expect(toValidationIssues([{ message: 'x', path: keys }], 'body')[0]?.path).toEqual(
       keys.map(() => '*'),
     );
   });
 
   it('keeps field names and array indexes', () => {
     const path = ['title', 'k'.repeat(64), '_x9', 0, 7];
-    expect(toValidationIssues([{ message: 'x', path }])[0]?.path).toEqual(path);
+    expect(toValidationIssues([{ message: 'x', path }], 'body')[0]?.path).toEqual(path);
   });
 
   it('unwraps { key } path segments', () => {
-    expect(toValidationIssues([{ message: 'x', path: [{ key: 'a' }, { key: 2 }] }])).toEqual([
-      { path: ['a', 2], code: 'invalid' },
-    ]);
+    expect(
+      toValidationIssues([{ message: 'x', path: [{ key: 'a' }, { key: 2 }] }], 'body'),
+    ).toEqual([{ location: 'body', path: ['a', 2], code: 'invalid' }]);
+  });
+
+  it('puts the argument name first and still cuts at the maximum depth', () => {
+    const deep = Array.from({ length: 100 }, () => 'a');
+    const [issue] = toValidationIssues([{ message: 'x', path: deep }], 'query', 'filter');
+    expect(issue?.location).toBe('query');
+    expect(issue?.path[0]).toBe('filter');
+    expect(issue?.path).toHaveLength(maxPathDepth);
+  });
+
+  it('replaces an argument name that is not a field name', () => {
+    expect(toValidationIssues([{ message: 'x' }], 'params', 'not a name')[0]?.path).toEqual(['*']);
   });
 
   it('falls back to "invalid" when a validator gives no usable code', () => {
@@ -124,7 +176,7 @@ describe('toValidationIssues', () => {
       { message: 'x', code: 42 },
       { message: 'x' },
     ];
-    expect(toValidationIssues(issues).map((i) => i.code)).toEqual([
+    expect(toValidationIssues(issues, 'body').map((i) => i.code)).toEqual([
       'invalid',
       'invalid',
       'invalid',

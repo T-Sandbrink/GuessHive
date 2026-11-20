@@ -16,8 +16,11 @@ decorator metadata: `@Body({ schema })`, `@Param('id', { schema })` and `Standar
 - The api validates bodies, params and queries with the zod schemas from `packages/shared` through
   NestJS 12's built-in Standard Schema validation. `nestjs-zod` is not used.
 - A validation failure returns `400` with `{ code: "VALIDATION_FAILED", message, issues }`, where
-  `issues` is `[{ path, code }]`: the field path and the kind of error, never the submitted value
-  (owner decision, 2026-11-19).
+  `issues` is `[{ location, path, code }]`: the part of the request (`body`, `query` or `params`),
+  the field path and the kind of error, never the submitted value (owner decision, 2026-11-19;
+  `location` added 2026-11-20). For a single named argument such as `@Param('id', { schema })`,
+  the path starts with that name (`{ location: 'params', path: ['id'] }`), so body paths map
+  one-to-one to form fields and a bad route param is never mistaken for a bad body.
 
 ## Consequences
 

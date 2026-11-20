@@ -361,7 +361,7 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Mobile-first. Most users vote on a phone.
 
 ### NestJS / Prisma
-- Request bodies, params and queries are validated with zod schemas from `packages/shared` through NestJS 12's built-in Standard Schema validation (`@Body({ schema })`, `StandardSchemaValidationPipe`; ADR 0003). Do not define types twice. A validation error returns `{ code: "VALIDATION_FAILED", message, issues: [{ path, code }] }`: field path and error kind only, never the submitted value.
+- Request bodies, params and queries are validated with zod schemas from `packages/shared` through NestJS 12's built-in Standard Schema validation (`@Body({ schema })`, `StandardSchemaValidationPipe`; ADR 0003). Do not define types twice. A validation error returns `{ code: "VALIDATION_FAILED", message, issues: [{ location, path, code }] }`: request part (`body`, `query`, `params`), field path and error kind only, never the submitted value.
 - Errors use Nest HTTP exceptions with a stable machine-readable `code` (e.g. `VOTE_ALREADY_CAST`) that the web app maps to translated messages.
 - Prisma migrations are generated with `prisma migrate dev`. **Never edit a migration that has been merged to `main`.** Add a new one instead.
 - Every query that lists data is paginated (cursor-based for feeds).

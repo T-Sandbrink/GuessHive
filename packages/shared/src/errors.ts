@@ -40,11 +40,18 @@ export const VALIDATION_PATH_PLACEHOLDER = '*';
 /** Issue codes look like zod's `invalid_type`; anything else is reported as `invalid`. */
 export const VALIDATION_ISSUE_CODE_PATTERN = /^[a-z][a-z_]{0,39}$/;
 
+/** Which part of the request a validation issue is about. */
+export const VALIDATION_ISSUE_LOCATIONS = ['body', 'query', 'params'] as const;
+
+export type ValidationIssueLocation = (typeof VALIDATION_ISSUE_LOCATIONS)[number];
+
 /**
- * One failed check in a `VALIDATION_FAILED` response (ADR 0003): where in the input it failed
- * and what kind of check it was (e.g. zod's `invalid_type`, `too_small`). Never the submitted value.
+ * One failed check in a `VALIDATION_FAILED` response (ADR 0003): which part of the request
+ * (`location`), where in it (`path`; for a single named param or query value, that name) and what
+ * kind of check it was (e.g. zod's `invalid_type`, `too_small`). Never the submitted value.
  */
 export const apiValidationIssueSchema = z.object({
+  location: z.enum(VALIDATION_ISSUE_LOCATIONS),
   path: z
     .array(
       z.union([

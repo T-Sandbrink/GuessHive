@@ -1,4 +1,5 @@
 import {
+  type ArgumentMetadata,
   HttpException,
   HttpStatus,
   StandardSchemaValidationPipe,
@@ -10,6 +11,7 @@ import {
   VALIDATION_ISSUE_LIMITS,
   VALIDATION_PATH_KEY_PATTERN,
   VALIDATION_PATH_PLACEHOLDER,
+  type ValidationIssueLocation,
 } from '@guesshive/shared';
 
 /** The issues a Standard Schema validator reports (from `@standard-schema/spec`). */
@@ -40,11 +42,20 @@ function toIssueCode(issue: object): string {
 /**
  * Keeps only where each check failed and what kind of check it was (ADR 0003). The issue
  * `message` is dropped: validators may quote the submitted value in it (AGENTS.md §7). The
- * caps keep a huge invalid body from inflating the reply.
+ * caps keep a huge invalid body from inflating the reply. `name` is the argument name of a
+ * decorator such as `@Param('id', { schema })`, and becomes the first path segment.
  */
-export function toValidationIssues(issues: SchemaIssues): ApiValidationIssue[] {
+export function toValidationIssues(
+  issues: SchemaIssues,
+  location: ValidationIssueLocation,
+  name?: string,
+): ApiValidationIssue[] {
+  const prefix = name === undefined ? [] : [name];
   return issues.slice(0, VALIDATION_ISSUE_LIMITS.maxIssues).map((issue) => ({
-    path: (issue.path ?? []).slice(0, VALIDATION_ISSUE_LIMITS.maxPathDepth).map(toPathSegment),
+    location,
+    path: [...prefix, ...(issue.path ?? [])]
+      .slice(0, VALIDATION_ISSUE_LIMITS.maxPathDepth)
+      .map(toPathSegment),
     code: toIssueCode(issue),
   }));
 }
@@ -59,13 +70,48 @@ export class ValidationFailedException extends HttpException {
   }
 }
 
+const LOCATION_BY_TYPE = {
+  body: 'body',
+  query: 'query',
+  param: 'params',
+} as const satisfies Record<Exclude<ArgumentMetadata['type'], 'custom'>, ValidationIssueLocation>;
+
+/** Carries the raw issues from the exception factory to `transform`, which knows the location. */
+class SchemaIssuesError extends Error {
+  constructor(readonly issues: SchemaIssues) {
+    super('Schema validation failed');
+  }
+}
+
+/**
+ * Adds the request location to the issues. The base pipe's exception factory only receives the
+ * issues, so it throws them in a `SchemaIssuesError` and `transform` wraps them here. Custom
+ * decorators are never validated (`validateCustomDecorators` stays off).
+ */
+class ApiValidationPipe extends StandardSchemaValidationPipe {
+  constructor() {
+    super({ exceptionFactory: (issues) => new SchemaIssuesError(issues) });
+  }
+
+  override async transform<T = unknown>(value: T, metadata: ArgumentMetadata): Promise<T> {
+    try {
+      return await super.transform(value, metadata);
+    } catch (error) {
+      if (error instanceof SchemaIssuesError && metadata.type !== 'custom') {
+        throw new ValidationFailedException(
+          toValidationIssues(error.issues, LOCATION_BY_TYPE[metadata.type], metadata.data),
+        );
+      }
+      throw error;
+    }
+  }
+}
+
 /**
  * The global pipe: validates every `@Body`, `@Param` and `@Query` that declares a `schema`
  * (zod schemas from `@guesshive/shared`) and passes the parsed value on. The pipe itself skips
  * arguments without a schema; test/route-schemas.e2e-spec.ts fails the build when one exists.
  */
 export function createValidationPipe(): StandardSchemaValidationPipe {
-  return new StandardSchemaValidationPipe({
-    exceptionFactory: (issues) => new ValidationFailedException(toValidationIssues(issues)),
-  });
+  return new ApiValidationPipe();
 }

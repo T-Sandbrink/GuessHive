@@ -26,11 +26,14 @@ describe('apiErrorBodySchema', () => {
     );
   });
 
-  it('accepts validation issues with a path and a code', () => {
+  it('accepts validation issues with a location, a path and a code', () => {
     const body = {
       code: 'VALIDATION_FAILED',
       message: 'Validation failed',
-      issues: [{ path: ['options', 0, 'label'], code: 'too_small' }],
+      issues: [
+        { location: 'body', path: ['options', 0, 'label'], code: 'too_small' },
+        { location: 'params', path: ['id'], code: 'invalid_format' },
+      ],
     };
     expect(apiErrorBodySchema.parse(body)).toEqual(body);
   });
@@ -39,8 +42,19 @@ describe('apiErrorBodySchema', () => {
     const body = {
       code: 'VALIDATION_FAILED',
       message: 'Validation failed',
-      issues: [{ path: [true], code: 'custom' }],
+      issues: [{ location: 'body', path: [true], code: 'custom' }],
     };
     expect(apiErrorBodySchema.safeParse(body).success).toBe(false);
+  });
+
+  it('rejects an issue without a known location', () => {
+    for (const location of [undefined, 'headers', 'param']) {
+      const body = {
+        code: 'VALIDATION_FAILED',
+        message: 'Validation failed',
+        issues: [{ location, path: ['id'], code: 'invalid_format' }],
+      };
+      expect(apiErrorBodySchema.safeParse(body).success).toBe(false);
+    }
   });
 });

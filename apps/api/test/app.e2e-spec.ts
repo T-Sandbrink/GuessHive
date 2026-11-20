@@ -192,7 +192,7 @@ describe('App (e2e)', () => {
       expect(res.body).toEqual({ limit: 20 });
     });
 
-    it('answers an invalid body with 400 VALIDATION_FAILED and path/code issues only', async () => {
+    it('answers an invalid body with 400 VALIDATION_FAILED and location/path/code issues only', async () => {
       const res = await request(app.getHttpServer())
         .post(`/test-validation/${id}`)
         .send({ title: 'jan@example.com'.slice(0, 2), tags: 42, note: 'jan@example.com' })
@@ -201,8 +201,8 @@ describe('App (e2e)', () => {
         code: 'VALIDATION_FAILED',
         message: 'Validation failed',
         issues: [
-          { path: ['title'], code: 'too_small' },
-          { path: ['tags'], code: 'invalid_type' },
+          { location: 'body', path: ['title'], code: 'too_small' },
+          { location: 'body', path: ['tags'], code: 'invalid_type' },
         ],
       });
       expect(JSON.stringify(res.body)).not.toContain('jan@example.com');
@@ -216,13 +216,17 @@ describe('App (e2e)', () => {
       expect(res.body).toEqual({
         code: 'VALIDATION_FAILED',
         message: 'Validation failed',
-        issues: [{ path: [], code: 'invalid_format' }],
+        issues: [{ location: 'params', path: ['id'], code: 'invalid_format' }],
       });
     });
 
     it('validates query strings', async () => {
       const res = await request(app.getHttpServer()).get('/test-validation?limit=500').expect(400);
-      expect(res.body).toMatchObject({ issues: [{ path: ['limit'], code: 'too_big' }] });
+      expect(res.body).toEqual({
+        code: 'VALIDATION_FAILED',
+        message: 'Validation failed',
+        issues: [{ location: 'query', path: ['limit'], code: 'too_big' }],
+      });
     });
   });
 });
