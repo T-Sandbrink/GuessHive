@@ -99,7 +99,7 @@ pnpm format               # prettier --write over the whole repo
 pnpm --filter web exec playwright install chromium   # one-time: browser for web tests
 ```
 
-Database (Prisma 7, `apps/api`): `pnpm --filter api db:generate` (regenerate the client into `src/generated`, gitignored; turbo runs it before build/lint/typecheck/test), `pnpm --filter api db:migrate` (create/apply a migration; needs `apps/api/.env` with `DATABASE_URL`). Added in task 1.4: `pnpm --filter api db:seed`.
+Database (Prisma 7, `apps/api`): `pnpm --filter api db:generate` (regenerate the client into `src/generated`, gitignored; turbo runs it before build/lint/typecheck/test), `pnpm --filter api db:migrate` (create/apply a migration; needs `apps/api/.env` with `DATABASE_URL`). Added in task 1.4: `pnpm --filter api db:seed` (local database only). API docs (task 1.6, only with `NODE_ENV=development`): http://localhost:3000/docs, JSON at `/docs-json`.
 
 On Windows, Turborepo needs `pnpm` resolvable on `PATH` without hitting a malformed entry first (see README "Troubleshooting").
 

@@ -12,6 +12,7 @@ minimumReleaseAge: 1440
 # schema-engine binary) also happens lazily on first CLI use.
 ignoredBuiltDependencies:
   - '@prisma/engines'
+  - '@scarf/scarf'
   - prisma
 
 # One version range per shared dependency; packages refer to it as "catalog:".
