@@ -47,7 +47,8 @@ export type ValidationIssueLocation = (typeof VALIDATION_ISSUE_LOCATIONS)[number
 
 /**
  * One failed check in a `VALIDATION_FAILED` response (ADR 0003): which part of the request
- * (`location`), where in it (`path`; for a single named param or query value, that name) and what
+ * (`location`), where in it (`path`; for a single named argument such as `@Param('id')`,
+ * `@Query('limit')` or `@Body('title')`, it starts with that name) and what
  * kind of check it was (e.g. zod's `invalid_type`, `too_small`). Never the submitted value.
  */
 export const apiValidationIssueSchema = z.object({

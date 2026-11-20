@@ -20,7 +20,9 @@ decorator metadata: `@Body({ schema })`, `@Param('id', { schema })` and `Standar
   the field path and the kind of error, never the submitted value (owner decision, 2026-11-19;
   `location` added 2026-11-20). For a single named argument such as `@Param('id', { schema })`,
   the path starts with that name (`{ location: 'params', path: ['id'] }`), so body paths map
-  one-to-one to form fields and a bad route param is never mistaken for a bad body.
+  one-to-one to form fields and a bad route param is never mistaken for a bad body. Nest validates
+  a handler's arguments in parallel and stops at the first failure, so `issues` covers only the
+  first argument that failed, not the whole request.
 
 ## Consequences
 

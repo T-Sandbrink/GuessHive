@@ -90,7 +90,12 @@ class SchemaIssuesError extends Error {
  */
 class ApiValidationPipe extends StandardSchemaValidationPipe {
   constructor() {
-    super({ exceptionFactory: (issues) => new SchemaIssuesError(issues) });
+    super({
+      // Custom decorators (`@RawBody`, `@UploadedFile`, cookies) reach pipes as type 'custom'.
+      // Before turning this on, add a location for them to VALIDATION_ISSUE_LOCATIONS.
+      validateCustomDecorators: false,
+      exceptionFactory: (issues) => new SchemaIssuesError(issues),
+    });
   }
 
   override async transform<T = unknown>(value: T, metadata: ArgumentMetadata): Promise<T> {

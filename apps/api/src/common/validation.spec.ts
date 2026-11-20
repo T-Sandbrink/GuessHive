@@ -117,6 +117,16 @@ describe('validation pipe', () => {
     ]);
   });
 
+  it('passes errors other than schema issues through unchanged', async () => {
+    const failure = new Error('transform failed');
+    const schema = z.string().transform(() => {
+      throw failure;
+    });
+    const error: unknown = await validate('x', schema).catch((e: unknown) => e);
+    expect(error).toBe(failure);
+    expect(error).not.toBeInstanceOf(ValidationFailedException);
+  });
+
   it('leaves custom decorators unvalidated', async () => {
     const value = 'not-a-uuid';
     await expect(
