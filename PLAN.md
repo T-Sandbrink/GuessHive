@@ -18,7 +18,7 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 - **Klaar:** fase 0 (tag `phase-0-done`), taken 1.1–1.7 (alle gemerged in `phase/1-database` en gepusht, review gates PASS). Op 20-11 ook: `pnpm install` op Node 26.13.1 en de nieuwe gebruikersnaamregel (begint met letter of cijfer).
 - **Waarom gestopt:** weeklimiet op 74% (drempel 75%); een nieuwe taak met review gate zou daar midden in overheen gaan. Werktree schoon op `phase/1-database`.
 - **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored). De dev-db is gemigreerd en geseed.
-- **Open punten:** systeem-PATH (eigenaar). Nieuw geparkeerd, blokkeren niets nu: Belgische regio's, categorie-slugs, seed op staging, `NODE_ENV` zonder waarde, Redis zonder TLS, `effect`-kwetsbaarheid (agent, bij de fase-gate). Eerder: gebruikersnamen extra regels, betaalgegevens, groepspunten.
+- **Open punten:** geen eigenaarsacties (Node 26 en het systeem-PATH zijn op 20-11 gefixt; turbo werkt zonder workaround). Nieuw geparkeerd, blokkeren niets nu: Belgische regio's, categorie-slugs, seed op staging, `NODE_ENV` zonder waarde, Redis zonder TLS, `effect`-kwetsbaarheid (agent, bij de fase-gate). Eerder: gebruikersnamen extra regels, betaalgegevens, groepspunten.
 - **Hervat op:** 24-11-2026 01:05 via `guesshive-resume` (5 minuten na de reset van de weeklimiet).
 
 ---
