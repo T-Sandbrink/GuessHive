@@ -1388,6 +1388,9 @@ ALTER TABLE "CrowdSnapshot" ADD CONSTRAINT "CrowdSnapshot_probability_check" CHE
 -- A comment loses its author only after its text is wiped (account deletion, task 11.2).
 ALTER TABLE "Comment" ADD CONSTRAINT "Comment_anonymised_check" CHECK ("userId" IS NOT NULL OR ("body" = '' AND "deletedAt" IS NOT NULL));
 
+-- A user's own photo never outlives the account: delete AVATAR assets before the user (task 11.2).
+ALTER TABLE "MediaAsset" ADD CONSTRAINT "MediaAsset_avatar_owner_check" CHECK ("ownerId" IS NOT NULL OR "kind" <> 'AVATAR');
+
 ALTER TABLE "Follow" ADD CONSTRAINT "Follow_not_self_check" CHECK ("followerId" <> "followeeId");
 ALTER TABLE "Agreement" ADD CONSTRAINT "Agreement_pair_order_check" CHECK ("userAId" < "userBId");
 

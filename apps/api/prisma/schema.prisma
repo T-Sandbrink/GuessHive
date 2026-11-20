@@ -590,7 +590,8 @@ model Sponsor {
 model MediaAsset {
   id               String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
   /// Null once the uploader's account is hard-deleted, so images of kept questions, options and
-  /// sponsors stay. Task 11.2 deletes the user's own AVATAR assets (row and stored object) first.
+  /// sponsors stay. Task 11.2 deletes the user's own AVATAR assets (row and stored object) first; a
+  /// CHECK in the migration blocks the user delete while an avatar would lose its owner.
   ownerId          String?     @db.Uuid
   url              String
   kind             MediaKind
