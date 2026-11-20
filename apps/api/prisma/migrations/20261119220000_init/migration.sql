@@ -339,7 +339,7 @@ CREATE TABLE "Sponsor" (
 -- CreateTable
 CREATE TABLE "MediaAsset" (
     "id" UUID NOT NULL DEFAULT uuidv7(),
-    "ownerId" UUID NOT NULL,
+    "ownerId" UUID,
     "url" TEXT NOT NULL,
     "kind" "MediaKind" NOT NULL,
     "altText" JSONB NOT NULL DEFAULT '{}',
@@ -529,7 +529,7 @@ CREATE TABLE "QuestionSkip" (
 CREATE TABLE "Forecast" (
     "id" UUID NOT NULL DEFAULT uuidv7(),
     "questionId" UUID NOT NULL,
-    "userId" UUID NOT NULL,
+    "userId" UUID,
     "optionId" UUID,
     "probability" INTEGER NOT NULL,
     "isPublic" BOOLEAN NOT NULL DEFAULT false,
@@ -1169,7 +1169,7 @@ ALTER TABLE "Sponsor" ADD CONSTRAINT "Sponsor_partnerId_fkey" FOREIGN KEY ("part
 ALTER TABLE "Sponsor" ADD CONSTRAINT "Sponsor_logoAssetId_fkey" FOREIGN KEY ("logoAssetId") REFERENCES "MediaAsset"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "MediaAsset" ADD CONSTRAINT "MediaAsset_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "MediaAsset" ADD CONSTRAINT "MediaAsset_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Region" ADD CONSTRAINT "Region_countryCode_fkey" FOREIGN KEY ("countryCode") REFERENCES "Country"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1262,7 +1262,7 @@ ALTER TABLE "QuestionSkip" ADD CONSTRAINT "QuestionSkip_userId_fkey" FOREIGN KEY
 ALTER TABLE "Forecast" ADD CONSTRAINT "Forecast_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Forecast" ADD CONSTRAINT "Forecast_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Forecast" ADD CONSTRAINT "Forecast_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Forecast" ADD CONSTRAINT "Forecast_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
@@ -1362,6 +1362,8 @@ ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_actorId_fkey" FOREIGN KEY ("acto
 ALTER TABLE "User" ADD CONSTRAINT "User_streakFreezes_check" CHECK ("streakFreezes" BETWEEN 0 AND 2);
 -- Case-insensitive unique usernames: "username" is always the lowercase form of "displayUsername".
 ALTER TABLE "User" ADD CONSTRAINT "User_username_lowercase_check" CHECK ("username" = lower("displayUsername"));
+-- Usernames are ASCII only (USERNAME_PATTERN in @guesshive/shared), so lower() matches JavaScript in every locale.
+ALTER TABLE "User" ADD CONSTRAINT "User_displayUsername_charset_check" CHECK ("displayUsername" ~ '^[A-Za-z0-9_.]+$');
 
 ALTER TABLE "Group" ADD CONSTRAINT "Group_seasonLengthMonths_check" CHECK ("seasonLengthMonths" IN (1, 3, 6));
 ALTER TABLE "Group" ADD CONSTRAINT "Group_maxMembers_check" CHECK ("maxMembers" > 0);
@@ -1382,6 +1384,9 @@ ALTER TABLE "Question" ADD CONSTRAINT "Question_period_check" CHECK ("closesAt" 
 ALTER TABLE "Forecast" ADD CONSTRAINT "Forecast_probability_check" CHECK ("probability" BETWEEN 1 AND 99);
 ALTER TABLE "ForecastHistory" ADD CONSTRAINT "ForecastHistory_probability_check" CHECK ("probability" BETWEEN 1 AND 99);
 ALTER TABLE "CrowdSnapshot" ADD CONSTRAINT "CrowdSnapshot_probability_check" CHECK ("probability" BETWEEN 0 AND 100);
+
+-- A comment loses its author only after its text is wiped (account deletion, task 11.2).
+ALTER TABLE "Comment" ADD CONSTRAINT "Comment_anonymised_check" CHECK ("userId" IS NOT NULL OR ("body" = '' AND "deletedAt" IS NOT NULL));
 
 ALTER TABLE "Follow" ADD CONSTRAINT "Follow_not_self_check" CHECK ("followerId" <> "followeeId");
 ALTER TABLE "Agreement" ADD CONSTRAINT "Agreement_pair_order_check" CHECK ("userAId" < "userBId");

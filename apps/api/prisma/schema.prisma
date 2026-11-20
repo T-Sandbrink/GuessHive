@@ -219,7 +219,8 @@ model User {
   /// (e.g. /u/[username]) ignore case. A CHECK in the migration keeps it equal to
   /// lower(displayUsername). Names match Better Auth's username plugin (owner, 2026-11-20).
   username              String            @unique @db.VarChar(32)
-  /// The username as the user typed it ("SamDeBij"); shown everywhere.
+  /// The username as the user typed it ("SamDeBij"); shown everywhere. Only ASCII letters, digits,
+  /// `_` and `.` (USERNAME_PATTERN in @guesshive/shared; CHECK in the migration).
   displayUsername       String            @db.VarChar(32)
   avatarUrl             String?
   countryCode           String            @db.VarChar(2)
@@ -588,7 +589,9 @@ model Sponsor {
 /// Shown only after moderation (AGENTS.md §9).
 model MediaAsset {
   id               String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  ownerId          String      @db.Uuid
+  /// Null once the uploader's account is hard-deleted, so images of kept questions, options and
+  /// sponsors stay. Task 11.2 deletes the user's own AVATAR assets (row and stored object) first.
+  ownerId          String?     @db.Uuid
   url              String
   kind             MediaKind
   /// { nl, en }
@@ -598,7 +601,7 @@ model MediaAsset {
   hash             String      @db.VarChar(128)
   createdAt        DateTime    @default(now()) @db.Timestamptz(6)
 
-  owner          User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner          User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   sponsorLogos   Sponsor[]  @relation("SponsorLogo")
   questionImages Question[] @relation("QuestionImage")
   optionImages   Option[]   @relation("OptionImage")
@@ -900,14 +903,16 @@ model QuestionSkip {
 model Forecast {
   id          String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   questionId  String   @db.Uuid
-  userId      String   @db.Uuid
+  /// Null once the forecaster's account is hard-deleted, like Vote, so the crowd forecast and
+  /// other users' scores stay stable (owner, 2026-11-20).
+  userId      String?  @db.Uuid
   optionId    String?  @db.Uuid
   probability Int
   isPublic    Boolean  @default(false)
   updatedAt   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   question Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   option   Option?           @relation(fields: [optionId], references: [id], onDelete: NoAction)
   history  ForecastHistory[]
 
@@ -1011,8 +1016,9 @@ model Agreement {
 model Comment {
   id         String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
   questionId String        @db.Uuid
-  /// Null once the commenter's account is hard-deleted; task 11.2 then also clears `body` and sets
-  /// `deletedAt`, while replies by others stay.
+  /// Null once the commenter's account is hard-deleted; replies by others stay. A CHECK in the
+  /// migration only allows that when `body` is '' and `deletedAt` is set, so task 11.2 must wipe the
+  /// text first and no other delete path can keep it.
   userId     String?       @db.Uuid
   parentId   String?       @db.Uuid
   body       String        @db.VarChar(2000)
