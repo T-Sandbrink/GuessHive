@@ -26,7 +26,7 @@ Product principles. Use them to decide when something is unclear:
 |---|---|
 | Monorepo | pnpm workspaces + Turborepo |
 | Runtime | Node.js LTS (26.x, owner decision 2026-11-19), TypeScript 6.0 `strict` everywhere (TS 7 once svelte-check and typescript-eslint support it) |
-| Frontend | SvelteKit 3 + **Svelte 5 (runes)**, SSR on, `adapter-node` (or `adapter-vercel`, decided at launch) |
+| Frontend | SvelteKit 3 + **Svelte 5 (runes)**, SSR on, `adapter-vercel` on Vercel, region `fra1` (owner decision 2026-11-20; task 1.13). The api, Postgres and Redis run on an EU host, not on Vercel |
 | UI | Tailwind CSS v4 + shadcn-svelte (Bits UI), lucide-svelte icons, self-hosted fonts (Fredoka + Nunito via @fontsource, never a font CDN) |
 | i18n | Paraglide JS (via `sv add paraglide`), locale-prefixed routes `/nl/...`, `/en/...` |
 | Backend | NestJS (latest major), REST, OpenAPI via `@nestjs/swagger` |
@@ -39,7 +39,7 @@ Product principles. Use them to decide when something is unclear:
 | Bot protection | Cloudflare Turnstile on sign-up and sensitive actions |
 | Tests | Vitest everywhere (web, shared, api), Playwright (e2e). The api is ESM-only, like NestJS 12 itself (ADR 0002) |
 | Quality | ESLint + Prettier, husky + lint-staged, GitHub Actions CI |
-| Observability | Sentry (errors), Umami or Plausible (cookieless analytics) |
+| Observability | Sentry (errors), Vercel Web Analytics (cookieless; never on private pages, owner decision 2026-11-20) |
 
 Do **not** introduce React, Next.js, or another UI framework. Do not swap a core choice above without asking the owner first and recording the decision in `docs/decisions/`.
 
