@@ -14,6 +14,12 @@ export const apiEnvSchema = z.object({
     .string()
     .trim()
     .pipe(z.url({ protocol: /^postgres(ql)?$/ })),
+  /** Redis for jobs, rate limits and caches (local default: docker compose on port 6379). */
+  REDIS_URL: z
+    .string()
+    .trim()
+    .pipe(z.url({ protocol: /^rediss?$/ }))
+    .default('redis://127.0.0.1:6379'),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

@@ -10,7 +10,15 @@ describe('loadEnv (api)', () => {
       HOST: '127.0.0.1',
       PORT: 3000,
       DATABASE_URL,
+      REDIS_URL: 'redis://127.0.0.1:6379',
     });
+  });
+
+  it('accepts redis and rediss URLs and rejects other schemes', () => {
+    expect(loadEnv({ DATABASE_URL, REDIS_URL: 'rediss://cache.example:6380' }).REDIS_URL).toBe(
+      'rediss://cache.example:6380',
+    );
+    expect(() => loadEnv({ DATABASE_URL, REDIS_URL: 'http://cache.example' })).toThrow(/REDIS_URL/);
   });
 
   it('reads NODE_ENV, HOST and PORT from the environment', () => {
