@@ -4,6 +4,7 @@ import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
 import { API_ENV } from './config/config.module.js';
 import type { ApiEnv } from './env.js';
+import { setupOpenApi } from './openapi.js';
 
 async function bootstrap() {
   // Buffer startup logs until the pino logger is in place. Nest types this options bag as a
@@ -14,6 +15,8 @@ async function bootstrap() {
   // SIGTERM/SIGINT close the HTTP server, then run onApplicationShutdown hooks (closing the database pool).
   app.enableShutdownHooks();
   const env = app.get<ApiEnv>(API_ENV);
+  // OpenAPI + Swagger UI on /docs, development only (task 1.6).
+  setupOpenApi(app, env);
   await app.listen(env.PORT, env.HOST);
 }
 await bootstrap();
