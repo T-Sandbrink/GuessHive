@@ -88,6 +88,7 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "emailVerified" BOOLEAN NOT NULL DEFAULT false,
     "username" VARCHAR(32) NOT NULL,
+    "displayUsername" VARCHAR(32) NOT NULL,
     "avatarUrl" TEXT,
     "countryCode" VARCHAR(2) NOT NULL,
     "regionCode" VARCHAR(6),
@@ -272,7 +273,7 @@ CREATE TABLE "GroupStake" (
 CREATE TABLE "GroupResolution" (
     "questionId" UUID NOT NULL,
     "proposedOptionId" UUID NOT NULL,
-    "proposedById" UUID NOT NULL,
+    "proposedById" UUID,
     "proposedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "disputeUntil" TIMESTAMPTZ(6) NOT NULL,
     "status" "GroupResolutionStatus" NOT NULL DEFAULT 'PROPOSED',
@@ -404,7 +405,7 @@ CREATE TABLE "ElectionBlackout" (
     "startsAt" TIMESTAMPTZ(6) NOT NULL,
     "endsAt" TIMESTAMPTZ(6) NOT NULL,
     "note" TEXT NOT NULL,
-    "createdById" UUID NOT NULL,
+    "createdById" UUID,
 
     CONSTRAINT "ElectionBlackout_pkey" PRIMARY KEY ("id")
 );
@@ -424,7 +425,7 @@ CREATE TABLE "Question" (
     "isDaily" BOOLEAN NOT NULL DEFAULT false,
     "sponsorId" UUID,
     "defaultLocale" VARCHAR(10) NOT NULL,
-    "authorId" UUID NOT NULL,
+    "authorId" UUID,
     "categoryId" UUID NOT NULL,
     "maxChoices" INTEGER NOT NULL DEFAULT 1,
     "allowVoteChange" BOOLEAN NOT NULL DEFAULT true,
@@ -607,7 +608,7 @@ CREATE TABLE "Agreement" (
 CREATE TABLE "Comment" (
     "id" UUID NOT NULL DEFAULT uuidv7(),
     "questionId" UUID NOT NULL,
-    "userId" UUID NOT NULL,
+    "userId" UUID,
     "parentId" UUID,
     "body" VARCHAR(2000) NOT NULL,
     "showChoice" BOOLEAN NOT NULL DEFAULT false,
@@ -706,7 +707,7 @@ CREATE TABLE "SeasonalMascot" (
     "countryCode" VARCHAR(2),
     "startsAt" TIMESTAMPTZ(6) NOT NULL,
     "endsAt" TIMESTAMPTZ(6) NOT NULL,
-    "createdById" UUID NOT NULL,
+    "createdById" UUID,
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "SeasonalMascot_pkey" PRIMARY KEY ("id")
@@ -747,7 +748,7 @@ CREATE TABLE "Invite" (
 -- CreateTable
 CREATE TABLE "Report" (
     "id" UUID NOT NULL DEFAULT uuidv7(),
-    "reporterId" UUID NOT NULL,
+    "reporterId" UUID,
     "targetType" "ModerationTargetType" NOT NULL,
     "targetId" UUID NOT NULL,
     "reason" VARCHAR(64) NOT NULL,
@@ -1144,7 +1145,7 @@ ALTER TABLE "GroupResolution" ADD CONSTRAINT "GroupResolution_questionId_fkey" F
 ALTER TABLE "GroupResolution" ADD CONSTRAINT "GroupResolution_proposedOptionId_fkey" FOREIGN KEY ("proposedOptionId") REFERENCES "Option"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "GroupResolution" ADD CONSTRAINT "GroupResolution_proposedById_fkey" FOREIGN KEY ("proposedById") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "GroupResolution" ADD CONSTRAINT "GroupResolution_proposedById_fkey" FOREIGN KEY ("proposedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "GroupDisputeVote" ADD CONSTRAINT "GroupDisputeVote_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1189,7 +1190,7 @@ ALTER TABLE "Ambassador" ADD CONSTRAINT "Ambassador_decidedById_fkey" FOREIGN KE
 ALTER TABLE "ElectionBlackout" ADD CONSTRAINT "ElectionBlackout_countryCode_fkey" FOREIGN KEY ("countryCode") REFERENCES "Country"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ElectionBlackout" ADD CONSTRAINT "ElectionBlackout_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ElectionBlackout" ADD CONSTRAINT "ElectionBlackout_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Question" ADD CONSTRAINT "Question_countryCode_fkey" FOREIGN KEY ("countryCode") REFERENCES "Country"("code") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1204,7 +1205,7 @@ ALTER TABLE "Question" ADD CONSTRAINT "Question_groupId_fkey" FOREIGN KEY ("grou
 ALTER TABLE "Question" ADD CONSTRAINT "Question_sponsorId_fkey" FOREIGN KEY ("sponsorId") REFERENCES "Sponsor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Question" ADD CONSTRAINT "Question_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Question" ADD CONSTRAINT "Question_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Question" ADD CONSTRAINT "Question_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1306,7 +1307,7 @@ ALTER TABLE "Agreement" ADD CONSTRAINT "Agreement_userBId_fkey" FOREIGN KEY ("us
 ALTER TABLE "Comment" ADD CONSTRAINT "Comment_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Comment" ADD CONSTRAINT "Comment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Comment" ADD CONSTRAINT "Comment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Comment" ADD CONSTRAINT "Comment_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Comment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1330,7 +1331,7 @@ ALTER TABLE "UserCustomization" ADD CONSTRAINT "UserCustomization_titleBadgeId_f
 ALTER TABLE "SeasonalMascot" ADD CONSTRAINT "SeasonalMascot_countryCode_fkey" FOREIGN KEY ("countryCode") REFERENCES "Country"("code") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SeasonalMascot" ADD CONSTRAINT "SeasonalMascot_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SeasonalMascot" ADD CONSTRAINT "SeasonalMascot_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "UserBadge" ADD CONSTRAINT "UserBadge_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1348,7 +1349,7 @@ ALTER TABLE "Invite" ADD CONSTRAINT "Invite_inviterId_fkey" FOREIGN KEY ("invite
 ALTER TABLE "Invite" ADD CONSTRAINT "Invite_usedById_fkey" FOREIGN KEY ("usedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Report" ADD CONSTRAINT "Report_reporterId_fkey" FOREIGN KEY ("reporterId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Report" ADD CONSTRAINT "Report_reporterId_fkey" FOREIGN KEY ("reporterId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Report" ADD CONSTRAINT "Report_handledById_fkey" FOREIGN KEY ("handledById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1359,6 +1360,8 @@ ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_actorId_fkey" FOREIGN KEY ("acto
 -- ─── Added by hand: constraints Prisma cannot express (see the comments in schema.prisma) ───
 
 ALTER TABLE "User" ADD CONSTRAINT "User_streakFreezes_check" CHECK ("streakFreezes" BETWEEN 0 AND 2);
+-- Case-insensitive unique usernames: "username" is always the lowercase form of "displayUsername".
+ALTER TABLE "User" ADD CONSTRAINT "User_username_lowercase_check" CHECK ("username" = lower("displayUsername"));
 
 ALTER TABLE "Group" ADD CONSTRAINT "Group_seasonLengthMonths_check" CHECK ("seasonLengthMonths" IN (1, 3, 6));
 ALTER TABLE "Group" ADD CONSTRAINT "Group_maxMembers_check" CHECK ("maxMembers" > 0);

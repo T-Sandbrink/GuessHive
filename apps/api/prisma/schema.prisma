@@ -215,7 +215,12 @@ model User {
   id                    String            @id @default(dbgenerated("uuidv7()")) @db.Uuid
   email                 String            @unique
   emailVerified         Boolean           @default(false)
+  /// Lowercase form of displayUsername, unique, so "Sam" and "sam" cannot both exist and lookups
+  /// (e.g. /u/[username]) ignore case. A CHECK in the migration keeps it equal to
+  /// lower(displayUsername). Names match Better Auth's username plugin (owner, 2026-11-20).
   username              String            @unique @db.VarChar(32)
+  /// The username as the user typed it ("SamDeBij"); shown everywhere.
+  displayUsername       String            @db.VarChar(32)
   avatarUrl             String?
   countryCode           String            @db.VarChar(2)
   regionCode            String?           @db.VarChar(6)
@@ -423,6 +428,9 @@ model Group {
   name               String    @db.VarChar(80)
   avatarUrl          String?
   description        String?
+  /// Before a hard account delete, ownership moves to the longest-standing member, or the group is
+  /// deleted when no member is left (task 11.2). No ON DELETE action, so a forgotten group blocks
+  /// the delete instead of losing the group.
   ownerId            String    @db.Uuid
   maxMembers         Int       @default(25)
   seasonLengthMonths Int       @default(3)
@@ -491,14 +499,15 @@ model GroupStake {
 model GroupResolution {
   questionId       String                @id @db.Uuid
   proposedOptionId String                @db.Uuid
-  proposedById     String                @db.Uuid
+  /// Null once the proposer's account is hard-deleted; the proposal stays (task 11.2).
+  proposedById     String?               @db.Uuid
   proposedAt       DateTime              @default(now()) @db.Timestamptz(6)
   disputeUntil     DateTime              @db.Timestamptz(6)
   status           GroupResolutionStatus @default(PROPOSED)
 
   question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
   proposedOption Option   @relation(fields: [proposedOptionId], references: [id], onDelete: NoAction)
-  proposedBy     User     @relation(fields: [proposedById], references: [id], onDelete: Cascade)
+  proposedBy     User?    @relation(fields: [proposedById], references: [id], onDelete: SetNull)
 
   @@index([proposedOptionId])
   @@index([proposedById])
@@ -676,10 +685,11 @@ model ElectionBlackout {
   startsAt    DateTime @db.Timestamptz(6)
   endsAt      DateTime @db.Timestamptz(6)
   note        String
-  createdById String   @db.Uuid
+  /// Null once the admin account is hard-deleted (task 11.2).
+  createdById String?  @db.Uuid
 
   country   Country @relation(fields: [countryCode], references: [code])
-  createdBy User    @relation(fields: [createdById], references: [id])
+  createdBy User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([countryCode, startsAt])
   @@index([createdById])
@@ -706,7 +716,8 @@ model Question {
   isDaily          Boolean        @default(false)
   sponsorId        String?        @db.Uuid
   defaultLocale    String         @db.VarChar(10)
-  authorId         String         @db.Uuid
+  /// Null once the author's account is hard-deleted ("deleted user"); the question stays (task 11.2).
+  authorId         String?        @db.Uuid
   categoryId       String         @db.Uuid
   maxChoices       Int            @default(1)
   allowVoteChange  Boolean        @default(true)
@@ -737,7 +748,7 @@ model Question {
   region         Region?     @relation(fields: [regionCode], references: [code])
   group          Group?      @relation(fields: [groupId], references: [id], onDelete: Cascade)
   sponsor        Sponsor?    @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
-  author         User        @relation("QuestionAuthor", fields: [authorId], references: [id])
+  author         User?       @relation("QuestionAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   category       Category    @relation(fields: [categoryId], references: [id])
   imageAsset     MediaAsset? @relation("QuestionImage", fields: [imageAssetId], references: [id], onDelete: SetNull)
   resolvedOption Option?     @relation("ResolvedOption", fields: [resolvedOptionId], references: [id], onDelete: NoAction)
@@ -1000,7 +1011,9 @@ model Agreement {
 model Comment {
   id         String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
   questionId String        @db.Uuid
-  userId     String        @db.Uuid
+  /// Null once the commenter's account is hard-deleted; task 11.2 then also clears `body` and sets
+  /// `deletedAt`, while replies by others stay.
+  userId     String?       @db.Uuid
   parentId   String?       @db.Uuid
   body       String        @db.VarChar(2000)
   showChoice Boolean       @default(false)
@@ -1010,7 +1023,7 @@ model Comment {
   deletedAt  DateTime?     @db.Timestamptz(6)
 
   question Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id])
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies  Comment[] @relation("CommentReplies")
 
@@ -1120,11 +1133,12 @@ model SeasonalMascot {
   countryCode String?  @db.VarChar(2)
   startsAt    DateTime @db.Timestamptz(6)
   endsAt      DateTime @db.Timestamptz(6)
-  createdById String   @db.Uuid
+  /// Null once the admin account is hard-deleted (task 11.2).
+  createdById String?  @db.Uuid
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
 
   country   Country? @relation(fields: [countryCode], references: [code])
-  createdBy User     @relation(fields: [createdById], references: [id])
+  createdBy User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([startsAt, endsAt])
   @@index([countryCode])
@@ -1174,7 +1188,8 @@ model Invite {
 /// Polymorphic target: no foreign key on targetId; the service checks it exists.
 model Report {
   id          String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  reporterId  String               @db.Uuid
+  /// Null once the reporter's account is hard-deleted; the report and its outcome stay (task 11.2).
+  reporterId  String?              @db.Uuid
   targetType  ModerationTargetType
   targetId    String               @db.Uuid
   reason      String               @db.VarChar(64)
@@ -1182,7 +1197,7 @@ model Report {
   handledById String?              @db.Uuid
   createdAt   DateTime             @default(now()) @db.Timestamptz(6)
 
-  reporter  User  @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reporter  User? @relation("Reporter", fields: [reporterId], references: [id], onDelete: SetNull)
   handledBy User? @relation("ReportHandler", fields: [handledById], references: [id], onDelete: SetNull)
 
   @@unique([reporterId, targetType, targetId])

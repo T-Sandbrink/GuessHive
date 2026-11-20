@@ -570,7 +570,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 Richtlijn, geen keurslijf: aanpassen mag, maar dan ook hier bijwerken.
 
 ```
-User            id, email, emailVerified, username (uniek), avatarUrl,
+User            id, email, emailVerified, username (uniek, kleine letters), displayUsername (eigen schrijfwijze), avatarUrl,
                 countryCode, regionCode?, birthDate? (alleen voor leeftijdsgroep en 18+-check), birthDateCorrectedAt?, gender?, votesPublicByDefault (default false),
                 locale, timezone, role (USER|MODERATOR|ADMIN), trustScore, xp, level,
                 winStreak, longestWinStreak, streakFreezes (0-2), lastStreakDate,
@@ -592,7 +592,7 @@ FraudSignal     id, userId, ipHash (gezouten), deviceHint, ipCountry, day, creat
 GroupMember     groupId + userId (PK), role (OWNER|ADMIN|MEMBER), points, joinedAt, consentAt, leftAt?
 GroupInvite     id, groupId, code, createdById, expiresAt, revokedAt?
 GroupStake      questionId + userId (PK), optionId?, amount, stakeNote?
-GroupResolution questionId (PK), proposedOptionId, proposedById, proposedAt, disputeUntil, status (PROPOSED|DISPUTED|FINAL|ANNULLED)
+GroupResolution questionId (PK), proposedOptionId, proposedById?, proposedAt, disputeUntil, status (PROPOSED|DISPUTED|FINAL|ANNULLED)
 GroupDisputeVote questionId + userId (PK), optionId?, createdAt
 Subscription    id, userId, provider, status (TRIAL|ACTIVE|CANCELED|PAST_DUE), plan, periodEnd, createdAt
 Partner         id, name, kind (MEDIA|BRAND), contactEmail, createdAt
@@ -614,7 +614,7 @@ Question        id, shortId, slug, type (POLL_SINGLE|POLL_MULTI|THIS_OR_THAT|
                 OPEN|CLOSED|RESOLVED|ANNULLED|REJECTED|ARCHIVED),
                 scope (GLOBAL|COUNTRY|REGION|GROUP), countryCode?, regionCode?, groupId? (verplicht bij GROUP),
                 darkCorner (bool, default false), isDaily (bool, dagvoorspelling, 8.2c), sponsorId?,
-                defaultLocale, authorId, categoryId, maxChoices, allowVoteChange,
+                defaultLocale, authorId?, categoryId, maxChoices, allowVoteChange,
                 imageAssetId?, opensAt, closesAt, resolvesAt?, resolvedOptionId?,
                 resolutionSource?, resolutionNote?, resolvedAt?, resolvedById?,
                 proposedOptionId?, proposedSource?, proposedAt? (9.1c), draftExpiresAt? (concept, 7 dagen),
@@ -642,7 +642,7 @@ ResultAggregate questionId, optionId, dimension (ALL|COUNTRY|REGION|AGE|GENDER),
 
 Follow          followerId + followeeId (PK), createdAt
 Agreement       userAId + userBId (PK), sharedCount, agreeCount, updatedAt
-Comment         id, questionId, userId, parentId?, body, showChoice (bool, default false), status, createdAt, editedAt?, deletedAt?
+Comment         id, questionId, userId?, parentId?, body, showChoice (bool, default false), status, createdAt, editedAt?, deletedAt?
 Reaction        id, userId, targetType (QUESTION|COMMENT), targetId, emoji
 Notification    id, userId, type, payload (json), readAt?, createdAt
 PushSubscription id, userId, endpoint, keys (json), createdAt
@@ -656,8 +656,10 @@ UserBadge       userId + badgeId (PK), awardedAt
 XpEvent         id, userId, type, amount, refId?, createdAt
 Invite          id, inviterId, code, usedById?, usedAt?
 
-Report          id, reporterId, targetType, targetId, reason, status, handledById?, createdAt
+Report          id, reporterId?, targetType, targetId, reason, status, handledById?, createdAt
 AuditLog        id, actorId, action, targetType, targetId, meta (json), createdAt
 ```
+
+Account definitief verwijderen (eigenaar, 20-11-2026): `authorId`, `userId` (Comment), `proposedById`, `reporterId` en `createdById` (ElectionBlackout, SeasonalMascot) worden leeg (`ON DELETE SET NULL`), net als `Vote.userId`; taak 11.2 wist daarnaast de reactietekst en zet groepen over naar het oudste lid. `username` is altijd `lower(displayUsername)` (CHECK in de migratie).
 
 Belangrijke indexen: `Question(status, scope, countryCode, opensAt)`, `Question(categoryId, status)`, `Question(groupId)`, `Question(darkCorner, status)`, `Question(isDaily, resolvesAt)`, `Vote(questionId)`, `Vote(userId)`, `Forecast(questionId)`, `Comment(questionId, createdAt)`, `Notification(userId, readAt)`, plus full-text index op `QuestionTranslation(title)` per taal.
