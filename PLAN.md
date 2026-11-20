@@ -14,12 +14,12 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** eerst `pnpm install` (de pc draait nu Node 26.13.1). Dan de nieuwe gebruikersnaamregel (eigenaar 20-11): `USERNAME_PATTERN` = `^[A-Za-z0-9][A-Za-z0-9_.]*$` plus tests in `packages/shared`, en de CHECK `User_displayUsername_charset_check` in de init-migratie gelijk trekken (die staat nog niet op `main` en de dev-db heeft nog geen migraties, dus aanpassen mag; daarna beide drift-checks). Daarna 1.4 (seed), 1.6–1.12 en 1.13 (Vercel; koppelen alleen samen met de eigenaar).
-- **Klaar:** fase 0 (tag `phase-0-done`), taken 1.1, 1.2, 1.3 en 1.5 (alle gemerged in `phase/1-database` en gepusht, review gates PASS).
-- **Waarom gestopt:** gebruikslimiet (5-uursvenster 77% om 16:20). Werktree schoon op `phase/1-database`.
-- **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored)
-- **Open punten:** geen eigenaarsacties meer (Node 26 en het systeem-PATH zijn op 20-11 gefixt). Nieuw geparkeerd, blokkeren niets nu: "Gebruikersnamen: extra regels" (vóór 2.11), "Betaalgegevens na accountverwijdering" (vóór 11.2/fase 13), bijvraag bij "Groepspunten-mechaniek".
-- **Hervat op:** 20-11-2026 17:05 via `guesshive-resume`.
+- **Huidige taak:** 1.8 (Redis-module + BullMQ-basis; bouwt voort op `RedisService` uit 1.7). Daarna 1.9–1.12, 1.13 (Vercel; koppelen alleen samen met de eigenaar) en de fase-1-gate (inclusief de `effect`-audit).
+- **Klaar:** fase 0 (tag `phase-0-done`), taken 1.1–1.7 (alle gemerged in `phase/1-database` en gepusht, review gates PASS). Op 20-11 ook: `pnpm install` op Node 26.13.1 en de nieuwe gebruikersnaamregel (begint met letter of cijfer).
+- **Waarom gestopt:** weeklimiet op 74% (drempel 75%); een nieuwe taak met review gate zou daar midden in overheen gaan. Werktree schoon op `phase/1-database`.
+- **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored). De dev-db is gemigreerd en geseed.
+- **Open punten:** systeem-PATH (eigenaar). Nieuw geparkeerd, blokkeren niets nu: Belgische regio's, categorie-slugs, seed op staging, `NODE_ENV` zonder waarde, Redis zonder TLS, `effect`-kwetsbaarheid (agent, bij de fase-gate). Eerder: gebruikersnamen extra regels, betaalgegevens, groepspunten.
+- **Hervat op:** 24-11-2026 01:05 via `guesshive-resume` (5 minuten na de reset van de weeklimiet).
 
 ---
 
