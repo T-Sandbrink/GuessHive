@@ -15,7 +15,8 @@ try {
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
-  migrations: { path: 'prisma/migrations' },
+  // `prisma migrate reset` runs the seed afterwards (task 1.4).
+  migrations: { path: 'prisma/migrations', seed: 'pnpm run db:seed' },
   // `prisma generate` needs no database, so an empty URL is fine there;
   // migrate/studio then fail on the missing DATABASE_URL.
   datasource: { url: (process.env['DATABASE_URL'] ?? '').trim() },
