@@ -1362,8 +1362,9 @@ ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_actorId_fkey" FOREIGN KEY ("acto
 ALTER TABLE "User" ADD CONSTRAINT "User_streakFreezes_check" CHECK ("streakFreezes" BETWEEN 0 AND 2);
 -- Case-insensitive unique usernames: "username" is always the lowercase form of "displayUsername".
 ALTER TABLE "User" ADD CONSTRAINT "User_username_lowercase_check" CHECK ("username" = lower("displayUsername"));
--- Usernames are ASCII only (USERNAME_PATTERN in @guesshive/shared), so lower() matches JavaScript in every locale.
-ALTER TABLE "User" ADD CONSTRAINT "User_displayUsername_charset_check" CHECK ("displayUsername" ~ '^[A-Za-z0-9_.]+$');
+-- Usernames are ASCII only and start with a letter or digit (USERNAME_PATTERN in @guesshive/shared),
+-- so lower() matches JavaScript in every locale.
+ALTER TABLE "User" ADD CONSTRAINT "User_displayUsername_charset_check" CHECK ("displayUsername" ~ '^[A-Za-z0-9][A-Za-z0-9_.]*$');
 
 ALTER TABLE "Group" ADD CONSTRAINT "Group_seasonLengthMonths_check" CHECK ("seasonLengthMonths" IN (1, 3, 6));
 ALTER TABLE "Group" ADD CONSTRAINT "Group_maxMembers_check" CHECK ("maxMembers" > 0);
