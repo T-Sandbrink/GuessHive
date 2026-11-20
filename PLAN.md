@@ -14,14 +14,12 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** de eigenaar heeft op 20-11-2026 de vier open vragen beantwoord en Docker draait. Deze interactieve sessie verwerkt de antwoorden:
-  - **1.5** `task/1.5-validation-pipe`: `location` toevoegen aan validatiefouten, ADR 0003 bijwerken, korte re-review, mergen.
-  - **1.2** `task/1.2-id-strategy`: ADR 0004 afronden (6 tekens), mergen.
-  - **1.3** `task/1.3-schema`: anonimiseren bij verwijderen en hoofdletterongevoelige gebruikersnamen in het schema, migratie toepassen + drift-check, db-review op de wijzigingen, mergen.
-- **Klaar:** fase 0 (tag `phase-0-done`), taak 1.1, taak 1.5 zonder de validatiepipe (gemerged).
+- **Huidige taak:** 1.4 (seed-script), nog niet begonnen. Daarna 1.6–1.12.
+- **Klaar:** fase 0 (tag `phase-0-done`), taken 1.1, 1.2, 1.3 en 1.5 (alle gemerged in `phase/1-database` en gepusht, review gates PASS).
+- **Waarom gestopt:** gebruikslimiet (5-uursvenster 77% om 16:20). Werktree schoon op `phase/1-database`.
 - **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored)
-- **Open punten:** Node 26 en het systeem-PATH (eigenaar, zie "Open vragen").
-- **Hervat op:** n.v.t., sessie loopt.
+- **Open punten:** Node 26 en het systeem-PATH (eigenaar). Nieuw geparkeerd, blokkeren niets nu: "Gebruikersnamen: extra regels" (vóór 2.11), "Betaalgegevens na accountverwijdering" (vóór 11.2/fase 13), bijvraag bij "Groepspunten-mechaniek".
+- **Hervat op:** 20-11-2026 17:05 via `guesshive-resume`.
 
 ---
 
