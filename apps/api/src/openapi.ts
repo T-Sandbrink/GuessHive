@@ -7,7 +7,6 @@ import {
 } from '@nestjs/swagger';
 import { apiErrorBodySchema } from '@guesshive/shared';
 import { z } from 'zod';
-import type { ApiEnv } from './env.js';
 
 /** Swagger UI path; the JSON document is served at `${OPENAPI_PATH}-json`. */
 export const OPENAPI_PATH = 'docs';
@@ -30,7 +29,7 @@ export function createOpenApiDocument(app: INestApplication): OpenAPIObject {
     .addGlobalResponse(
       {
         status: 400,
-        description: 'Invalid input (code VALIDATION_FAILED, with issues)',
+        description: 'Invalid input (code VALIDATION_FAILED with issues, or BAD_REQUEST)',
         schema: errorBody,
       },
       {
@@ -44,11 +43,13 @@ export function createOpenApiDocument(app: INestApplication): OpenAPIObject {
 }
 
 /**
- * Serves Swagger UI on `/docs` in development only (task 1.6): test and production never expose
- * it. Returns whether the docs were mounted.
+ * Serves Swagger UI on `/docs` in development only (task 1.6). Takes the raw NODE_ENV, because the
+ * env schema defaults an unset value to development: a host that forgot NODE_ENV must not expose
+ * the route map, so only an explicit `development` mounts the docs. These routes bypass Nest
+ * guards, so this check is their only protection. Returns whether the docs were mounted.
  */
-export function setupOpenApi(app: INestApplication, env: Pick<ApiEnv, 'NODE_ENV'>): boolean {
-  if (env.NODE_ENV !== 'development') {
+export function setupOpenApi(app: INestApplication, rawNodeEnv: string | undefined): boolean {
+  if (rawNodeEnv?.trim() !== 'development') {
     return false;
   }
   SwaggerModule.setup(OPENAPI_PATH, app, () => createOpenApiDocument(app));

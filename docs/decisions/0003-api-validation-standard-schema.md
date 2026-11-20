@@ -29,4 +29,9 @@ decorator metadata: `@Body({ schema })`, `@Param('id', { schema })` and `Standar
 - One dependency fewer, and no version mismatch with NestJS 12.
 - Task 1.6 must show that `@nestjs/swagger` can describe these schemas (for example from zod's
   JSON Schema output). If it cannot, the agent asks the owner before adding a library.
+  **Resolved (task 1.6, 2026-11-20):** `@nestjs/swagger` 12.1 documents `@Body/@Query/@Param({ schema })`
+  natively (zod's Standard JSON Schema, OpenAPI 3.0 target), and per-route responses use
+  `@ApiResponse({ standardSchema })`. Exception: `addGlobalResponse` deep-clones its options, which
+  breaks a Standard Schema there, so global responses pass
+  `z.toJSONSchema(schema, { target: 'openapi-3.0', io: 'output' })`. No extra library needed.
 - The web app reuses the same schemas for client-side form validation.

@@ -16,7 +16,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
   const env = app.get<ApiEnv>(API_ENV);
   // OpenAPI + Swagger UI on /docs, development only (task 1.6).
-  setupOpenApi(app, env);
+  setupOpenApi(app, process.env['NODE_ENV']);
   await app.listen(env.PORT, env.HOST);
 }
 await bootstrap();

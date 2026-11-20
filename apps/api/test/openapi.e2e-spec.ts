@@ -1,4 +1,5 @@
 import { Body, Controller, type INestApplication, Param, Post, Query } from '@nestjs/common';
+import { ApiCreatedResponse } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { type App } from 'supertest/types.js';
@@ -12,11 +13,18 @@ const createThingSchema = z.object({
   title: z.string().min(3).max(200),
   tags: z.array(z.string()),
 });
-const listQuerySchema = z.object({ cursor: z.string().optional() });
+// Stand-ins for the shared schemas (one zod version, so behaviour is identical). `limit` is the
+// coerce + default shape every paginated list uses.
+const listQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+const thingSchema = z.object({ id: z.uuid(), title: z.string() });
 
 @Controller('things')
 class ThingsController {
   @Post(':id')
+  @ApiCreatedResponse({ standardSchema: thingSchema })
   create(
     @Param('id', { schema: z.uuid() }) id: string,
     @Query({ schema: listQuerySchema }) _query: z.infer<typeof listQuerySchema>,
@@ -78,13 +86,37 @@ describe('OpenAPI (task 1.6)', () => {
     const operation = paths['/things/{id}']?.['post'];
     expect(operation).toBeDefined();
 
-    const parameters = operation?.['parameters'] as { name: string; in: string }[];
-    expect(parameters).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: 'id', in: 'path' }),
-        expect.objectContaining({ name: 'cursor', in: 'query' }),
-      ]),
-    );
+    const parameters = operation?.['parameters'] as {
+      name: string;
+      in: string;
+      required?: boolean;
+      schema?: Record<string, unknown>;
+    }[];
+    const param = (name: string) => parameters.find((p) => p.name === name);
+    expect(param('id')).toMatchObject({
+      in: 'path',
+      required: true,
+      schema: { type: 'string', format: 'uuid' },
+    });
+    expect(param('cursor')).toMatchObject({ in: 'query', schema: { type: 'string' } });
+    expect(param('cursor')?.required).not.toBe(true);
+    expect(param('limit')).toMatchObject({
+      in: 'query',
+      schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 },
+    });
+    expect(param('limit')?.required).not.toBe(true);
+
+    const created = (
+      operation?.['responses'] as Record<
+        string,
+        Record<string, Record<string, Record<string, Record<string, unknown>>>>
+      >
+    )['201']?.['content']?.['application/json']?.['schema'];
+    expect(resolve(doc, created ?? {})).toMatchObject({
+      type: 'object',
+      required: expect.arrayContaining(['id', 'title']) as unknown,
+      properties: { id: { type: 'string', format: 'uuid' } },
+    });
 
     const content = (operation?.['requestBody'] as Record<string, Record<string, unknown>>)[
       'content'
@@ -120,12 +152,13 @@ describe('OpenAPI (task 1.6)', () => {
     }
   });
 
-  it.each(['test', 'production'] as const)(
-    'does not serve /docs when NODE_ENV=%s',
+  // Unset or empty must stay closed: the env schema would default those to development.
+  it.each(['test', 'production', undefined, '', ' Development'])(
+    'does not serve /docs when NODE_ENV=%j',
     async (nodeEnv) => {
       let mounted: boolean | undefined;
       app = await createApp((a) => {
-        mounted = setupOpenApi(a, { NODE_ENV: nodeEnv });
+        mounted = setupOpenApi(a, nodeEnv);
       });
       expect(mounted).toBe(false);
       await request(app.getHttpServer()).get(`/${OPENAPI_PATH}`).expect(404);
@@ -136,7 +169,7 @@ describe('OpenAPI (task 1.6)', () => {
   it('serves Swagger UI and the JSON document in development', async () => {
     let mounted: boolean | undefined;
     app = await createApp((a) => {
-      mounted = setupOpenApi(a, { NODE_ENV: 'development' });
+      mounted = setupOpenApi(a, 'development');
     });
     expect(mounted).toBe(true);
     const res = await request(app.getHttpServer()).get(`/${OPENAPI_PATH}-json`).expect(200);
