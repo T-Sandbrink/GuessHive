@@ -14,13 +14,14 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** 1.5 `[~]` (alleen nog de validatiepipe: Nest 12-ingebouwd, zie "Validatie in de api"), daarna 1.2, 1.3, 1.4, 1.6–1.12 op volgorde. De eigenaar heeft op 19-11-2026 (avond) alle blokkerende vragen beantwoord; zie de nieuwe rijen in "Vastgelegde beslissingen".
-- **Klaar:** fase 0 (tag `phase-0-done`), taak 1.1, taak 1.5 zonder de validatiepipe (gemerged in `phase/1-database` en gepusht). Project staat nu op Node 26 (`.nvmrc`, engines, `@types/node`).
-- **Nog te doen in deze taak:** validatiepipe met `StandardSchemaValidationPipe` en `issues: [{ path, code }]` (ADR 0003), review gate, `[x]`, mergen.
-- **Review gate nog nodig:** ja, voor het validatiedeel van 1.5.
+- **Huidige taak:** de eigenaar heeft op 20-11-2026 de vier open vragen beantwoord en Docker draait. Deze interactieve sessie verwerkt de antwoorden:
+  - **1.5** `task/1.5-validation-pipe`: `location` toevoegen aan validatiefouten, ADR 0003 bijwerken, korte re-review, mergen.
+  - **1.2** `task/1.2-id-strategy`: ADR 0004 afronden (6 tekens), mergen.
+  - **1.3** `task/1.3-schema`: anonimiseren bij verwijderen en hoofdletterongevoelige gebruikersnamen in het schema, migratie toepassen + drift-check, db-review op de wijzigingen, mergen.
+- **Klaar:** fase 0 (tag `phase-0-done`), taak 1.1, taak 1.5 zonder de validatiepipe (gemerged).
 - **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored)
-- **Open punten:** eigenaarsacties: systeem-PATH repareren en Node 26 LTS installeren (zie "Open vragen").
-- **Hervat op:** 19-11-2026 21:20 via `guesshive-resume` (verse sessie).
+- **Open punten:** Node 26 en het systeem-PATH (eigenaar, zie "Open vragen").
+- **Hervat op:** n.v.t., sessie loopt.
 
 ---
 
@@ -49,13 +50,16 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Node.js | **Node 26 LTS** lokaal en in CI (`.nvmrc`), in plaats van 24: winget biedt alleen nog 26 als LTS en NestJS 12 ondersteunt het (eigenaar, 19-11-2026) |
 | ID-generatie | UUIDv7 wordt **in de database** gemaakt (`uuidv7()` als standaardwaarde); daarom **PostgreSQL 18+**, ook bij de productie-hosting (eigenaar, 19-11-2026; ADR in taak 1.2) |
 | Validatie in de api | **Ingebouwde Standard Schema-validatie van NestJS 12** met de zod-schema's uit `packages/shared`, in plaats van `nestjs-zod` (dat officieel alleen Nest 10/11 ondersteunt). OpenAPI (1.6) moet daarmee nog bewezen worden (eigenaar, 19-11-2026; ADR 0003) |
-| Validatiefouten | Een validatiefout geeft `issues: [{ path, code }]` terug: veldnaam en soort fout, **nooit de ingevulde waarde**, zodat formulieren serverfouten bij het juiste veld tonen (eigenaar, 19-11-2026) |
+| Validatiefouten | Een validatiefout geeft `issues: [{ location, path, code }]` terug: `location` is `body`, `query` of `params`, `path` de veldnaam (bij een route-parameter de naam, bv. `['id']`) en `code` de soort fout, **nooit de ingevulde waarde**, zodat formulieren serverfouten bij het juiste veld tonen (eigenaar, 19-11-2026; `location` eigenaar, 20-11-2026) |
 | Redis-client | **ioredis** voor BullMQ, de health-check en de rate-limit-opslag; overstappen op node-redis kan later als ioredis stil komt te liggen (eigenaar, 19-11-2026) |
 | Foutlogs (5xx) | Het serverlog bewaart bij onverwachte fouten **alleen het fouttype, de foutcode en de plek in de code**, nooit de foutmelding zelf (eigenaar, 19-11-2026) |
 | Database-TLS | In productie start de api alleen als `DATABASE_URL` `sslmode=verify-full` heeft (behalve een lokale socket of localhost); bouwen in taak 11.6 (eigenaar, 19-11-2026) |
 | Api-tooling | De api volgt NestJS 12: **ESM-only**, tests met **Vitest** (zoals web en shared), linten met de **gedeelde ESLint-config** in plaats van oxlint (eigenaar, 19-11-2026; ADR 0002) |
 | Dependency-updates | **Renovate** (eigenaar, 18-11-2026). De agent zet `renovate.json` klaar; de eigenaar heeft de Renovate GitHub-app op 19-11-2026 geïnstalleerd. Renovate-PR's gaan naar `main` en worden alleen door de eigenaar gemerged |
 | ID's | **UUIDv7** als primaire sleutel (native Postgres-`uuid`, op tijd sorteerbaar); publieke URL's krijgen daarnaast een korte id (eigenaar, 18-11-2026; ADR in taak 1.2) |
+| Korte publieke id | **6 tekens**, willekeurig, uit kleine letters en cijfers zonder verwarrende tekens (`0 o 1 i l`); de server zoekt alleen op de id, een oude of foute slug stuurt met 301 door naar de juiste URL (eigenaar, 20-11-2026; ADR 0004) |
+| Account definitief verwijderen | **Anonimiseren**: na de 14 dagen bedenktijd wordt de koppeling naar de gebruiker leeg ("verwijderde gebruiker"), de tekst van diens reacties wordt gewist maar antwoorden van anderen blijven staan, en een groep gaat over naar het oudste lid (of verdwijnt als er niemand meer is). Zo ook bij stemmen (eigenaar, 20-11-2026) |
+| Gebruikersnamen | **Uniek zonder op hoofdletters te letten** ("Sam" en "sam" kunnen niet allebei), maar de eigen schrijfwijze blijft zichtbaar ("SamDeBij"); één extra kolom met de genormaliseerde naam (eigenaar, 20-11-2026) |
 
 ### UX-beslissingen
 
@@ -224,8 +228,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 - [x] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
   - *Notitie (19-11):* Prisma 7.10.1 met pg-adapter. Review gate: code- en security-reviewer PASS; db-reviewer vond 1 🔴 (`db:generate` hing via `prisma.config.ts` af van de shared-build) en 1 🟡 (geen connect-timeout op de pg-pool), code-reviewer 1 🟡 (pool sloot vóór lopende requests klaar waren). Alle drie opgelost: `prisma.config.ts` is zelfstandig, pool met 5 s connect-timeout en max 10, `$disconnect` in `onApplicationShutdown`. Re-review PASS. Open 🔵-nits voor later: `db:deploy`-script (1.3/1.10), env één keer parsen via een Nest-provider, test op `enableShutdownHooks`, Sentry-scrubber voor pg-fouten (fase 11), schema-engine-binary cachen in CI. Twee eigenaarsvragen in "Open vragen" (UUIDv7-generatie, TLS in productie).
-- [ ] 1.2 ID-strategie vastleggen in een ADR: UUIDv7 (gekozen door de eigenaar, 18-11-2026), met een korte publieke id voor URL's
-- [ ] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken, inclusief de verdienmodel-velden en -tabellen (voorheen 13.1: `User.plan`, `premiumUntil`, `Subscription`, `Partner`, `EmbedKey`, `Sponsor`, `Question.sponsorId`), alles standaard uit
+- [~] 1.2 ID-strategie vastleggen in een ADR: UUIDv7 (gekozen door de eigenaar, 18-11-2026), met een korte publieke id voor URL's
+- [~] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken, inclusief de verdienmodel-velden en -tabellen (voorheen 13.1: `User.plan`, `premiumUntil`, `Subscription`, `Partner`, `EmbedKey`, `Sponsor`, `Question.sponsorId`), alles standaard uit
 - [ ] 1.4 Seed-script: alle landen (ISO), met `localEnabled` aan voor NL en BE en regio's voor NL en BE; de 10 categorieën uit "Lancering & landen" (NL+EN, Politiek met `sensitive = true`); 1 admin-gebruiker; ~20 voorbeeldvragen van alle types (development-data, niet de startcontent)
 - [~] 1.5 Globale Nest-setup: config-module (zod), validatie met de ingebouwde `StandardSchemaValidationPipe` van Nest 12 (fouten met `issues: [{ path, code }]`), exception filter met `{ code, message }`, request-logging (pino) zonder PII
   - *Notitie (19-11):* gebouwd en gemerged in `phase/1-database`, behalve de `ZodValidationPipe` (wacht op de eigenaarsvraag over nestjs-zod vs. Nest 12). `ConfigModule` levert de geparste env als `API_ENV`; `AllExceptionsFilter` geeft altijd `{ code, message }` met codes uit `@guesshive/shared` (`API_ERROR_CODES`, `apiErrorBodySchema`); domeinfouten via `ApiException`. Logging met nestjs-pino: alleen request-id, methode, route-sjabloon, status en duur; `X-Request-Id` in elke response; 5xx-logs zonder foutmelding. Review gate: code- en security-reviewer PASS; 4 🟡 opgelost (5xx-log zonder melding, headers-al-verstuurd, statussen buiten 400–599, niet-HTTP-contexten). 🔵 voor later: `NODE_ENV` verplicht maken of `LOG_PRETTY` in de deploytaak; extra redact-paden bij `logger.error({ err })`.
