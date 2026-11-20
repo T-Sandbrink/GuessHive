@@ -220,7 +220,8 @@ model User {
   /// lower(displayUsername). Names match Better Auth's username plugin (owner, 2026-11-20).
   username              String            @unique @db.VarChar(32)
   /// The username as the user typed it ("SamDeBij"); shown everywhere. Only ASCII letters, digits,
-  /// `_` and `.` (USERNAME_PATTERN in @guesshive/shared; CHECK in the migration).
+  /// `_` and `.`, starting with a letter or digit (USERNAME_PATTERN in @guesshive/shared; CHECK in
+  /// the migration).
   displayUsername       String            @db.VarChar(32)
   avatarUrl             String?
   countryCode           String            @db.VarChar(2)
