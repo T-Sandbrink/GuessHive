@@ -4,6 +4,7 @@ import request from 'supertest';
 import { type App } from 'supertest/types.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../src/app.module.js';
+import { HEALTH_CHECK_TIMEOUT_MS } from '../src/health/health.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { RedisService } from '../src/redis/redis.service.js';
 
@@ -63,4 +64,22 @@ describe('GET /health (task 1.7)', () => {
       expect(res.headers['cache-control']).toBe('no-store');
     },
   );
+
+  it('starts with Redis unreachable and reports it down within the budget', async () => {
+    vi.stubEnv('REDIS_URL', 'redis://127.0.0.1:1');
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(PrismaService)
+      .useValue({
+        onModuleInit: () => undefined,
+        onApplicationShutdown: () => undefined,
+        $queryRaw: up,
+      })
+      .compile();
+    app = moduleRef.createNestApplication<INestApplication<App>>();
+    await app.init();
+    const started = Date.now();
+    const res = await request(app.getHttpServer()).get('/health').expect(503);
+    expect(Date.now() - started).toBeLessThan(HEALTH_CHECK_TIMEOUT_MS + 500);
+    expect(res.body).toEqual({ status: 'error', database: 'up', redis: 'down' });
+  });
 });

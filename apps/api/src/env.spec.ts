@@ -14,6 +14,17 @@ describe('loadEnv (api)', () => {
     });
   });
 
+  it('requires REDIS_URL in production', () => {
+    expect(() => loadEnv({ NODE_ENV: 'production', DATABASE_URL })).toThrow(/REDIS_URL/);
+    expect(() => loadEnv({ NODE_ENV: 'production', DATABASE_URL, REDIS_URL: ' ' })).toThrow(
+      /REDIS_URL/,
+    );
+    expect(
+      loadEnv({ NODE_ENV: 'production', DATABASE_URL, REDIS_URL: 'rediss://cache.example' })
+        .REDIS_URL,
+    ).toBe('rediss://cache.example');
+  });
+
   it('accepts redis and rediss URLs and rejects other schemes', () => {
     expect(loadEnv({ DATABASE_URL, REDIS_URL: 'rediss://cache.example:6380' }).REDIS_URL).toBe(
       'rediss://cache.example:6380',
@@ -23,7 +34,13 @@ describe('loadEnv (api)', () => {
 
   it('reads NODE_ENV, HOST and PORT from the environment', () => {
     expect(
-      loadEnv({ NODE_ENV: 'production', HOST: '0.0.0.0', PORT: '8080', DATABASE_URL }),
+      loadEnv({
+        NODE_ENV: 'production',
+        HOST: '0.0.0.0',
+        PORT: '8080',
+        DATABASE_URL,
+        REDIS_URL: 'rediss://cache.example',
+      }),
     ).toMatchObject({ NODE_ENV: 'production', HOST: '0.0.0.0', PORT: 8080 });
   });
 

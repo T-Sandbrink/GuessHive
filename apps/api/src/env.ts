@@ -26,7 +26,12 @@ export type ApiEnv = z.infer<typeof apiEnvSchema>;
 
 /** Validates the api environment; throws (and so stops startup) when it is invalid. */
 export function loadEnv(source: Record<string, string | undefined> = process.env): ApiEnv {
-  return parseEnv(apiEnvSchema, source);
+  const env = parseEnv(apiEnvSchema, source);
+  // The REDIS_URL default is for local development only; production must set it (fail fast).
+  if (env.NODE_ENV === 'production' && !source['REDIS_URL']?.trim()) {
+    throw new Error('Invalid environment variables:\n- REDIS_URL: required in production');
+  }
+  return env;
 }
 
 /** Loads a local `.env` file when present. In production the host sets real env vars. */

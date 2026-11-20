@@ -8,7 +8,7 @@ import { LoggerModule } from './logging/logger.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
-/** Root module. Domain modules (health, auth, questions, …) are added from phase 1 on. */
+/** Root module: infrastructure (config, logging, Prisma, Redis) plus the domain modules. */
 @Module({
   imports: [ConfigModule, LoggerModule, PrismaModule, RedisModule, HealthModule],
   providers: [

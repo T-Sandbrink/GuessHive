@@ -22,9 +22,21 @@ export class RedisService extends Redis implements OnApplicationShutdown {
     });
     // Without a listener ioredis prints every failed reconnect as an unhandled error. Log only
     // the error code: the message can contain the host, and the URL can contain a password.
+    // Logged once per outage (ioredis retries every few seconds), and again on recovery.
     const logger = new Logger(RedisService.name);
-    this.on('error', (error: NodeJS.ErrnoException) => {
-      logger.warn(`Redis connection error (${error.code ?? 'unknown'})`);
+    let failing = false;
+    this.on('error', (error: Error) => {
+      if (!failing) {
+        failing = true;
+        const code = 'code' in error && typeof error.code === 'string' ? error.code : 'unknown';
+        logger.warn(`Redis connection error (${code})`);
+      }
+    });
+    this.on('ready', () => {
+      if (failing) {
+        failing = false;
+        logger.log('Redis connection restored');
+      }
     });
   }
 

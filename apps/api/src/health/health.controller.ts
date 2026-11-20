@@ -1,4 +1,5 @@
-import { Controller, Get, HttpCode, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { ApiOkResponse, ApiServiceUnavailableResponse } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { type HealthReport, HealthService } from './health.service.js';
 
@@ -11,7 +12,10 @@ export class HealthController {
   constructor(private readonly health: HealthService) {}
 
   @Get()
-  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: '{ status: "ok", database: "up", redis: "up" }' })
+  @ApiServiceUnavailableResponse({
+    description: 'status "error"; database/redis each "up" or "down"',
+  })
   async check(@Res({ passthrough: true }) res: Response): Promise<HealthReport> {
     const report = await this.health.check();
     if (report.status !== 'ok') {
