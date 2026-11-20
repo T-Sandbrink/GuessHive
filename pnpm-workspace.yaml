@@ -15,6 +15,11 @@ ignoredBuiltDependencies:
   - '@scarf/scarf'
   - prisma
 
+# Security overrides. Remove each one once the parent ships a fixed version.
+overrides:
+  # GHSA-7589-6fvf-x4pw (ReDoS, high): @prisma/config 7.10.1 pins effect 3.20.0.
+  effect: '>=3.22.1 <4'
+
 # One version range per shared dependency; packages refer to it as "catalog:".
 catalog:
   '@types/node': ^26.6.6
