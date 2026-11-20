@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
 import {
+  Body,
   type CanActivate,
   Controller,
   ForbiddenException,
@@ -10,11 +11,14 @@ import {
   Injectable,
   NotFoundException,
   Param,
+  Post,
+  Query,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import request from 'supertest';
 import { type App } from 'supertest/types.js';
+import { z } from 'zod';
 import { AppModule } from '../src/app.module.js';
 import { ApiException } from '../src/common/api.exception.js';
 import { REQUEST_ID_HEADER } from '../src/logging/logger.module.js';
@@ -77,6 +81,25 @@ class ErrorsController {
   }
 }
 
+const createSchema = z.object({ title: z.string().min(3), tags: z.array(z.string()).max(3) });
+const listSchema = z.object({ limit: z.coerce.number().int().min(1).max(50) });
+
+@Controller('test-validation')
+class ValidationController {
+  @Post(':id')
+  create(
+    @Param('id', { schema: z.uuid() }) id: string,
+    @Body({ schema: createSchema }) body: z.infer<typeof createSchema>,
+  ): { id: string; body: z.infer<typeof createSchema> } {
+    return { id, body };
+  }
+
+  @Get()
+  list(@Query({ schema: listSchema }) query: z.infer<typeof listSchema>): { limit: number } {
+    return { limit: query.limit };
+  }
+}
+
 // HTTP tests without a database; real-database tests arrive in task 1.10.
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
@@ -85,7 +108,7 @@ describe('App (e2e)', () => {
     vi.stubEnv('DATABASE_URL', 'postgresql://user:pass@localhost:5440/guesshive');
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
-      controllers: [ErrorsController],
+      controllers: [ErrorsController, ValidationController],
     })
       .overrideProvider(PrismaService)
       .useValue({})
@@ -151,5 +174,59 @@ describe('App (e2e)', () => {
     const res = await request(app.getHttpServer()).get('/test-errors/crash/hunter2').expect(500);
     expect(res.body).toEqual({ code: 'INTERNAL_ERROR', message: 'Internal server error' });
     expect(JSON.stringify(res.body)).not.toContain('hunter2');
+  });
+
+  describe('request validation', () => {
+    const id = '0190f2a4-7b1e-7c3d-9a2b-1c2d3e4f5a6b';
+
+    it('passes the parsed body and params to the handler', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/test-validation/${id}`)
+        .send({ title: 'Beste speler', tags: ['voetbal'], isAdmin: true })
+        .expect(201);
+      expect(res.body).toEqual({ id, body: { title: 'Beste speler', tags: ['voetbal'] } });
+    });
+
+    it('coerces query strings through the schema', async () => {
+      const res = await request(app.getHttpServer()).get('/test-validation?limit=20').expect(200);
+      expect(res.body).toEqual({ limit: 20 });
+    });
+
+    it('answers an invalid body with 400 VALIDATION_FAILED and location/path/code issues only', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/test-validation/${id}`)
+        .send({ title: 'jan@example.com'.slice(0, 2), tags: 42, note: 'jan@example.com' })
+        .expect(400);
+      expect(res.body).toEqual({
+        code: 'VALIDATION_FAILED',
+        message: 'Validation failed',
+        issues: [
+          { location: 'body', path: ['title'], code: 'too_small' },
+          { location: 'body', path: ['tags'], code: 'invalid_type' },
+        ],
+      });
+      expect(JSON.stringify(res.body)).not.toContain('jan@example.com');
+    });
+
+    it('validates route params', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/test-validation/not-a-uuid')
+        .send({ title: 'Beste speler', tags: [] })
+        .expect(400);
+      expect(res.body).toEqual({
+        code: 'VALIDATION_FAILED',
+        message: 'Validation failed',
+        issues: [{ location: 'params', path: ['id'], code: 'invalid_format' }],
+      });
+    });
+
+    it('validates query strings', async () => {
+      const res = await request(app.getHttpServer()).get('/test-validation?limit=500').expect(400);
+      expect(res.body).toEqual({
+        code: 'VALIDATION_FAILED',
+        message: 'Validation failed',
+        issues: [{ location: 'query', path: ['limit'], code: 'too_big' }],
+      });
+    });
   });
 });
