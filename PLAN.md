@@ -58,8 +58,8 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Dependency-updates | **Renovate** (eigenaar, 18-11-2026). De agent zet `renovate.json` klaar; de eigenaar heeft de Renovate GitHub-app op 19-11-2026 geïnstalleerd. Renovate-PR's gaan naar `main` en worden alleen door de eigenaar gemerged |
 | ID's | **UUIDv7** als primaire sleutel (native Postgres-`uuid`, op tijd sorteerbaar); publieke URL's krijgen daarnaast een korte id (eigenaar, 18-11-2026; ADR in taak 1.2) |
 | Korte publieke id | **6 tekens**, willekeurig, uit kleine letters en cijfers zonder verwarrende tekens (`0 o 1 i l`); de server zoekt alleen op de id, een oude of foute slug stuurt met 301 door naar de juiste URL (eigenaar, 20-11-2026; ADR 0004) |
-| Account definitief verwijderen | **Anonimiseren**: na de 14 dagen bedenktijd wordt de koppeling naar de gebruiker leeg ("verwijderde gebruiker"), de tekst van diens reacties wordt gewist maar antwoorden van anderen blijven staan, en een groep gaat over naar het oudste lid (of verdwijnt als er niemand meer is). Zo ook bij stemmen (eigenaar, 20-11-2026) |
-| Gebruikersnamen | **Uniek zonder op hoofdletters te letten** ("Sam" en "sam" kunnen niet allebei), maar de eigen schrijfwijze blijft zichtbaar ("SamDeBij"); één extra kolom met de genormaliseerde naam (eigenaar, 20-11-2026) |
+| Account definitief verwijderen | **Anonimiseren**: na de 14 dagen bedenktijd wordt de koppeling naar de gebruiker leeg ("verwijderde gebruiker"), de tekst van diens reacties wordt gewist maar antwoorden van anderen blijven staan, en een groep gaat over naar het oudste lid (of verdwijnt als er niemand meer is). Zo ook bij stemmen en **voorspellingen** (blijven anoniem meetellen; persoonlijke scores verdwijnen) (eigenaar, 20-11-2026) |
+| Gebruikersnamen | **Uniek zonder op hoofdletters te letten** ("Sam" en "sam" kunnen niet allebei), maar de eigen schrijfwijze blijft zichtbaar ("SamDeBij"); één extra kolom met de genormaliseerde naam. Alleen **letters A–Z, cijfers, `_` en `.`**, zodat kleine letters overal hetzelfde uitvallen en look-alikes niet kunnen; afgedwongen in zod (`USERNAME_PATTERN`) en in de database (eigenaar, 20-11-2026) |
 
 ### UX-beslissingen
 
@@ -162,9 +162,11 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Merknaam-check**: GuessHive in het EUIPO-register controleren vóór lancering (eigenaar).
 - [ ] **Domeinen registreren**: `.com`, `.net`, `.eu` en `.nl` (eigenaar).
 - [ ] **Groepspunten-mechaniek** (voorstel, in fase 7b ter goedkeuring): elk lid start per seizoen met 1.000 groepspunten, en zet per groepsvoorspelling 10–100 punten in. Wie goed zat, deelt de pot naar verhouding van de inzet. Eigenaar keurt goed of stuurt bij.
+  - *Bijvraag (db-review 1.3):* wat gebeurt er met de inzet van een lid dat zijn account definitief verwijdert terwijl de pot nog open staat? Nu verdwijnt die inzet (en zijn bezwaarstem); bewaren vraagt een eigen id in `GroupStake`.
 - [ ] **Juridische check inzet-tekst** (eigenaar): mag een vrije "inzet"-afspraak tussen vrienden (zonder geld via GuessHive) onder de Wet op de kansspelen en de Belgische regels? Tot het antwoord er is, bouwt de agent het veld achter een feature-flag (standaard uit).
 - [ ] **Dark Corner: beeldmoderatie** (eigenaar kiest dienst in fase 9b): automatische beeldscan (naakt, geweld, extremistische symbolen) + verplichte hash-check op misbruikmateriaal (bijv. Cloudflare CSAM-scan of PhotoDNA) + menselijke controle.
 - [ ] **Premium-prijs en betaaldienst** (vóór fase 13): voorstel €2,99 per maand of €24,99 per jaar, betalen via Mollie (iDEAL, Bancontact, creditcard). De eigenaar beslist en regelt het account.
+- [ ] **Betaalgegevens na accountverwijdering** (vóór 11.2 en fase 13; db-review 1.3): nu worden abonnementen (`Subscription`) mee verwijderd. De fiscale bewaarplicht (7 jaar) geldt mogelijk voor onze eigen administratie. **(A, aanbevolen, na juridische check)** bewaren met lege koppeling naar de gebruiker en alleen de minimale factuurgegevens; (B) verwijderen en vertrouwen op de administratie van de betaaldienst.
 - [ ] **Tarieven voor embeds, inzichten en sponsoring** (vóór fase 13): de eigenaar bepaalt de prijzen. De agent bouwt een eenvoudig partnerbeheer.
 - [ ] **Dagvoorspellingen: bron van uitslagen** (fase 8): handmatig door admins/ambassadeurs, of automatisch via een weer- of sport-API (kost mogelijk geld). Voorstel: eerst handmatig.
 - [ ] **Bijzondere persoonsgegevens laten toetsen** (eigenaar, vóór fase 9 en 9b): stemmen op politieke vragen en Dark Corner-vragen over seks, gezondheid of drugs kunnen bijzondere persoonsgegevens zijn (AVG art. 9). Voorstel: uitdrukkelijke toestemming per categorie vóór de eerste stem, strengere toegang, nooit voor sponsors of partners behalve als totaal vanaf 10. Een jurist of privacy-adviseur bevestigt dit, of stuurt bij.
@@ -172,6 +174,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] **Vrijspeel-schema** (fase 8b): de agent stelt voor welke bij-onderdelen, kleuren en titels bij welk level of welke badge horen (de mockup "Jouw bij" toont een eerste idee), en de eigenaar keurt goed of stuurt bij.
 - [ ] **Node 26 LTS op deze pc** (eigenaar): hier draait Node 25.0.0 (end-of-life); project en CI gebruiken nu Node 26. In een terminal: `winget uninstall OpenJS.NodeJS` en daarna `winget install OpenJS.NodeJS.LTS`, dan de Claude-app herstarten en `pnpm install` draaien.
 - [ ] **Systeem-PATH repareren** (eigenaar, nu): in het systeem-PATH van deze pc staat de kapotte regel `C:\Program Files (x86)\cloudflared"` (met een losse `"`). Turborepo stopt daardoor met zoeken naar pnpm (`Unable to find package manager binary`), dus `pnpm dev`/`pnpm lint` werken niet en geplande runs lopen vast. Oplossing: Windows-instellingen › "Omgevingsvariabelen voor het systeem bewerken" › Systeemvariabelen › Path › verwijder alleen die regel (de goede `C:\Program Files (x86)\cloudflared\` blijft staan) › OK, en start daarna de Claude-app opnieuw. Tot die tijd zet de agent de npm-map vooraan in zijn eigen PATH.
+- [ ] **Gebruikersnamen: extra regels tegen verwarrende namen** (nodig vóór 2.11, samen met de lengtegrenzen; blokkeert 1.3 niet; db-review). Nu mag een naam ook alleen uit punten bestaan (`.`, `..`), en `/nl/u/..` wordt door browsers ingekort tot `/nl/`, dus zo'n profiel is onbereikbaar. **(A, aanbevolen)** de naam begint met een letter of cijfer (sluit ook `_` en `.` als begin uit); één regel in zod en de database. (B) minstens één letter of cijfer, punten overal toegestaan. (C) A plus geen twee punten achter elkaar en geen punt aan het eind. De database-regel komt dan in een kleine extra migratie.
 - [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), analytics-dienst Umami of Plausible (fase 11), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor de AI-check op nieuwe vragen (fase 9) en de AI-nieuwssuggesties (na lancering), en eventueel een moderatie-API (bijv. OpenAI) als tweede keuze voor de AI-check (fase 9). Elke dienst die vragen te zien krijgt, heeft een verwerkersovereenkomst nodig.
 
 ---
@@ -229,7 +232,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [x] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
   - *Notitie (19-11):* Prisma 7.10.1 met pg-adapter. Review gate: code- en security-reviewer PASS; db-reviewer vond 1 🔴 (`db:generate` hing via `prisma.config.ts` af van de shared-build) en 1 🟡 (geen connect-timeout op de pg-pool), code-reviewer 1 🟡 (pool sloot vóór lopende requests klaar waren). Alle drie opgelost: `prisma.config.ts` is zelfstandig, pool met 5 s connect-timeout en max 10, `$disconnect` in `onApplicationShutdown`. Re-review PASS. Open 🔵-nits voor later: `db:deploy`-script (1.3/1.10), env één keer parsen via een Nest-provider, test op `enableShutdownHooks`, Sentry-scrubber voor pg-fouten (fase 11), schema-engine-binary cachen in CI. Twee eigenaarsvragen in "Open vragen" (UUIDv7-generatie, TLS in productie).
 - [x] 1.2 ID-strategie vastleggen in een ADR: UUIDv7 (gekozen door de eigenaar, 18-11-2026), met een korte publieke id voor URL's (ADR 0004: `uuidv7()` in Postgres 18+, korte id van 6 tekens, eigenaar 20-11-2026)
-- [~] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken, inclusief de verdienmodel-velden en -tabellen (voorheen 13.1: `User.plan`, `premiumUntil`, `Subscription`, `Partner`, `EmbedKey`, `Sponsor`, `Question.sponsorId`), alles standaard uit
+- [x] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken, inclusief de verdienmodel-velden en -tabellen (voorheen 13.1: `User.plan`, `premiumUntil`, `Subscription`, `Partner`, `EmbedKey`, `Sponsor`, `Question.sponsorId`), alles standaard uit
+  - *Notitie (20-11):* volledig schema + eerste migratie (`20261119220000_init`, met handgeschreven CHECK's en full-text-indexen). Eigenaarsbesluiten verwerkt: anonimiseren bij definitieve verwijdering (vragen, reacties, meldingen, voorspellingen, uploads; CHECK's dwingen af dat reactietekst en avatars eerst weg zijn, `Group.ownerId` blokkeert tot overdracht), hoofdletterongevoelige gebruikersnamen (`username` = `lower(displayUsername)`, alleen `A–Z a–z 0–9 _ .`). Getest op een lege Postgres 18-db: migratie schoon, beide drift-checks zonder verschil, SQL-rooktest van alle nieuwe regels. Review gate: db-reviewer PASS (2 rondes, alle 🟡 opgelost); open punten geparkeerd (gebruikersnaam-regels, betaalgegevens, inzet in groepspot).
 - [ ] 1.4 Seed-script: alle landen (ISO), met `localEnabled` aan voor NL en BE en regio's voor NL en BE; de 10 categorieën uit "Lancering & landen" (NL+EN, Politiek met `sensitive = true`); 1 admin-gebruiker; ~20 voorbeeldvragen van alle types (development-data, niet de startcontent)
 - [x] 1.5 Globale Nest-setup: config-module (zod), validatie met de ingebouwde `StandardSchemaValidationPipe` van Nest 12 (fouten met `issues: [{ location, path, code }]`), exception filter met `{ code, message }`, request-logging (pino) zonder PII
   - *Notitie (19-11):* gebouwd en gemerged in `phase/1-database`, behalve de `ZodValidationPipe` (wacht op de eigenaarsvraag over nestjs-zod vs. Nest 12). `ConfigModule` levert de geparste env als `API_ENV`; `AllExceptionsFilter` geeft altijd `{ code, message }` met codes uit `@guesshive/shared` (`API_ERROR_CODES`, `apiErrorBodySchema`); domeinfouten via `ApiException`. Logging met nestjs-pino: alleen request-id, methode, route-sjabloon, status en duur; `X-Request-Id` in elke response; 5xx-logs zonder foutmelding. Review gate: code- en security-reviewer PASS; 4 🟡 opgelost (5xx-log zonder melding, headers-al-verstuurd, statussen buiten 400–599, niet-HTTP-contexten). 🔵 voor later: `NODE_ENV` verplicht maken of `LOG_PRETTY` in de deploytaak; extra redact-paden bij `logger.error({ err })`.
@@ -259,6 +263,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 2.9 Cloudflare Turnstile op registratie en magic-link-aanvraag (server-side verificatie)
 - [ ] 2.10 Rate limits op login, registratie en magic link
 - [ ] 2.11 Onboarding-gegevens (kort): unieke `username`, `countryCode` (voorstel via IP-geolocatie, gebruiker bevestigt), interesses, plus akkoord voorwaarden + 16+-bevestiging. Regio, geboortedatum en geslacht zijn optioneel en worden later via `PATCH /me` aangevuld (zie 6.9)
+  - *Notitie (db-review 1.3, 20-11):* Better Auth maakt de `User`-rij al bij het inloggen via Google, Apple of magic link, vóór de onboarding een gebruikersnaam kiest. `username` en `displayUsername` zijn verplicht (NOT NULL); kies in fase 2 tussen een tijdelijke naam via `databaseHooks.user.create.before` of beide kolommen tijdelijk leeg laten tot de onboarding. De api leidt `username` altijd in één functie af van `displayUsername` en schrijft ze samen.
 - [ ] 2.14 Gast-stem afronden: een "pending vote/skip" (vraag-id, optie(s), zekerheid) die vóór aanmelden is gekozen, wordt na aanmelden/onboarding één keer server-side ingediend (gevalideerd alsof de gebruiker het nu doet, de vraag moet nog open zijn)
 - [ ] 2.12 `GET/PATCH /me`, avatar-upload naar S3 (lokaal SeaweedFS) als `MediaAsset` (status `PENDING`, resize, max-grootte, alleen JPG/PNG/WebP, EXIF eraf). Tot 9b.4 er is, worden geüploade avatars niet getoond (standaard-avatar)
 - [ ] 2.13 Tests: registratie → verificatie → login, magic link, guard-gedrag en rate limits
@@ -430,6 +435,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 9.2 Duplicaatdetectie bij indienen: vergelijkbare bestaande vragen tonen (full-text/trigram)
 - [ ] 9.3 Moderatiewachtrij (zie mockup "Admin: moderatie"): vragen die de AI-check niet haalden, preventief verborgen vragen, meldingen, politiek en Dark Corner. Per zaak de aanleiding (AI-check of meldingen, met kijkers en meldpercentage) en het advies van de Wachtbijen. Acties: goedkeuren, terugzetten, aanpassen of verwijderen, altijd met reden; de steller krijgt een motivering en kan bezwaar maken (DSA)
 - [ ] 9.4 Melden: vragen, reacties en gebruikers, met reden (inclusief "illegale inhoud" voor de DSA). Elke melding komt in de wachtrij. **Vragen** worden preventief verborgen zodra minstens 20 unieke ingelogde kijkers ze zagen en 20% van hen meldde (meldingen van verschillende accounts ouder dan 7 dagen; beide drempels in `AppSetting`); een admin beslist definitief. Unieke kijkers tellen met een Redis HyperLogLog per vraag, dus zonder tabel van wie wat zag. **Reacties**: na 3 meldingen (Dark Corner: 2) verborgen tot een moderator kijkt. Wie meldde, krijgt altijd bericht over de beslissing. Een melding "mogelijk illegaal" vraagt verplicht om uitleg en een verklaring naar eer en geweten (DSA art. 16)
+  - *Notitie (db-review 1.3, 20-11):* `Report.reporterId` mag leeg zijn (na accountverwijdering), dus de meldingsservice zet hem altijd uit de sessie; een test bewaakt "één melding per gebruiker per doel".
 - [ ] 9.5 Woordfilter (NL+EN scheldwoorden/spam) op vragen, reacties en usernames
 - [ ] 9.6 Trust score per gebruiker (accountleeftijd, geverifieerd, meldingen, gedrag), gebruikt voor rate limits
 - [ ] 9.7 Moderatoracties: verbergen, verwijderen, gebruiker waarschuwen/schorsen/bannen. Alles in een `AuditLog`
@@ -505,6 +511,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 11.12 DPIA (`docs/privacy/dpia.md`) voor bijzondere persoonsgegevens, Dark Corner, minderjarigen (16–17), demografische uitsplitsingen, fraudesignalen en AI-moderatie. **Eigenaar laat toetsen**
 - [ ] 11.13 Overzicht van verwerkers (hosting, Resend, Cloudflare/R2, Sentry, analytics, Mollie, Anthropic) met de status van de verwerkersovereenkomst en de doorgifte buiten de EU. **Eigenaar sluit de overeenkomsten af**
 - [ ] 11.14 Bewaartermijnen per tabel met persoonsgegevens + automatische opschoon- en anonimiseringsjobs (BullMQ), met tests
+  - *Notitie (db-review 1.3, 20-11):* ook een job voor geüploade bestanden zonder eigenaar waar geen `Question`, `Option` of `Sponsor` meer naar verwijst (verlaten concepten, afgewezen vragen), inclusief het bestand in de opslag. `Group.avatarUrl` is een losse URL, dus groepsavatars matchen op `url`.
 - [ ] 11.15 Datalekprocedure (`docs/privacy/datalek.md`): herkennen, vastleggen, binnen 72 uur melden bij de Autoriteit Persoonsgegevens indien nodig, gebruikers informeren
 - [ ] 11.16 DSA: melden van illegale inhoud (notice-and-action), motivering bij verwijderen of beperken, een bezwaarroute, een contactpunt, en transparantie over moderatie en gesponsorde inhoud
 - [ ] 11.17 Rechten van betrokkenen: inzage, correctie, verwijderen, beperking, bezwaar en overdraagbaarheid in de app of via een gedocumenteerde supportroute; afhandeling binnen een maand
@@ -571,7 +578,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 Richtlijn, geen keurslijf: aanpassen mag, maar dan ook hier bijwerken.
 
 ```
-User            id, email, emailVerified, username (uniek), avatarUrl,
+User            id, email, emailVerified, username (uniek, kleine letters), displayUsername (eigen schrijfwijze), avatarUrl,
                 countryCode, regionCode?, birthDate? (alleen voor leeftijdsgroep en 18+-check), birthDateCorrectedAt?, gender?, votesPublicByDefault (default false),
                 locale, timezone, role (USER|MODERATOR|ADMIN), trustScore, xp, level,
                 winStreak, longestWinStreak, streakFreezes (0-2), lastStreakDate,
@@ -593,13 +600,13 @@ FraudSignal     id, userId, ipHash (gezouten), deviceHint, ipCountry, day, creat
 GroupMember     groupId + userId (PK), role (OWNER|ADMIN|MEMBER), points, joinedAt, consentAt, leftAt?
 GroupInvite     id, groupId, code, createdById, expiresAt, revokedAt?
 GroupStake      questionId + userId (PK), optionId?, amount, stakeNote?
-GroupResolution questionId (PK), proposedOptionId, proposedById, proposedAt, disputeUntil, status (PROPOSED|DISPUTED|FINAL|ANNULLED)
+GroupResolution questionId (PK), proposedOptionId, proposedById?, proposedAt, disputeUntil, status (PROPOSED|DISPUTED|FINAL|ANNULLED)
 GroupDisputeVote questionId + userId (PK), optionId?, createdAt
 Subscription    id, userId, provider, status (TRIAL|ACTIVE|CANCELED|PAST_DUE), plan, periodEnd, createdAt
 Partner         id, name, kind (MEDIA|BRAND), contactEmail, createdAt
 EmbedKey        id, partnerId, keyHash, allowedOrigins, revokedAt?
 Sponsor         id, partnerId, name, logoAssetId?
-MediaAsset      id, ownerId, url, kind (QUESTION|OPTION|AVATAR|GROUP_AVATAR|SPONSOR_LOGO), altText (json nl/en),
+MediaAsset      id, ownerId?, url, kind (QUESTION|OPTION|AVATAR|GROUP_AVATAR|SPONSOR_LOGO), altText (json nl/en),
                 status (PENDING|APPROVED|REJECTED), moderationLabels (json), hash, createdAt
 Account/Session/Verification   (tabellen van Better Auth)
 
@@ -608,14 +615,14 @@ Region          code (PK), countryCode, names (json)
 Category        id, slug, names (json), icon, sortOrder, sensitive (bool)
 Ambassador      id, userId, countryCode, regionCode?, status (APPLIED|PROBATION|ACTIVE|REJECTED|REVOKED),
                 motivation, appliedAt, decidedById?, decidedAt?, probationEndsAt?
-ElectionBlackout id, countryCode, startsAt, endsAt, note, createdById
+ElectionBlackout id, countryCode, startsAt, endsAt, note, createdById?
 
 Question        id, shortId, slug, type (POLL_SINGLE|POLL_MULTI|THIS_OR_THAT|
                 PREDICTION_BINARY|PREDICTION_CHOICE), status (DRAFT|PENDING_REVIEW|
                 OPEN|CLOSED|RESOLVED|ANNULLED|REJECTED|ARCHIVED),
                 scope (GLOBAL|COUNTRY|REGION|GROUP), countryCode?, regionCode?, groupId? (verplicht bij GROUP),
                 darkCorner (bool, default false), isDaily (bool, dagvoorspelling, 8.2c), sponsorId?,
-                defaultLocale, authorId, categoryId, maxChoices, allowVoteChange,
+                defaultLocale, authorId?, categoryId, maxChoices, allowVoteChange,
                 imageAssetId?, opensAt, closesAt, resolvesAt?, resolvedOptionId?,
                 resolutionSource?, resolutionNote?, resolvedAt?, resolvedById?,
                 proposedOptionId?, proposedSource?, proposedAt? (9.1c), draftExpiresAt? (concept, 7 dagen),
@@ -632,7 +639,7 @@ Vote            id, questionId, userId? (null na definitieve verwijdering, 11.2)
                 UNIQUE(questionId, userId)
 VoteChoice      voteId + optionId (PK)      1 rij bij POLL_SINGLE/THIS_OR_THAT, max. maxChoices bij POLL_MULTI
 QuestionSkip    questionId + userId (PK), createdAt
-Forecast        id, questionId, userId, optionId?, probability (1-99), isPublic (default false), updatedAt
+Forecast        id, questionId, userId? (null na definitieve verwijdering, 11.2), optionId?, probability (1-99), isPublic (default false), updatedAt
                 UNIQUE(questionId, userId)
 ForecastHistory id, forecastId, optionId?, probability, createdAt
 CrowdSnapshot   questionId, optionId?, probability, forecasterCount, takenAt
@@ -643,7 +650,7 @@ ResultAggregate questionId, optionId, dimension (ALL|COUNTRY|REGION|AGE|GENDER),
 
 Follow          followerId + followeeId (PK), createdAt
 Agreement       userAId + userBId (PK), sharedCount, agreeCount, updatedAt
-Comment         id, questionId, userId, parentId?, body, showChoice (bool, default false), status, createdAt, editedAt?, deletedAt?
+Comment         id, questionId, userId?, parentId?, body, showChoice (bool, default false), status, createdAt, editedAt?, deletedAt?
 Reaction        id, userId, targetType (QUESTION|COMMENT), targetId, emoji
 Notification    id, userId, type, payload (json), readAt?, createdAt
 PushSubscription id, userId, endpoint, keys (json), createdAt
@@ -652,13 +659,15 @@ Badge           id, slug, names (json), descriptions (json), icon, title (json n
 UserCustomization userId (PK), mascotLook (json)?, mascotName?, useOwnBee, useBeeAsAvatar, accent, startTab, hiddenCategoryIds,
                 textSize, compactCards, celebrations (json), featuredBadgeIds, titleBadgeId?, updatedAt
 MascotItem      id, slot (BODY|EYES|NOSE|EARS|HAIR|BEARD|OUTFIT|ACCESSORY|ACCENT), key, unlock (FREE|LEVEL|BADGE), unlockValue?, sortOrder
-SeasonalMascot  id, name, look (json), countryCode?, startsAt, endsAt, createdById, createdAt
+SeasonalMascot  id, name, look (json), countryCode?, startsAt, endsAt, createdById?, createdAt
 UserBadge       userId + badgeId (PK), awardedAt
 XpEvent         id, userId, type, amount, refId?, createdAt
 Invite          id, inviterId, code, usedById?, usedAt?
 
-Report          id, reporterId, targetType, targetId, reason, status, handledById?, createdAt
+Report          id, reporterId?, targetType, targetId, reason, status, handledById?, createdAt
 AuditLog        id, actorId, action, targetType, targetId, meta (json), createdAt
 ```
+
+Account definitief verwijderen (eigenaar, 20-11-2026): `authorId`, `userId` (Comment), `proposedById`, `reporterId`, `MediaAsset.ownerId` en `createdById` (ElectionBlackout, SeasonalMascot) worden leeg (`ON DELETE SET NULL`), net als `Vote.userId` en `Forecast.userId`. Taak 11.2 wist eerst de reactietekst (een CHECK dwingt dat af), verwijdert de eigen avatar-bestanden en zet elke groep (ook verwijderde) over naar het langstzittende lid (vroegste `joinedAt`, niet vertrokken en zelf niet in bedenktijd, rol `OWNER` in dezelfde transactie), of verwijdert de groep als er niemand meer is; `Group.ownerId` heeft geen ON DELETE-actie, dus een vergeten groep blokkeert het verwijderen. `username` is altijd `lower(displayUsername)`, en `displayUsername` bevat alleen `A–Z a–z 0–9 _ .` (beide CHECK in de migratie).
 
 Belangrijke indexen: `Question(status, scope, countryCode, opensAt)`, `Question(categoryId, status)`, `Question(groupId)`, `Question(darkCorner, status)`, `Question(isDaily, resolvesAt)`, `Vote(questionId)`, `Vote(userId)`, `Forecast(questionId)`, `Comment(questionId, createdAt)`, `Notification(userId, readAt)`, plus full-text index op `QuestionTranslation(title)` per taal.
