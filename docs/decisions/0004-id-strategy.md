@@ -1,14 +1,14 @@
 # 0004 — IDs: UUIDv7 in Postgres, plus a short public id for URLs
 
-- **Status:** partly accepted. Primary keys are accepted (owner, 18-11 and 19-11-2026). The short
-  public id format is **proposed**, waiting for the owner (PLAN.md "Open vragen").
-- **Date:** 2026-11-19
+- **Status:** accepted. Primary keys: owner, 18-11 and 19-11-2026. Short public id: owner,
+  20-11-2026.
+- **Date:** 2026-11-20
 - **Deciders:** owner
 
 ## Context
 
 Every table needs a primary key. AGENTS.md §7 forbids exposing auto-increment ids, and public
-URLs combine a readable slug with a short id (`/nl/q/beste-voetballer-ooit-k3x9`). The owner chose
+URLs combine a readable slug with a short id (`/nl/q/beste-voetballer-ooit-k3x9ma`). The owner chose
 UUIDv7 (18-11-2026) and decided that the database generates it (19-11-2026), which needs
 PostgreSQL 18+ for the built-in `uuidv7()`.
 
@@ -30,16 +30,15 @@ PostgreSQL 18+ for the built-in `uuidv7()`.
   and composite keys such as `QuestionTranslation (questionId, locale)`.
 - Foreign keys are `@db.Uuid` as well and get an index (AGENTS.md §7).
 
-## Proposal: short public id (waiting for the owner)
+## Decision: short public id (accepted)
 
 Only entities with a public URL get a short id. Today that is `Question` (`Question.shortId`,
 already in the data model). Others get one when a public URL for them is planned.
 
-- **Format (recommended):** 6 characters from a 31-character alphabet of lowercase letters and
-  digits without look-alikes (`23456789abcdefghjkmnpqrstuvwxyz`, so no `0 o 1 i l`). About
-  887 million values. Alternatives the owner can pick: 4 characters as in the AGENTS.md example
-  (about 1 million values: too few once there are many questions), or 8 characters (about 850
-  billion, longer URLs).
+- **Format:** 6 characters from a 31-character alphabet of lowercase letters and digits without
+  look-alikes (`23456789abcdefghjkmnpqrstuvwxyz`, so no `0 o 1 i l`). About 887 million values.
+  Rejected: 4 characters (about 1 million values, too few once there are many questions) and
+  8 characters (about 850 billion, longer URLs for no practical gain).
 - **Generation:** random, from `crypto.getRandomValues` with rejection sampling (no modulo bias),
   in the api's questions service. Never derived from the UUID or a counter, so ids cannot be
   enumerated or used to estimate the number of questions.
@@ -56,6 +55,6 @@ already in the data model). Others get one when a public URL for them is planned
 
 - Task 1.3 models every surrogate key with `@default(dbgenerated("uuidv7()")) @db.Uuid` and
   `Question.shortId String @unique`. The short id length is enforced by the generator and a zod
-  schema in `packages/shared`, not by the column type, so changing the proposal later needs no
-  migration.
+  schema in `packages/shared` (added with the questions module), not by the column type, so a
+  later change of length needs no migration.
 - Hosting (phase 12) must provide PostgreSQL 18+.
