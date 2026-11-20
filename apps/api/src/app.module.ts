@@ -3,12 +3,14 @@ import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { createValidationPipe } from './common/validation.js';
 import { ConfigModule } from './config/config.module.js';
+import { HealthModule } from './health/health.module.js';
 import { LoggerModule } from './logging/logger.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { RedisModule } from './redis/redis.module.js';
 
-/** Root module. Domain modules (health, auth, questions, …) are added from phase 1 on. */
+/** Root module: infrastructure (config, logging, Prisma, Redis) plus the domain modules. */
 @Module({
-  imports: [ConfigModule, LoggerModule, PrismaModule],
+  imports: [ConfigModule, LoggerModule, PrismaModule, RedisModule, HealthModule],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     { provide: APP_PIPE, useFactory: createValidationPipe },
