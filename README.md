@@ -61,11 +61,12 @@ All ports bind to `127.0.0.1` only. Change them in a root `.env` file (see `.env
 ## Checks
 
 ```bash
-pnpm lint        # Prettier + ESLint in every package
-pnpm typecheck   # tsc / svelte-check
-pnpm test        # Vitest (web component tests need: pnpm --filter web exec playwright install chromium)
-pnpm test:e2e    # Playwright (web) and HTTP tests (api)
-pnpm build       # production build
+pnpm lint              # Prettier + ESLint in every package
+pnpm typecheck         # tsc / svelte-check
+pnpm test              # Vitest (web component tests need: pnpm --filter web exec playwright install chromium)
+pnpm test:e2e          # Playwright (web) and HTTP tests (api)
+pnpm test:integration  # api tests against the postgres-test container and Redis (docker compose up -d first)
+pnpm build             # production build
 ```
 
 ## Troubleshooting
