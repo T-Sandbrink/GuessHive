@@ -6,6 +6,8 @@ node_modules/
 dist/
 build/
 .svelte-kit/
+# Vercel build output and local project link (vercel link)
+.vercel/
 .turbo/
 *.tsbuildinfo
 
