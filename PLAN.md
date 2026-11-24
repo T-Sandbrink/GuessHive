@@ -14,12 +14,12 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** 1.13 (Vercel, alleen de code-kant; koppelen aan het account gebeurt samen met de eigenaar). 1.8 (BullMQ) en 1.9 (rate limiting) wachten op eigenaarsvragen in "Open vragen". Daarna de fase-1-gate.
-- **Klaar:** fase 0 (tag `phase-0-done`), taken 1.1–1.7 en (24-11, watchdog-run) 1.10 integratietests, 1.11 feature flags en 1.12 instellingenregister; alle gemerged in `phase/1-database` en gepusht, review gates PASS.
-- **Waarom deze run:** de resume-keten was gebroken (`guesshive-resume` stond nog op 20-11); de watchdog heeft het werk op 24-11 08:45 hervat.
+- **Huidige taak:** geen; **wacht op de eigenaar**. Fase 1 heeft nog 1.8 (BullMQ) en 1.9 (rate limiting), die allebei wachten op vragen in "Open vragen". Daarna de fase-1-gate (security- en code-review over de hele fasediff) en het koppelen van Vercel samen met de eigenaar.
+- **Klaar:** fase 0 (tag `phase-0-done`), taken 1.1–1.7 en op 24-11 (watchdog-run) 1.10 integratietests, 1.11 feature flags, 1.12 instellingenregister en 1.13 Vercel (code-kant); alle gemerged in `phase/1-database` en gepusht, review gates PASS.
+- **Waarom gestopt:** geen onbelemmerde taak meer in fase 1; aan fase 2 beginnen vóór de fase-1-gate zou de volgorde van PLAN.md veranderen (eigenaarsbeslissing). Werktree schoon op `phase/1-database`.
 - **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored).
-- **Open punten (eigenaar):** nieuw op 24-11: BullMQ-workers en jobbewaring (blokkeren 1.8), rate-limit-opslag en standaardlimiet (blokkeren 1.9), bewaartermijn audit log (blokkeert niets nu). Eerder geparkeerd: Belgische regio's, categorie-slugs, seed op staging, `NODE_ENV` zonder waarde, Redis zonder TLS, gebruikersnamen, betaalgegevens, groepspunten.
-- **Hervat op:** —
+- **Open punten (eigenaar), nieuw op 24-11:** BullMQ-workers en jobbewaring (blokkeren 1.8), rate-limit-opslag en standaardlimiet (blokkeren 1.9), bewaartermijn audit log, Vercel productie-branch, analytics op profielpagina's, juridische check Web Analytics. Optioneel: mag ik alvast aan fase 2 beginnen terwijl 1.8/1.9 wachten? Eerder geparkeerd: Belgische regio's, categorie-slugs, seed op staging, `NODE_ENV` zonder waarde, Redis zonder TLS, gebruikersnamen, betaalgegevens, groepspunten.
+- **Hervat op:** zodra de eigenaar antwoordt (geen `guesshive-resume` gepland).
 
 ---
 
