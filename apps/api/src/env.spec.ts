@@ -11,7 +11,15 @@ describe('loadEnv (api)', () => {
       PORT: 3000,
       DATABASE_URL,
       REDIS_URL: 'redis://127.0.0.1:6379',
+      WORKERS_ENABLED: true,
     });
+  });
+
+  it('reads WORKERS_ENABLED as a strict true/false switch', () => {
+    expect(loadEnv({ DATABASE_URL, WORKERS_ENABLED: 'false' }).WORKERS_ENABLED).toBe(false);
+    expect(loadEnv({ DATABASE_URL, WORKERS_ENABLED: 'true' }).WORKERS_ENABLED).toBe(true);
+    expect(() => loadEnv({ DATABASE_URL, WORKERS_ENABLED: 'no' })).toThrow(/WORKERS_ENABLED/);
+    expect(() => loadEnv({ DATABASE_URL, WORKERS_ENABLED: '0' })).toThrow(/WORKERS_ENABLED/);
   });
 
   it('requires REDIS_URL in production', () => {

@@ -20,6 +20,15 @@ export const apiEnvSchema = z.object({
     .trim()
     .pipe(z.url({ protocol: /^rediss?$/ }))
     .default('redis://127.0.0.1:6379'),
+  /**
+   * Run the BullMQ workers in this process (owner decision 2026-11-24). `false` keeps the
+   * queues (jobs can still be added) but processes nothing, so the workers can later move to a
+   * separate process without a code change.
+   */
+  WORKERS_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

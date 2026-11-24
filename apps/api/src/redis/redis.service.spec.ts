@@ -35,7 +35,7 @@ describe('RedisService', () => {
     redis.emit('ready');
     expect(log).toHaveBeenCalledWith('Redis connection restored');
     redis.emit('error', new Error('WRONGPASS hunter2'));
-    expect(warn).toHaveBeenLastCalledWith('Redis connection error (unknown)');
+    expect(warn).toHaveBeenLastCalledWith('Redis connection error (Error)');
     expect(JSON.stringify([...warn.mock.calls, ...log.mock.calls])).not.toMatch(/hunter2|10\.1/);
     redis.disconnect();
   });

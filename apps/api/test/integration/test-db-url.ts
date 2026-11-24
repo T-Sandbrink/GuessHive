@@ -47,10 +47,40 @@ export function testDatabaseUrl(): string {
   );
 }
 
+/** docker compose Redis, database 15 (development uses database 0). */
+export const DEFAULT_TEST_REDIS_URL = 'redis://127.0.0.1:6379/15';
+
 /**
- * Redis for the api under test: TEST_REDIS_URL, or db 15 of the docker compose Redis, so tests
- * never share keys with development (which uses db 0).
+ * Integration tests delete Redis data (queues, caches), so they refuse any Redis that is not
+ * clearly local and separate from development: loopback host, an explicit database other than
+ * 0, and no query parameters. Errors never include the URL, since it can hold a password.
+ */
+export function assertTestRedisUrl(raw: string): string {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error('Refusing to run integration tests: TEST_REDIS_URL is not a valid URL.');
+  }
+  const database = url.pathname.replace(/^\//, '');
+  if (
+    url.protocol !== 'redis:' ||
+    url.search !== '' ||
+    !LOOPBACK_HOSTS.has(url.hostname.toLowerCase()) ||
+    !/^[1-9]\d?$/.test(database)
+  ) {
+    throw new Error(
+      'Refusing to run integration tests: TEST_REDIS_URL must be a Redis on localhost with an ' +
+        'explicit database other than 0 (for example redis://127.0.0.1:6379/15).',
+    );
+  }
+  return raw;
+}
+
+/**
+ * The validated Redis URL for the api under test: TEST_REDIS_URL, or db 15 of the docker
+ * compose Redis, so tests never share keys with development (which uses db 0).
  */
 export function testRedisUrl(): string {
-  return process.env['TEST_REDIS_URL']?.trim() || 'redis://127.0.0.1:6379/15';
+  return assertTestRedisUrl(process.env['TEST_REDIS_URL']?.trim() || DEFAULT_TEST_REDIS_URL);
 }
