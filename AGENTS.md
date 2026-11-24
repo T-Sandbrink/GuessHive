@@ -94,6 +94,7 @@ pnpm lint                 # prettier --check + eslint in every package
 pnpm typecheck            # tsc / svelte-check in every package
 pnpm test                 # Vitest in every package (web component tests run in Chromium)
 pnpm test:e2e             # Playwright (web) + supertest HTTP tests (api)
+pnpm test:integration     # api integration tests against postgres-test (:5441) + redis (needs docker compose up)
 pnpm build                # production build
 pnpm format               # prettier --write over the whole repo
 pnpm --filter web exec playwright install chromium   # one-time: browser for web tests
