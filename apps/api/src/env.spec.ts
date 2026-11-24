@@ -39,8 +39,8 @@ describe('loadEnv (api)', () => {
     expect(() => loadEnv({ ...prod, IP_HASH_SECRET: 'too-short' })).toThrow(/IP_HASH_SECRET/);
     expect(() => loadEnv({ ...prod, IP_HASH_SECRET: 'too-short' })).not.toThrow(/too-short/);
     expect(() =>
-      loadEnv({ ...prod, IP_HASH_SECRET: 'development-only-ip-hash-secret-not-for-production' }),
-    ).toThrow(/IP_HASH_SECRET: required in production/);
+      loadEnv({ ...prod, IP_HASH_SECRET: ' development-only-ip-hash-secret-not-for-production ' }),
+    ).toThrow(/IP_HASH_SECRET: must not be the development default/);
     expect(loadEnv({ ...prod, IP_HASH_SECRET }).IP_HASH_SECRET).toBe(IP_HASH_SECRET);
   });
 

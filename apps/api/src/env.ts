@@ -49,15 +49,15 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   // The REDIS_URL and IP_HASH_SECRET defaults are for local development only; production must
   // set both (fail fast).
   if (env.NODE_ENV === 'production') {
-    const missing = ['REDIS_URL', 'IP_HASH_SECRET'].filter((key) => !source[key]?.trim());
+    const problems = ['REDIS_URL', 'IP_HASH_SECRET']
+      .filter((key) => !source[key]?.trim())
+      .map((key) => `- ${key}: required in production`);
     // The published development secret is as good as none.
-    if (source['IP_HASH_SECRET'] === DEV_IP_HASH_SECRET) {
-      missing.push('IP_HASH_SECRET');
+    if (source['IP_HASH_SECRET']?.trim() === DEV_IP_HASH_SECRET) {
+      problems.push('- IP_HASH_SECRET: must not be the development default');
     }
-    if (missing.length > 0) {
-      throw new Error(
-        `Invalid environment variables:\n${missing.map((key) => `- ${key}: required in production`).join('\n')}`,
-      );
+    if (problems.length > 0) {
+      throw new Error(`Invalid environment variables:\n${problems.join('\n')}`);
     }
   }
   return env;
