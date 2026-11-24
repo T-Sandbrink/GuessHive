@@ -29,12 +29,26 @@ Analytics over Umami/Plausible (2026-11-20).
   (builds `@guesshive/shared` first), "include files outside the root directory" on. Turbo
   caches `.vercel/output/**`.
 - **Analytics:** `@vercel/analytics` core API (`inject` + `pageview`; the package's SvelteKit
-  helper still imports `$app/stores`, which Kit 3 removed). Production builds only. Page views
-  carry the route id and the path **without** query string or fragment. Private sections
-  (Dark Corner, groups, settings, notifications, admin, auth, own account) are never sent: they
-  are filtered before the call and again in `beforeSend` (`apps/web/src/lib/analytics.ts`). No
-  custom events yet; any later `track()` call must never carry question text, ids of private
-  content or personal data.
+  helper still imports `$app/stores`, which Kit 3 removed). Fail-closed
+  (`apps/web/src/lib/analytics.ts`):
+  - **Off by default.** It runs only when the public, build-time variable
+    `PUBLIC_ANALYTICS_ENABLED=true` is set, which happens only in Vercel's Production environment
+    and only after the owner's legal check, the Vercel DPA and the transfer check. Builds without
+    it contain no analytics code. Previews and local builds never send data.
+  - **Allow-list of routes.** Only routes listed in `PUBLIC_ROUTES` are tracked; each new public
+    page's task adds it deliberately. Routes whose params identify a person (e.g. a public
+    profile) report the route id, not the path. A page can opt out through its load data
+    (`analytics: false`), e.g. a question page showing a Dark Corner or group question, since
+    those share the generic question URL.
+  - **`beforeSend`** passes only the page views this module itself sent, reduced to origin + the
+    decided path (no query string or fragment); automatic page views and custom events are
+    dropped. No custom events yet; any later `track()` must never carry question text, ids of
+    private content or personal data.
+  - **Referrer:** `<meta name="referrer" content="strict-origin">` in `app.html`, so no path or
+    query (tokens, private pages) is sent as referrer, to analytics or to other sites. Task 11.5
+    sets the same as a header. To verify on the first production-like deploy: what the insights
+    script sends as referrer and whether it sends an automatic first page view (both are
+    dropped or reduced by the measures above).
 - **Linking** the repository to the owner's Vercel account happens interactively with the
   owner, never in an autonomous run.
 
@@ -47,4 +61,9 @@ Analytics over Umami/Plausible (2026-11-20).
   That already matches the architecture (all state lives behind the api).
 - `vite preview` and the Playwright e2e tests keep working locally; `.vercel/` output is
   gitignored.
+- Preview deployments are public URLs: before any preview gets a real api or secrets, Vercel
+  Deployment Protection (Standard) is switched on for previews (owner, when linking).
+- CSP (task 11.5): the insights script and its requests are same-origin (`/_vercel/insights/*`),
+  so `script-src 'self'` and `connect-src 'self'` suffice; with nonces, keep `'self'` or add
+  `'strict-dynamic'`. Never allow `va.vercel-scripts.com` (debug script only).
 - Hobby → Pro is a cost the owner takes on before launch.

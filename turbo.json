@@ -4,7 +4,8 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**", ".svelte-kit/output/**", ".vercel/output/**"]
+      "outputs": ["dist/**", "build/**", ".svelte-kit/output/**", ".vercel/output/**"],
+      "env": ["PUBLIC_ANALYTICS_ENABLED"]
     },
     "dev": {
       "dependsOn": ["^build"],
