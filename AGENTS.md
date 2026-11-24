@@ -39,7 +39,7 @@ Product principles. Use them to decide when something is unclear:
 | Bot protection | Cloudflare Turnstile on sign-up and sensitive actions |
 | Tests | Vitest everywhere (web, shared, api), Playwright (e2e). The api is ESM-only, like NestJS 12 itself (ADR 0002) |
 | Quality | ESLint + Prettier, husky + lint-staged, GitHub Actions CI |
-| Observability | Sentry (errors), Vercel Web Analytics (cookieless; never on private pages, owner decision 2026-11-20) |
+| Observability | Sentry (errors), Vercel Web Analytics (cookieless, only after opt-in consent, never on private pages; owner decisions 2026-11-20 and 2026-11-24) |
 
 Do **not** introduce React, Next.js, or another UI framework. Do not swap a core choice above without asking the owner first and recording the decision in `docs/decisions/`.
 
