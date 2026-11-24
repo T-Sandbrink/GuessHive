@@ -17,7 +17,7 @@ How we work: [AGENTS.md](AGENTS.md) (conventions and rules) and [PLAN.md](PLAN.m
 
 ## Run it locally in 5 steps
 
-**Prerequisites:** Node.js 24 LTS (24.15 or newer), pnpm 10 and Docker Desktop.
+**Prerequisites:** Node.js 26 LTS, pnpm 10 and Docker Desktop.
 
 1. **Install dependencies**
 
@@ -61,12 +61,15 @@ All ports bind to `127.0.0.1` only. Change them in a root `.env` file (see `.env
 ## Checks
 
 ```bash
-pnpm lint        # Prettier + ESLint in every package
-pnpm typecheck   # tsc / svelte-check
-pnpm test        # Vitest (web component tests need: pnpm --filter web exec playwright install chromium)
-pnpm test:e2e    # Playwright (web) and HTTP tests (api)
-pnpm build       # production build
+pnpm lint              # Prettier + ESLint in every package
+pnpm typecheck         # tsc / svelte-check
+pnpm test              # Vitest (web component tests need: pnpm --filter web exec playwright install chromium)
+pnpm test:e2e          # Playwright (web) and HTTP tests (api)
+pnpm test:integration  # api tests against the postgres-test container and Redis (docker compose up -d first)
+pnpm build             # production build
 ```
+
+The integration tests empty every table of the test database. They use `postgresql://guesshive:guesshive@localhost:5441/guesshive_test` and Redis db 15; override with `TEST_DATABASE_URL` / `TEST_REDIS_URL` in your shell (not `.env`). The database URL must point to localhost and its name must end in `_test`, otherwise the suite refuses to run.
 
 ## Troubleshooting
 

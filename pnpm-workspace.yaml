@@ -8,9 +8,22 @@ packages:
 # minimumReleaseAgeExclude in the same PR and remove it again afterwards.
 minimumReleaseAge: 1440
 
+# Install scripts stay blocked (pnpm default). Prisma's only download (the
+# schema-engine binary) also happens lazily on first CLI use.
+ignoredBuiltDependencies:
+  - '@prisma/engines'
+  - '@scarf/scarf'
+  - msgpackr-extract
+  - prisma
+
+# Security overrides. Remove each one once the parent ships a fixed version.
+overrides:
+  # GHSA-7589-6fvf-x4pw (ReDoS, high): @prisma/config 7.10.1 pins effect 3.20.0.
+  effect: '>=3.22.1 <4'
+
 # One version range per shared dependency; packages refer to it as "catalog:".
 catalog:
-  '@types/node': ^24.19.2
+  '@types/node': ^26.6.6
   '@vitest/browser-playwright': ^5.1.1
   '@vitest/coverage-v8': ^5.1.1
   eslint: ^10.15.0

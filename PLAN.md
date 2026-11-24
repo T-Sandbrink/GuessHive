@@ -14,12 +14,11 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** 1.1 (fase 1, nog niet begonnen; maak eerst `phase/1-database` vanaf `main`)
-- **Klaar:** fase 0 volledig: gemerged in `main` met tag `phase-0-done` (19-11-2026). Phase gate gedraaid, zie "Phase review" onder fase 0.
-- **Nog te doen in deze taak:** —
-- **Review gate nog nodig:** — (vanaf fase 1 per taak, AGENTS.md §6)
-- **Niet-gecommitte bestanden:** — (lokaal `.env` met `GUESSHIVE_DRIVE_DIR`, bewust gitignored)
-- **Open punten:** eigenaarsacties in "Open vragen": systeem-PATH repareren, Node 24 LTS installeren, Renovate-app installeren. Taak 1.2 (UUIDv7) is al beslist en hoeft alleen nog een ADR.
+- **Huidige taak:** fase 1 is klaar (gate gedaan, zie "Phase review" onder fase 1). Volgende: fase 2, taak 2.1 (Better Auth in NestJS; eerst de docs en de NestJS-integratie controleren).
+- **Klaar:** fase 0 (tag `phase-0-done`) en fase 1 (taken 1.1–1.13, `NODE_ENV`-standaard `production`, fase-gate), gemerged in `main` met tag `phase-1-done`.
+- **Waarom gestopt:** — (geen pauze; dit blok is bijgewerkt bij het afronden van fase 1, 24-11).
+- **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored)
+- **Open punten:** open vraag "Echt IP van gasten achter de SvelteKit-proxy" (blokkeert 3.4). Eigenaar: Vercel koppelen (1.13) samen doen; Vercel-connector inloggen via `/mcp`.
 - **Hervat op:** —
 
 ---
@@ -46,9 +45,30 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 | Dependency-audit | CI draait een **volledige, blokkerende** `pnpm audit --audit-level high` (ook devDependencies, want de web-app bundelt die in de server). Uitzonderingen die alleen dev-tools raken komen met reden in `pnpm-workspace.yaml` (`auditConfig.ignoreGhsas`). Nieuwe pakketversies worden pas na 1 dag geïnstalleerd (`minimumReleaseAge`), ook beveiligingsupdates; Renovate wacht voor gewone updates 3 dagen. Een echt spoedeisende fix gaat via een eenmalige `minimumReleaseAgeExclude` (eigenaar, 19-11-2026) |
 | tsup | Blijft voorlopig, ook al wordt het niet meer actief onderhouden (opvolger: tsdown). Herzien in fase 1 (eigenaar, 19-11-2026) |
 | GitHub-bescherming | Ruleset op `main` en de `phase-*-done`-tags: geen force-push en niet verwijderen (eigenaar, 19-11-2026) |
+| Node.js | **Node 26 LTS** lokaal en in CI (`.nvmrc`), in plaats van 24: winget biedt alleen nog 26 als LTS en NestJS 12 ondersteunt het (eigenaar, 19-11-2026) |
+| ID-generatie | UUIDv7 wordt **in de database** gemaakt (`uuidv7()` als standaardwaarde); daarom **PostgreSQL 18+**, ook bij de productie-hosting (eigenaar, 19-11-2026; ADR in taak 1.2) |
+| Validatie in de api | **Ingebouwde Standard Schema-validatie van NestJS 12** met de zod-schema's uit `packages/shared`, in plaats van `nestjs-zod` (dat officieel alleen Nest 10/11 ondersteunt). OpenAPI werkt daarmee: `@nestjs/swagger` 12 leest de zod-schema's zelf (bewezen in 1.6) (eigenaar, 19-11-2026; ADR 0003) |
+| Validatiefouten | Een validatiefout geeft `issues: [{ location, path, code }]` terug: `location` is `body`, `query` of `params`, `path` de veldnaam (bij een route-parameter de naam, bv. `['id']`) en `code` de soort fout, **nooit de ingevulde waarde**, zodat formulieren serverfouten bij het juiste veld tonen (eigenaar, 19-11-2026; `location` eigenaar, 20-11-2026) |
+| Redis-client | **ioredis** voor BullMQ, de health-check en de rate-limit-opslag; overstappen op node-redis kan later als ioredis stil komt te liggen (eigenaar, 19-11-2026) |
+| Foutlogs (5xx) | Het serverlog bewaart bij onverwachte fouten **alleen het fouttype, de foutcode en de plek in de code**, nooit de foutmelding zelf (eigenaar, 19-11-2026) |
+| Database-TLS | In productie start de api alleen als `DATABASE_URL` `sslmode=verify-full` heeft (behalve een lokale socket of localhost); bouwen in taak 11.6 (eigenaar, 19-11-2026) |
+| Redis-TLS | `redis://` (onversleuteld) alleen voor Redis op dezelfde server of in een privénetwerk; anders `rediss://`. Vastleggen in de hosting-ADR zodra de hosting gekozen is (eigenaar, 24-11-2026) |
+| `NODE_ENV` | Ontbreekt `NODE_ENV`, dan geldt **`production`** (veilig dicht); lokaal zet `.env` `development` (eigenaar, 24-11-2026) |
+| Achtergrondtaken | BullMQ-workers draaien voorlopig **in het api-proces**, met env-schakelaar `WORKERS_ENABLED` (standaard aan), zodat ze later zonder codewijziging naar een apart proces kunnen. Afgeronde jobs: geslaagd **24 uur** (max. 1.000), mislukt **7 dagen**, daarna automatisch weg (eigenaar, 24-11-2026) |
+| Rate limiting | Eigen kleine Redis-opslag voor `@nestjs/throttler` op de bestaande ioredis-verbinding (Lua-script, geen extra pakket). Standaard **120 verzoeken per minuut** per gebruiker (gasten per IP-hash). Ligt Redis plat: verzoeken doorlaten en loggen, behalve inloggen, registreren en magic link: die weigeren (eigenaar, 24-11-2026) |
+| Audit log | Bewaren **2 jaar**, daarna verwijderen; bij een definitieve accountverwijdering wordt het id van die gebruiker uit oudere regels gehaald (pseudonimiseren) (eigenaar, 24-11-2026) |
+| Belgische regio's | De **10 provincies + Brussels Hoofdstedelijk Gewest** (`BE-BRU`), zodat elk adres in precies één regio valt (eigenaar, 24-11-2026) |
+| Categorie-URL's | Voorlopig **één Engelse slug** per categorie (`/nl/c/food-drink`); opnieuw bekijken bij 4.14 (eigenaar, 24-11-2026) |
+| Seed | Het seed-script vult **alleen een lokale database**; staging krijgt data via een apart importscript (12.6) en de eerste admin via een bewuste stap in fase 2 (eigenaar, 24-11-2026) |
+| Web-hosting | De **web-app (SvelteKit) draait op Vercel** (`adapter-vercel`, EU-regio `fra1`), voorlopig op het **Hobby**-plan. Nu al gekoppeld met een preview-URL per branch; productie pas bij de lancering (fase 12). Hobby is alleen voor niet-commercieel gebruik: vóór de lancering met premium over naar **Pro**. De api, database en Redis draaien niet op Vercel maar bij een EU-host (zie open vraag "Productie-hosting") (eigenaar, 20-11-2026) |
+| Vercel-productie | In Vercel wijst de productie-branch naar `production`, die pas bij de lancering wordt aangemaakt. Tot dan krijgen alle branches (ook `main`) alleen een preview-URL (eigenaar, 24-11-2026) |
+| Analytics | **Vercel Web Analytics** (cookieloos) **vervangt Umami/Plausible**, maar meet **pas na toestemming** (opt-in-melding; eigenaar, 24-11-2026). Alleen openbare routes; profielpagina's alleen als route (`/[locale]/u/[username]`), nooit wiens. Alleen paginaweergaven en eigen events zonder persoonsgegevens; vóór productie een verwerkersovereenkomst met Vercel en een check op de doorgifte naar de VS (EU-VS-dataprivacykader) (eigenaar, 20-11 en 24-11-2026) |
 | Api-tooling | De api volgt NestJS 12: **ESM-only**, tests met **Vitest** (zoals web en shared), linten met de **gedeelde ESLint-config** in plaats van oxlint (eigenaar, 19-11-2026; ADR 0002) |
-| Dependency-updates | **Renovate** (eigenaar, 18-11-2026). De agent zet `renovate.json` klaar; de eigenaar installeert de Renovate GitHub-app op de repo |
+| Dependency-updates | **Renovate** (eigenaar, 18-11-2026). De agent zet `renovate.json` klaar; de eigenaar heeft de Renovate GitHub-app op 19-11-2026 geïnstalleerd. Renovate-PR's gaan naar `main` en worden alleen door de eigenaar gemerged |
 | ID's | **UUIDv7** als primaire sleutel (native Postgres-`uuid`, op tijd sorteerbaar); publieke URL's krijgen daarnaast een korte id (eigenaar, 18-11-2026; ADR in taak 1.2) |
+| Korte publieke id | **6 tekens**, willekeurig, uit kleine letters en cijfers zonder verwarrende tekens (`0 o 1 i l`); de server zoekt alleen op de id, een oude of foute slug stuurt met 301 door naar de juiste URL (eigenaar, 20-11-2026; ADR 0004) |
+| Account definitief verwijderen | **Anonimiseren**: na de 14 dagen bedenktijd wordt de koppeling naar de gebruiker leeg ("verwijderde gebruiker"), de tekst van diens reacties wordt gewist maar antwoorden van anderen blijven staan, en een groep gaat over naar het oudste lid (of verdwijnt als er niemand meer is). Zo ook bij stemmen en **voorspellingen** (blijven anoniem meetellen; persoonlijke scores verdwijnen) (eigenaar, 20-11-2026) |
+| Gebruikersnamen | **Uniek zonder op hoofdletters te letten** ("Sam" en "sam" kunnen niet allebei), maar de eigen schrijfwijze blijft zichtbaar ("SamDeBij"); één extra kolom met de genormaliseerde naam. Alleen **letters A–Z, cijfers, `_` en `.`**, zodat kleine letters overal hetzelfde uitvallen en look-alikes niet kunnen; en een naam **begint altijd met een letter of cijfer** (dus nooit `.`, `..` of `_` vooraan); afgedwongen in zod (`USERNAME_PATTERN` = `^[A-Za-z0-9][A-Za-z0-9_.]*$`) en in de database (eigenaar, 20-11-2026) |
 
 ### UX-beslissingen
 
@@ -144,25 +164,25 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 
 Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze hier neer.
 
-- [ ] **Productie-hosting**: (a) Hetzner VPS + Coolify/Docker (goedkoop, EU, meer zelf beheren), (b) Railway/Render EU-regio (simpel, duurder), of (c) web op Vercel + api/db elders. Beslissen vóór fase 12. Tot die tijd blijft alles Docker-portable.
+- [ ] **Echt IP van gasten achter de SvelteKit-proxy** (review 1.9; blokkeert 3.4, niet 1.9): straks komen alle gastverzoeken via Vercel binnen bij de api, dus delen alle gasten dan één rate-limitteller (120 per minuut voor de hele site). Opties: (A) **SvelteKit stuurt het client-IP mee in een header met een gedeeld geheim**; de api vertrouwt die alleen als het geheim klopt, anders het socket-IP. Werkt met Vercel, de api blijft de enige plek met limieten. (B) Express `trust proxy` met een lijst Vercel-IP's: fragiel, Vercel heeft geen vaste uitgaande IP's. (C) Gasten alleen in SvelteKit of aan de rand (Vercel/Cloudflare-firewall) begrenzen: limieten verspreid over twee plekken, tegen "NestJS bewaakt alle regels". **Aanbeveling: A.**
+- [ ] **Productie-hosting voor api, database en Redis** (de web-app gaat naar Vercel, zie "Web-hosting"): (a) Hetzner VPS + Coolify/Docker (goedkoop, EU, meer zelf beheren), (b) Railway/Render EU-regio (simpel, duurder), of (c) een beheerde Postgres (bijv. Neon/Supabase EU) plus een kleine api-server. Postgres 18+ is verplicht. Beslissen vóór fase 12 (of eerder, zodra de previews een werkende api nodig hebben). Tot die tijd blijft alles Docker-portable.
 - [ ] **XP-voorstel** (fase 8): de agent schrijft een tabel met XP per actie, de levelcurve en het dagplafond (in `packages/shared`), bouwt die alvast, en de eigenaar keurt goed of stuurt bij.
 - [ ] **Puntensysteem voorspellingen**: de agent schrijft in fase 5 een voorstel (tijdgewogen Brier-score t.o.v. de massa) en bouwt dat alvast. De eigenaar keurt het goed of stuurt bij.
 - [ ] **Mascotte**: naam voor de bij? Later eventueel een illustrator voor de definitieve versie (de agent maakt een eerste SVG-versie).
 - [ ] **Merknaam-check**: GuessHive in het EUIPO-register controleren vóór lancering (eigenaar).
 - [ ] **Domeinen registreren**: `.com`, `.net`, `.eu` en `.nl` (eigenaar).
 - [ ] **Groepspunten-mechaniek** (voorstel, in fase 7b ter goedkeuring): elk lid start per seizoen met 1.000 groepspunten, en zet per groepsvoorspelling 10–100 punten in. Wie goed zat, deelt de pot naar verhouding van de inzet. Eigenaar keurt goed of stuurt bij.
+  - *Besloten (eigenaar, 20-11-2026):* verwijdert een lid zijn account terwijl de pot nog open staat, dan **vervalt zijn inzet** (en zijn bezwaarstem); dat is het huidige schema (`GroupStake` en `GroupDisputeVote` worden mee verwijderd).
 - [ ] **Juridische check inzet-tekst** (eigenaar): mag een vrije "inzet"-afspraak tussen vrienden (zonder geld via GuessHive) onder de Wet op de kansspelen en de Belgische regels? Tot het antwoord er is, bouwt de agent het veld achter een feature-flag (standaard uit).
 - [ ] **Dark Corner: beeldmoderatie** (eigenaar kiest dienst in fase 9b): automatische beeldscan (naakt, geweld, extremistische symbolen) + verplichte hash-check op misbruikmateriaal (bijv. Cloudflare CSAM-scan of PhotoDNA) + menselijke controle.
 - [ ] **Premium-prijs en betaaldienst** (vóór fase 13): voorstel €2,99 per maand of €24,99 per jaar, betalen via Mollie (iDEAL, Bancontact, creditcard). De eigenaar beslist en regelt het account.
+- [ ] **Betaalgegevens na accountverwijdering** (eigenaar 20-11: later uitzoeken, uiterlijk vóór 11.2 en fase 13; db-review 1.3): nu worden abonnementen (`Subscription`) mee verwijderd. De fiscale bewaarplicht (7 jaar) geldt mogelijk voor onze eigen administratie. **(A, aanbevolen, na juridische check)** bewaren met lege koppeling naar de gebruiker en alleen de minimale factuurgegevens; (B) verwijderen en vertrouwen op de administratie van de betaaldienst.
 - [ ] **Tarieven voor embeds, inzichten en sponsoring** (vóór fase 13): de eigenaar bepaalt de prijzen. De agent bouwt een eenvoudig partnerbeheer.
 - [ ] **Dagvoorspellingen: bron van uitslagen** (fase 8): handmatig door admins/ambassadeurs, of automatisch via een weer- of sport-API (kost mogelijk geld). Voorstel: eerst handmatig.
 - [ ] **Bijzondere persoonsgegevens laten toetsen** (eigenaar, vóór fase 9 en 9b): stemmen op politieke vragen en Dark Corner-vragen over seks, gezondheid of drugs kunnen bijzondere persoonsgegevens zijn (AVG art. 9). Voorstel: uitdrukkelijke toestemming per categorie vóór de eerste stem, strengere toegang, nooit voor sponsors of partners behalve als totaal vanaf 10. Een jurist of privacy-adviseur bevestigt dit, of stuurt bij.
 - [ ] **Moderatorvoorwaarden voor Wachtbijen** (eigenaar, vóór fase 9): de tekst waarmee community-moderatoren akkoord gaan (geheimhouding, neutraliteit, geen privégegevens delen, gevolgen van misbruik).
 - [ ] **Vrijspeel-schema** (fase 8b): de agent stelt voor welke bij-onderdelen, kleuren en titels bij welk level of welke badge horen (de mockup "Jouw bij" toont een eerste idee), en de eigenaar keurt goed of stuurt bij.
-- [ ] **Node 24 LTS op deze pc** (eigenaar, aanbevolen): hier draait Node 25.0.0, een niet-LTS-versie die al end-of-life is, terwijl CI en `.nvmrc` Node 24 gebruiken. De NestJS-tools melden daarom "Unsupported engine". Installeer Node 24 LTS (nodejs.org, of `winget install OpenJS.NodeJS.LTS`), zodat lokaal en CI gelijk lopen. Daarna `pnpm install` opnieuw draaien.
-- [ ] **Systeem-PATH repareren** (eigenaar, nu): in het systeem-PATH van deze pc staat de kapotte regel `C:\Program Files (x86)\cloudflared"` (met een losse `"`). Turborepo stopt daardoor met zoeken naar pnpm (`Unable to find package manager binary`), dus `pnpm dev`/`pnpm lint` werken niet en geplande runs lopen vast. Oplossing: Windows-instellingen › "Omgevingsvariabelen voor het systeem bewerken" › Systeemvariabelen › Path › verwijder alleen die regel (de goede `C:\Program Files (x86)\cloudflared\` blijft staan) › OK, en start daarna de Claude-app opnieuw. Tot die tijd zet de agent de npm-map vooraan in zijn eigen PATH.
-- [ ] **Renovate GitHub-app installeren** (eigenaar, na taak 0.10b): installeer de gratis Renovate-app op `T-Sandbrink/GuessHive` (github.com/apps/renovate). De config `renovate.json` staat dan al klaar.
-- [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), analytics-dienst Umami of Plausible (fase 11), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor de AI-check op nieuwe vragen (fase 9) en de AI-nieuwssuggesties (na lancering), en eventueel een moderatie-API (bijv. OpenAI) als tweede keuze voor de AI-check (fase 9). Elke dienst die vragen te zien krijgt, heeft een verwerkersovereenkomst nodig.
+- [ ] **Externe accounts** (eigenaar, nodig vanaf de genoemde fase, tot die tijd placeholders): Google Cloud OAuth (fase 2), Apple Developer Program, ±€99 per jaar en nodig voor Sign in with Apple (fase 2), Resend (fase 2/12), Cloudflare Turnstile (fase 2), Cloudflare R2 voor bestanden (fase 2, productie), Vercel (nu, Hobby; Pro vóór lancering; verwerkersovereenkomst voor Web Analytics), uptime-monitoring (fase 11), opslag voor back-ups (fase 11), Sentry (fase 11), Mollie of een andere betaaldienst (fase 13), Anthropic API voor de AI-check op nieuwe vragen (fase 9) en de AI-nieuwssuggesties (na lancering), en eventueel een moderatie-API (bijv. OpenAI) als tweede keuze voor de AI-check (fase 9). Elke dienst die vragen te zien krijgt, heeft een verwerkersovereenkomst nodig.
 
 ---
 
@@ -187,7 +207,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 0 — Fundament (monorepo & tooling)
 
-- [x] 0.1 `.gitignore` aanvullen, `.gitattributes` (`* text=auto eol=lf`, tegen CRLF-gedoe op Windows), `.editorconfig`, `.nvmrc` (Node 24 LTS) en `packageManager`-veld (pnpm) toevoegen
+- [x] 0.1 `.gitignore` aanvullen, `.gitattributes` (`* text=auto eol=lf`, tegen CRLF-gedoe op Windows), `.editorconfig`, `.nvmrc` (Node 24 LTS; sinds 19-11-2026 Node 26) en `packageManager`-veld (pnpm) toevoegen
 - [x] 0.2 pnpm workspace (`pnpm-workspace.yaml`) + Turborepo (`turbo.json`) met de taken `dev`, `build`, `lint`, `typecheck`, `test`
 - [x] 0.3 `packages/config`: gedeelde `tsconfig.base.json` (strict), ESLint flat config en Prettier config
 - [x] 0.4 `apps/web` aanmaken met `npx sv create` (SvelteKit, TypeScript, Tailwind v4, ESLint, Prettier, Vitest, Playwright)
@@ -216,20 +236,38 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 1 — Database & API-skelet
 
-- [ ] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
-- [ ] 1.2 ID-strategie vastleggen in een ADR: UUIDv7 (gekozen door de eigenaar, 18-11-2026), met een korte publieke id voor URL's
-- [ ] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken, inclusief de verdienmodel-velden en -tabellen (voorheen 13.1: `User.plan`, `premiumUntil`, `Subscription`, `Partner`, `EmbedKey`, `Sponsor`, `Question.sponsorId`), alles standaard uit
-- [ ] 1.4 Seed-script: alle landen (ISO), met `localEnabled` aan voor NL en BE en regio's voor NL en BE; de 10 categorieën uit "Lancering & landen" (NL+EN, Politiek met `sensitive = true`); 1 admin-gebruiker; ~20 voorbeeldvragen van alle types (development-data, niet de startcontent)
-- [ ] 1.5 Globale Nest-setup: config-module (zod), `ZodValidationPipe`, exception filter met `{ code, message }`, request-logging (pino) zonder PII
-- [ ] 1.6 `@nestjs/swagger` + `nestjs-zod`: OpenAPI op `/docs` (alleen in dev)
-- [ ] 1.7 `health`-module: `/health` controleert db en redis
-- [ ] 1.8 Redis-module + BullMQ-basis (queue-registratie, eerste dummy-job)
-- [ ] 1.9 Rate-limiting (`@nestjs/throttler` met Redis-storage), standaardlimiet + per-route overrides
-- [ ] 1.10 Testopzet: Vitest-integratietests tegen de `postgres-test`-container (reset per testbestand)
-- [ ] 1.11 Feature-flag-systeem (per omgeving en per gebruiker, tabel `FeatureFlag`), nodig voor 7b.6 en fase 13 (voorheen 13.2)
-- [ ] 1.12 Instellingenregister (`AppSetting`) in `packages/shared`: per instelling een key, type, standaardwaarde, **harde min/max**, categorie en uitleg NL+EN, gevalideerd met zod. De api cachet waarden in Redis en ververst na een wijziging; elke wijziging gaat in de `AuditLog` (oud → nieuw). Wettelijke en privacyregels (16+, 18+, k = 10, bewaartermijnen) zijn constanten in de code, nooit een instelling. Latere taken registreren hun eigen instellingen hier
+- [x] 1.1 Prisma in `apps/api` opzetten, met een `PrismaService` als Nest-module en graceful shutdown
+  - *Notitie (19-11):* Prisma 7.10.1 met pg-adapter. Review gate: code- en security-reviewer PASS; db-reviewer vond 1 🔴 (`db:generate` hing via `prisma.config.ts` af van de shared-build) en 1 🟡 (geen connect-timeout op de pg-pool), code-reviewer 1 🟡 (pool sloot vóór lopende requests klaar waren). Alle drie opgelost: `prisma.config.ts` is zelfstandig, pool met 5 s connect-timeout en max 10, `$disconnect` in `onApplicationShutdown`. Re-review PASS. Open 🔵-nits voor later: `db:deploy`-script (1.3/1.10), env één keer parsen via een Nest-provider, test op `enableShutdownHooks`, Sentry-scrubber voor pg-fouten (fase 11), schema-engine-binary cachen in CI. Twee eigenaarsvragen in "Open vragen" (UUIDv7-generatie, TLS in productie).
+- [x] 1.2 ID-strategie vastleggen in een ADR: UUIDv7 (gekozen door de eigenaar, 18-11-2026), met een korte publieke id voor URL's (ADR 0004: `uuidv7()` in Postgres 18+, korte id van 6 tekens, eigenaar 20-11-2026)
+- [x] 1.3 Kernschema modelleren (zie *Datamodel* onderaan) en de eerste migratie maken, inclusief de verdienmodel-velden en -tabellen (voorheen 13.1: `User.plan`, `premiumUntil`, `Subscription`, `Partner`, `EmbedKey`, `Sponsor`, `Question.sponsorId`), alles standaard uit
+  - *Notitie (20-11):* volledig schema + eerste migratie (`20261119220000_init`, met handgeschreven CHECK's en full-text-indexen). Eigenaarsbesluiten verwerkt: anonimiseren bij definitieve verwijdering (vragen, reacties, meldingen, voorspellingen, uploads; CHECK's dwingen af dat reactietekst en avatars eerst weg zijn, `Group.ownerId` blokkeert tot overdracht), hoofdletterongevoelige gebruikersnamen (`username` = `lower(displayUsername)`, alleen `A–Z a–z 0–9 _ .`). Getest op een lege Postgres 18-db: migratie schoon, beide drift-checks zonder verschil, SQL-rooktest van alle nieuwe regels. Review gate: db-reviewer PASS (2 rondes, alle 🟡 opgelost); open punten geparkeerd (gebruikersnaam-regels, betaalgegevens, inzet in groepspot).
+- [x] 1.4 Seed-script: alle landen (ISO), met `localEnabled` aan voor NL en BE en regio's voor NL en BE; de 10 categorieën uit "Lancering & landen" (NL+EN, Politiek met `sensitive = true`); 1 admin-gebruiker; ~20 voorbeeldvragen van alle types (development-data, niet de startcontent)
+  - *Notitie (20-11):* `pnpm --filter api db:seed` (ook via `prisma db seed`). 249 landen (namen via `Intl.DisplayNames`, geen extra dependency; codes in `packages/shared`), NL en BE lokaal aan, 23 regio's (12 NL-provincies; BE: 10 provincies + Brussel, zie open vraag), 10 categorieën (Politiek `sensitive`), 1 admin zonder wachtwoord (`admin@guesshive.test`), 20 voorbeeldvragen over alle types, bereiken en de belangrijkste statussen (vaste korte id's, dus opnieuw draaien slaat ze over). `slugify` in `packages/shared`. De seed weigert alles behalve een db op localhost, een expliciete niet-productie `NODE_ENV` en een admin-mail op een gereserveerd domein. Getest op een lege Postgres 18-db (twee keer: tweede run maakt niets) en de dev-db is gemigreerd en geseed. Review gate: tests (seed-data + guard), code-reviewer PASS, security-reviewer PASS (2 rondes; de laatste 🟡, `?host=` in de URL, opgelost precies zoals voorgesteld, met test). Geparkeerd: Belgische regio's, categorie-slugs, seed op staging, `effect`-audit.
+  - *Gebruikersnaam (20-11):* `USERNAME_PATTERN` = `^[A-Za-z0-9][A-Za-z0-9_.]*$` en de CHECK in de init-migratie gelijkgetrokken (aparte taakbranch, code- en db-review PASS).
+- [x] 1.5 Globale Nest-setup: config-module (zod), validatie met de ingebouwde `StandardSchemaValidationPipe` van Nest 12 (fouten met `issues: [{ location, path, code }]`), exception filter met `{ code, message }`, request-logging (pino) zonder PII
+  - *Notitie (19-11):* gebouwd en gemerged in `phase/1-database`, behalve de `ZodValidationPipe` (wacht op de eigenaarsvraag over nestjs-zod vs. Nest 12). `ConfigModule` levert de geparste env als `API_ENV`; `AllExceptionsFilter` geeft altijd `{ code, message }` met codes uit `@guesshive/shared` (`API_ERROR_CODES`, `apiErrorBodySchema`); domeinfouten via `ApiException`. Logging met nestjs-pino: alleen request-id, methode, route-sjabloon, status en duur; `X-Request-Id` in elke response; 5xx-logs zonder foutmelding. Review gate: code- en security-reviewer PASS; 4 🟡 opgelost (5xx-log zonder melding, headers-al-verstuurd, statussen buiten 400–599, niet-HTTP-contexten). 🔵 voor later: `NODE_ENV` verplicht maken of `LOG_PRETTY` in de deploytaak (opgelost 24-11: onbekend `NODE_ENV` = `production`); extra redact-paden bij `logger.error({ err })`.
+  - *Notitie (20-11):* validatiepipe af: `ApiValidationPipe` (subklasse van Nest 12's `StandardSchemaValidationPipe`) geeft `issues: [{ location, path, code }]` (eigenaar 20-11, ADR 0003), nooit de ingevulde waarde; een test laat de build falen als een route-argument geen schema heeft. Review gate: code- en security-reviewer PASS, `location`-wijziging opnieuw gereviewd (PASS, 5 🔵 verwerkt).
+- [x] 1.6 `@nestjs/swagger` met de zod-schema's (Nest 12 Standard Schema, zonder `nestjs-zod`; ADR 0003): OpenAPI op `/docs` (alleen in dev)
+  - *Notitie (20-11):* `@nestjs/swagger` 12.1 leest de zod-schema's uit `@Body/@Query/@Param({ schema })` zelf (OpenAPI 3.0), zonder extra bibliotheek; de foutbody staat als globale 400/500-respons (via `z.toJSONSchema`, omdat globale responses geen Standard Schema aankunnen). `/docs` en `/docs-json` alleen als `NODE_ENV` echt `development` is (een lege waarde houdt ze dicht). Review gate: code-reviewer PASS, security-reviewer PASS (2 rondes). Geparkeerd: standaardwaarde van `NODE_ENV` (opgelost 24-11: onbekend = `production`).
+- [x] 1.7 `health`-module: `/health` controleert db en redis
+  - *Notitie (20-11):* `GET /health` geeft 200 of 503 met alleen up/down voor database en Redis (2 s per check, gelijktijdige verzoeken delen één check die 2 s hergebruikt wordt, `Cache-Control: no-store`). `ioredis` als globale, lui verbindende `RedisService` (de api start ook als Redis plat ligt); `REDIS_URL` (standaard `redis://127.0.0.1:6379`, verplicht in productie). Live getest: Redis stoppen geeft 503, herstart herstelt. Review gate: code-reviewer PASS, security-reviewer PASS; beide 🟡 (gedeelde check, test met echte Redis-instellingen) opgelost. Geparkeerd: Redis-TLS.
+- [x] 1.8 Redis-module + BullMQ-basis (queue-registratie, eerste dummy-job)
+  - *Notitie (24-11):* `bullmq` 6.7 + `@nestjs/bullmq` 12 (officiële Nest-koppeling). `QueueModule`: verbinding uit `REDIS_URL` (TLS met `rediss://` blijft werken), sleutelprefix `gh:bull`, bewaren volgens de eigenaar (geslaagd 24 u / max. 1.000, mislukt 7 dagen). Wachtrij `system` met een `ping`-job zonder bijwerkingen. Workers draaien in het api-proces; `WORKERS_ENABLED=false` (strikt `true`/`false`, standaard aan) sluit ze bij het opstarten, jobs toevoegen blijft werken. Processors erven van `SwitchableWorkerHost` met `@Processor(naam, { autorun: false })` (gecontroleerd bij het opstarten); wachtrijen registreren via `registerQueue()` zodat elke queue en worker vanaf de constructor een `error`-listener heeft (alleen de foutcode, max. 1× per minuut, nooit host of wachtwoord). Regel: in jobdata en jobfouten alleen id's, nooit e-mail, IP of andere persoonsgegevens. Integratietests op Redis db 15 met een nieuwe guard op `TEST_REDIS_URL` (loopback, db ≠ 0); e2e-tests draaien zonder workers. Review gate: code-reviewer PASS (1 🟡: listeners te laat gekoppeld, opgelost met eigen Queue/Worker-klassen; 🔵's verwerkt), security-reviewer PASS (🔵's verwerkt; `pnpm audit --prod` 0), re-review PASS (ESLint-regel tegen `BullModule.registerQueue` toegevoegd; 🔵 open: `backendFactory` wordt niet doorgegeven door de eigen Queue/Worker-klassen, pas nodig als iemand het instelt). **Voor later:** bij het splitsen van workers (hosting) een check op de leeftijd van wachtende jobs, omdat die zonder worker geen bewaartermijn hebben; `queue.add()` wacht als Redis plat ligt (geen timeout), meenemen bij de eerste echte producer.
+- [x] 1.9 Rate-limiting (`@nestjs/throttler` met Redis-storage), standaardlimiet + per-route overrides
+  - *Notitie (24-11):* `@nestjs/throttler` 6.8 met een eigen Redis-opslag (Lua-script, vast venster + blokkade, één round trip) op de gedeelde ioredis-verbinding. Twee throttlers: `global` = **120 verzoeken per minuut per client over de hele api** (één teller, zo gelezen uit "per gebruiker") en `route` = alleen op routes met `@RateLimit({ limit, ttlMs, blockMs?, failClosed? })`, per route geteld. Teller: `user:<id>` zodra auth `req.user` zet, anders een HMAC-SHA256 van het IP (IPv6 per /64) met de nieuwe `IP_HASH_SECRET` (min. 32 tekens, verplicht in productie, de publieke dev-waarde wordt daar geweigerd); nooit het ruwe IP. Redis plat of trager dan 300 ms: verzoek gaat door en er wordt gelogd (max. 1× per minuut), behalve op `failClosed`-routes: 503 `SERVICE_UNAVAILABLE`. 429 geeft `RATE_LIMITED` met `Retry-After`. e2e-tests draaien nu op Redis db 15 met schone tellers per bestand. Verwerkingsregister: regel 3. Review gate: code-reviewer PASS (5 🟡: time-out, e2e op dev-Redis, verwerkingsregister, proxy-IP en guard-volgorde → opgelost of als notitie bij 2.10/3.4 plus open vraag), security-reviewer PASS (2 🟡: time-out, proxy-IP → idem; `pnpm audit --prod` 0), re-reviews PASS, nits verwerkt. Niet gedaan (alleen performance): EVALSHA in plaats van `eval`.
+- [x] 1.10 Testopzet: Vitest-integratietests tegen de `postgres-test`-container (reset per testbestand)
+  - *Notitie (24-11):* `pnpm test:integration` (api, via turbo; ook in CI met Postgres- en Redis-services). Eén keer `prisma migrate deploy`, daarna per testbestand alle tabellen leeg (één `TRUNCATE`, migratiegeschiedenis blijft), bestanden na elkaar. Een guard weigert alles behalve een lokale db waarvan de naam op `_test` eindigt, zonder verbinding-wijzigende query-parameters; de api onder test gebruikt Redis db 15. Eerste tests: seed uitlezen (landen, categorieën, admin, vragen, idempotent), reset, en `/health` 200 tegen echte db en Redis. Review gate: code-reviewer PASS (3 🟡 opgelost: `db:generate` vóór de suite, env-passthrough in turbo, docs), security-reviewer PASS (🔵's verwerkt), re-review PASS. 🔵 voor 1.8/1.9: een guard op `TEST_REDIS_URL` (loopback, niet db 0) vóór de eerste test die Redis-data wist.
+- [x] 1.11 Feature-flag-systeem (per omgeving en per gebruiker, tabel `FeatureFlag`), nodig voor 7b.6 en fase 13 (voorheen 13.2)
+  - *Notitie (24-11):* register `FEATURE_FLAGS` in `packages/shared` (nu `groups.stakeNote` voor 7b.6 en `billing.premium` voor fase 13, overal standaard uit, per `NODE_ENV` instelbaar). "Per omgeving" = elke omgeving heeft een eigen db, een `FeatureFlag`-rij overschrijft daar de standaard; "per gebruiker" = `rules.userIds` (max. 1.000), die de functie al krijgen terwijl de vlag uit staat. `FeatureFlagsService` (globaal): één gecachte query (30 s; op de eigen instantie direct), bij een db-storing de laatst bekende waarden (max. 5 min, daarna uit), nooit "aan" als terugval; ongeldige regels = uit. Wijzigen via `update()` met zod-validatie, advisory lock en een `AuditLog`-regel met alleen de wijziging (aan/uit, gebruikers erbij/eraf). Nog geen endpoint (admin-routes na fase 2). Review gate: code-reviewer PASS (2 🟡: race tussen wijzigen en lezen, geen backoff bij storing), security-reviewer PASS (1 🟡: audit alleen de wijziging); alles opgelost, re-review PASS, nits verwerkt. **Voor 11.2:** bij definitief verwijderen het gebruikers-id uit alle `FeatureFlag.rules.userIds` halen. Nieuwe open vraag: bewaartermijn audit log.
+- [x] 1.12 Instellingenregister (`AppSetting`) in `packages/shared`: per instelling een key, type, standaardwaarde, **harde min/max**, categorie en uitleg NL+EN, gevalideerd met zod. De api cachet waarden in Redis en ververst na een wijziging; elke wijziging gaat in de `AuditLog` (oud → nieuw). Wettelijke en privacyregels (16+, 18+, k = 10, bewaartermijnen) zijn constanten in de code, nooit een instelling. Latere taken registreren hun eigen instellingen hier
+  - *Notitie (24-11):* register `APP_SETTINGS` in `packages/shared` (`defineSetting.integer/boolean`, zod-schema met harde grenzen, categorie, uitleg NL+EN); eerste instelling `auth.passwordMinLength` (12, 8–64). `SettingsService` (globaal): waarden uit `AppSetting`, altijd opnieuw gevalideerd (ook uit de cache), anders de standaard; Redis-cache per instelling (60 s, bij een wijziging direct gewist, met een wijzigingsteller en een atomaire Lua-check zodat een oude lezing niet terug in de cache komt); Redis plat → direct uit de db; db plat → fout (nooit gokken). `update`/`reset` met advisory lock en `AuditLog` oud → nieuw (`app_setting.update` / `app_setting.reset`). Nog geen endpoint (4.15b: `actorId` uit de sessie, `@Roles('ADMIN')`, body via het schema, tekst per actieve taal). Review gate: code-reviewer PASS (2 🟡: waarschuwing bij elke lezing, `SettingValue`-type; daarna 1 🟡: wissen overgeslagen in het Redis-wachtvenster), security-reviewer PASS (alleen 🔵); alles opgelost, re-reviews PASS.
+- [x] 1.13 Vercel voor de web-app (eigenaar, 20-11-2026): `adapter-vercel` met regio `fra1` (ADR 0005 met de afweging en de Hobby → Pro-regel), Vercel Web Analytics in de web-app (`@vercel/analytics`, niet op privépagina's zoals Dark Corner, groepen, instellingen en admin, en nooit vraagtekst of id's van privé-inhoud in events), preview-deploy per branch, `main` pas bij lancering naar productie. AGENTS.md (stack-tabel) en `docs/privacy/processing-register.md` bijwerken. **Het project koppelen aan het Vercel-account gebeurt interactief met de eigenaar**, nooit in een autonome run; de code-kant kan wel autonoom
+  - *Notitie (eigenaar 24-11):* analytics meet pas na toestemming. De opt-in-melding (tekst, plek, onthouden van de keuze) wordt ontworpen en gebouwd bij het eerste UI-werk in fase 3, met mockup en ux-review; tot dan blijft analytics uit.
+  - *Notitie (24-11, code-kant):* `adapter-vercel` 7 (`nodejs26.x`, `fra1`; Kit 3-config in `vite.config.ts`), ADR 0005, `docs/privacy/processing-register.md` gestart. Vercel Web Analytics via de kern-API (de SvelteKit-helper gebruikt nog `$app/stores`, weg in Kit 3), fail-closed: **standaard uit** (`PUBLIC_ANALYTICS_ENABLED`, alleen in Vercel-productie na de juridische check), alleen routes op de allow-list `PUBLIC_ROUTES` (nu `/` en `/[locale]`; latere taken voegen hun pagina's bewust toe), opt-out per pagina via `analytics: false` in de load-data (voor Dark Corner- en groepsvragen op de gewone vraag-URL), `beforeSend` laat alleen eigen page views door zonder query/fragment, referrer `strict-origin`. Review gate: code-reviewer PASS (3 🟡), security-reviewer eerst CHANGES REQUIRED (4 🟡: denylist, profielnamen, referrer, register), ux-reviewer PASS; alles opgelost, re-reviews security en ux PASS. **Nog te doen met de eigenaar:** het project koppelen (Root Directory `apps/web`, build `turbo run build`, previews met Deployment Protection, keuze productie-branch: zie Open vragen) en bij de eerste deploy de referrer en eerste page view in het netwerkverkeer controleren.
 
 **Acceptatie:** migraties draaien schoon op een lege db, de seed vult data, `/health` geeft 200, `/docs` toont de API en een integratietest leest seed-data uit.
+
+**Phase review (24-11-2026):** security-reviewer PASS (0 blockers, 0 🟡, 7 🔵; `pnpm audit` en `pnpm audit --prod`: 0 kwetsbaarheden), code-reviewer PASS (0 blockers, 3 🟡 opgelost: analytics-toestemming afgedwongen in code (`setAnalyticsConsent`, tot de banner in fase 3 blijft alles uit) plus register-regel 2 en ADR 0005, register-regels 4 (AuditLog) en 5 (FeatureFlag-gebruikers), "Laatste stand" bijgewerkt; 10 🔵). Alle acceptatiecriteria zijn gedekt door tests (lint, typecheck, unit, e2e en integratie groen). Verwerkt: `X-Powered-By` uit, `db:deploy`-script, waarschuwing bij een flag-storing max. 1× per minuut, infrastructuurmodules in AGENTS.md §3. **Doorgeschoven 🔵's** (staan bij de taken of hier): guard-volgorde t.o.v. de AuthGuard en Better Auth-routes via Nest (2.1/2.8/2.10), echt client-IP achter de proxy (3.4, open vraag), TLS/wachtwoord voor Redis en Postgres in productie (hosting-ADR), snapshot-velden van geanonimiseerde stemmen in de DPIA (11.2/11.14, juridische check), één `withTimeout`-helper (health + rate-limit), één loopback/URL-guard voor seed en tests (allowlist), één strikt boolean-env-schema in `packages/shared` (api en web verschillen nu), CI-stap tegen drift tussen `schema.prisma` en migraties (`prisma migrate diff --exit-code`), test voor `enableShutdownHooks`, een `createTestApp()`-helper voor de e2e-tests, en de short-id-generator plus zod-schema uit ADR 0004 (fase 4).
 
 ---
 
@@ -242,10 +280,12 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 2.5 Apple Sign In
 - [ ] 2.6 Accounts koppelen: zelfde geverifieerd e-mailadres = zelfde gebruiker
 - [ ] 2.7 Sessies: httpOnly cookie, `SameSite=Lax`, rotatie, uitloggen (ook "overal uitloggen")
-- [ ] 2.8 Globale `AuthGuard` (default deny) + `@Public()` + `RolesGuard` met rollen `USER`, `MODERATOR` en `ADMIN`
+- [ ] 2.8 Globale `AuthGuard` (default deny) + `@Public()` + `RolesGuard` met rollen `USER`, `MODERATOR` en `ADMIN`. `/health` wordt `@Public()` (uptime-monitor), met een test dat het zonder sessie werkt (review 1.7)
 - [ ] 2.9 Cloudflare Turnstile op registratie en magic-link-aanvraag (server-side verificatie)
 - [ ] 2.10 Rate limits op login, registratie en magic link
+  - *Notitie uit review 1.9:* gebruik `@RateLimit({ limit, ttlMs, failClosed: true })` (Redis plat → 503, eigenaarsbesluit). De sessie moet **vóór** de `RateLimitGuard` op `req.user` staan (middleware, niet een guard die later draait), anders tellen ingelogde gebruikers per IP; test dat een ingelogd verzoek de sleutel `global:user:<id>` gebruikt. Laat de Better Auth-routes via Nest-controllers lopen (of zet de eigen Redis-ratelimiter van Better Auth aan): als Better Auth als losse Express-middleware draait, lopen er geen Nest-guards en dus geen limieten. Overweeg ook een limiet per account (hash van het e-mailadres) tegen credential stuffing vanaf veel IP's.
 - [ ] 2.11 Onboarding-gegevens (kort): unieke `username`, `countryCode` (voorstel via IP-geolocatie, gebruiker bevestigt), interesses, plus akkoord voorwaarden + 16+-bevestiging. Regio, geboortedatum en geslacht zijn optioneel en worden later via `PATCH /me` aangevuld (zie 6.9)
+  - *Notitie (db-review 1.3, 20-11):* Better Auth maakt de `User`-rij al bij het inloggen via Google, Apple of magic link, vóór de onboarding een gebruikersnaam kiest. `username` en `displayUsername` zijn verplicht (NOT NULL); kies in fase 2 tussen een tijdelijke naam via `databaseHooks.user.create.before` of beide kolommen tijdelijk leeg laten tot de onboarding. De api leidt `username` altijd in één functie af van `displayUsername` en schrijft ze samen.
 - [ ] 2.14 Gast-stem afronden: een "pending vote/skip" (vraag-id, optie(s), zekerheid) die vóór aanmelden is gekozen, wordt na aanmelden/onboarding één keer server-side ingediend (gevalideerd alsof de gebruiker het nu doet, de vraag moet nog open zijn)
 - [ ] 2.12 `GET/PATCH /me`, avatar-upload naar S3 (lokaal SeaweedFS) als `MediaAsset` (status `PENDING`, resize, max-grootte, alleen JPG/PNG/WebP, EXIF eraf). Tot 9b.4 er is, worden geüploade avatars niet getoond (standaard-avatar)
 - [ ] 2.13 Tests: registratie → verificatie → login, magic link, guard-gedrag en rate limits
@@ -262,6 +302,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 3.2 shadcn-svelte initialiseren: basiscomponenten (button, card, input, dialog, sheet, tabs, toast, avatar, dropdown)
 - [ ] 3.3 Paraglide: locales `nl` en `en`, routes `/[locale]/...`, taaldetectie (cookie → Accept-Language → `en`), taalwisselaar
 - [ ] 3.4 `hooks.server.ts`: `/api/*` proxyen naar NestJS (cookies doorgeven, origin-check), sessie ophalen naar `event.locals.user`
+  - *Notitie uit review 1.9:* de api moet het echte client-IP van gasten krijgen op een manier die niet te vervalsen is (zie open vraag "Echt IP van gasten"), en de `RateLimitGuard` moet dat gebruiken; nu leest hij `req.ip` (socket-adres, geen `trust proxy`). Test: twee gasten met verschillende IP's via de proxy krijgen elk een eigen teller, en een vervalste header direct naar de api wordt genegeerd.
 - [ ] 3.5 Typed API-client: types genereren uit OpenAPI (`openapi-typescript` + `openapi-fetch`), plus een gedeelde helper voor server- en client-calls
 - [ ] 3.6 App-layout mobile-first: bovenbalk (logo, zoeken, profiel), onderste tabbalk op mobiel (**Home, Ontdek, Voorspel, Groepen, Meldingen**). Tabs van functies die nog niet gebouwd zijn blijven verborgen tot ze bestaan (pas bij lancering zijn alle vijf er). Profiel via de zeshoek-avatar rechtsboven. Dark Corner als tegel bovenaan Ontdek, alleen voor 18+ met opt-in. Onder 768px gebruikt ook de desktopsite deze mobiele kop- en tabbalk, zijbalk op desktop
 - [ ] 3.7 Auth-pagina's: inloggen, registreren, magic link verstuurd, wachtwoord vergeten/reset, e-mail geverifieerd
@@ -298,6 +339,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 4.12c **Carrousel "Uitgelicht"** bovenaan de home: vraag van de dag + nieuwste vragen (API: endpoint `featured` met de vraag van de dag + de nieuwste open vragen voor jouw land en globaal, zonder vragen waarop je al stemde). Stemmen in de dia, automatisch wisselen (6 s) met pauzeknop, pauzeren bij hover/focus/aanraken/na stemmen/"minder beweging", volgens het WAI-ARIA carrousel-patroon. Bewuste keuze: na aanraken of na een stem blijft de carrousel gepauzeerd tot de gebruiker zelf op afspelen of een puntje tikt. Tot 8.4 klaar is, is de eerste dia de meest trending open vraag
 - [ ] 4.13 Vraagpagina `/[locale]/q/[slug]`: SSR, volledige resultaten, uitsplitsing-tabs, "wat stemde jouw land vs de wereld"
 - [ ] 4.14 Categoriepagina's + Ontdek-pagina (categorieën, zoeken)
+  - *Notitie (eigenaar 24-11):* categorie-URL's gebruiken nu één Engelse slug; hier opnieuw bekijken (slug per taal of uit de vertaalde naam).
 - [ ] 4.15 Admin (minimaal): vragenlijst, vraag aanmaken/bewerken met vertalingen NL+EN, opties sorteren, statusbeheer
 - [ ] 4.15b Admin-paneel: opzet met eigen zijbalk (Overzicht, Moderatie, Vragen, Gebruikers, Wachtbijen, Landen, Instellingen, Audit log; secties verschijnen zodra hun fase er is) en de pagina **Instellingen** (zie mockup "Admin: instellingen"): per categorie de huidige waarde, standaard, grenzen en uitleg, "terug naar standaard", bevestiging bij opslaan, en de laatste wijzigingen uit de audit log. Alleen voor `ADMIN`, `noindex`
 - [ ] 4.16 SEO: vraagpagina's indexeerbaar, `sitemap.xml` (per taal, met hreflang), gestructureerde data waar zinvol
@@ -417,6 +459,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 9.2 Duplicaatdetectie bij indienen: vergelijkbare bestaande vragen tonen (full-text/trigram)
 - [ ] 9.3 Moderatiewachtrij (zie mockup "Admin: moderatie"): vragen die de AI-check niet haalden, preventief verborgen vragen, meldingen, politiek en Dark Corner. Per zaak de aanleiding (AI-check of meldingen, met kijkers en meldpercentage) en het advies van de Wachtbijen. Acties: goedkeuren, terugzetten, aanpassen of verwijderen, altijd met reden; de steller krijgt een motivering en kan bezwaar maken (DSA)
 - [ ] 9.4 Melden: vragen, reacties en gebruikers, met reden (inclusief "illegale inhoud" voor de DSA). Elke melding komt in de wachtrij. **Vragen** worden preventief verborgen zodra minstens 20 unieke ingelogde kijkers ze zagen en 20% van hen meldde (meldingen van verschillende accounts ouder dan 7 dagen; beide drempels in `AppSetting`); een admin beslist definitief. Unieke kijkers tellen met een Redis HyperLogLog per vraag, dus zonder tabel van wie wat zag. **Reacties**: na 3 meldingen (Dark Corner: 2) verborgen tot een moderator kijkt. Wie meldde, krijgt altijd bericht over de beslissing. Een melding "mogelijk illegaal" vraagt verplicht om uitleg en een verklaring naar eer en geweten (DSA art. 16)
+  - *Notitie (db-review 1.3, 20-11):* `Report.reporterId` mag leeg zijn (na accountverwijdering), dus de meldingsservice zet hem altijd uit de sessie; een test bewaakt "één melding per gebruiker per doel".
 - [ ] 9.5 Woordfilter (NL+EN scheldwoorden/spam) op vragen, reacties en usernames
 - [ ] 9.6 Trust score per gebruiker (accountleeftijd, geverifieerd, meldingen, gedrag), gebruikt voor rate limits
 - [ ] 9.7 Moderatoracties: verbergen, verwijderen, gebruiker waarschuwen/schorsen/bannen. Alles in een `AuditLog`
@@ -478,20 +521,24 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 - [ ] 11.1 Data-export (`/me/export` → JSON-download met al je gegevens)
 - [ ] 11.2 Account verwijderen: account direct onzichtbaar, **14 dagen bedenktijd** (opnieuw inloggen = terugzetten), daarna persoonsgegevens hard verwijderen en stemmen geanonimiseerd bewaren voor aggregaten. Duidelijk uitgelegd in de verwijderflow
+  - *Notitie (fase-1-gate):* bij definitief verwijderen ook het gebruikers-id uit `AuditLog`-regels halen (pseudonimiseren, eigenaarsbesluit) en uit alle `FeatureFlag.rules.userIds` (register-regels 4 en 5).
 - [ ] 11.3 Privacyverklaring, gebruiksvoorwaarden en community-richtlijnen (NL+EN). **Eigenaar laat juridisch checken**
-- [ ] 11.4 Cookieloze analytics (Umami/Plausible) + overzicht van welke cookies er zijn (alleen functioneel, geen cookiebanner nodig)
+- [ ] 11.4 Cookieloze analytics (Vercel Web Analytics (al gekoppeld in 1.13)) + overzicht van welke cookies er zijn (alleen functioneel, geen cookiebanner nodig)
 - [ ] 11.5 Security headers + CSP afstemmen (ook voor OG-afbeeldingen en analytics)
-- [ ] 11.6 Audit van alle endpoints: authZ, rate limits en input-validatie (checklist in `docs/security.md`), uitgevoerd door `security-reviewer` over de hele codebase
+  - *Notitie (1.13):* `Referrer-Policy: strict-origin` gelijk aan de meta-tag in `app.html` (of de meta-tag weghalen); CSP voor analytics: `script-src 'self'` en `connect-src 'self'` volstaan (`/_vercel/insights/*`), bij nonces `'self'` houden of `'strict-dynamic'`, nooit `va.vercel-scripts.com`.
+- [ ] 11.6 Database-TLS afdwingen in productie (`sslmode=verify-full`, zie "Database-TLS"). Audit van alle endpoints: authZ, rate limits en input-validatie (checklist in `docs/security.md`), uitgevoerd door `security-reviewer` over de hele codebase
 - [ ] 11.7 AuthZ-testmatrix: geautomatiseerde test die voor **elk** endpoint 401 (niet ingelogd), 403 (verkeerde rol/eigenaar) en 400 (ongeldige input) controleert, zodat een vergeten guard de CI laat falen
 - [ ] 11.7b OWASP ZAP baseline-scan (passief) tegen de **eigen staging-omgeving** in CI, resultaten beoordelen en oplossen
 - [ ] 11.7c Threat model (STRIDE, 1 pagina) in `docs/security.md`: stemfraude, nepaccounts, scraping, privacy-lekken via uitsplitsingen
 - [ ] 11.8 Back-ups: dagelijkse Postgres-dump naar aparte opslag, restore-procedure getest en beschreven
-- [ ] 11.9 Sentry in web en api (zonder PII), uptime-monitoring op `/health`
+- [ ] 11.9 Sentry in web en api (zonder PII), uptime-monitoring op `/health` (pino-http: geslaagde `/health`-verzoeken niet loggen; review 1.7)
 - [ ] 11.10 Entitlements-laag in de api (bijv. `can(user, "premium.stats")`), alles achter vlaggen, standaard uit, zodat premium-functies later alleen een vlag zijn (voorheen 13.3)
 - [ ] 11.11 Verwerkingsregister (`docs/privacy/processing-register.md`): per verwerking het doel, de grondslag, de categorieën gegevens, de bewaartermijn en de ontvangers (AVG art. 30)
 - [ ] 11.12 DPIA (`docs/privacy/dpia.md`) voor bijzondere persoonsgegevens, Dark Corner, minderjarigen (16–17), demografische uitsplitsingen, fraudesignalen en AI-moderatie. **Eigenaar laat toetsen**
 - [ ] 11.13 Overzicht van verwerkers (hosting, Resend, Cloudflare/R2, Sentry, analytics, Mollie, Anthropic) met de status van de verwerkersovereenkomst en de doorgifte buiten de EU. **Eigenaar sluit de overeenkomsten af**
 - [ ] 11.14 Bewaartermijnen per tabel met persoonsgegevens + automatische opschoon- en anonimiseringsjobs (BullMQ), met tests
+  - *Notitie (fase-1-gate):* `AuditLog`-regels na **2 jaar** verwijderen (eigenaarsbesluit, register-regel 4). Stemmen houden na anonimiseren `snap*`-velden en `createdAt`; in kleine groepen kan dat herleidbaar zijn: in de DPIA behandelen (bijv. `createdAt` afronden op de dag, stem-id's nooit tonen) en door de eigenaar juridisch laten checken.
+  - *Notitie (db-review 1.3, 20-11):* ook een job voor geüploade bestanden zonder eigenaar waar geen `Question`, `Option` of `Sponsor` meer naar verwijst (verlaten concepten, afgewezen vragen), inclusief het bestand in de opslag. `Group.avatarUrl` is een losse URL, dus groepsavatars matchen op `url`.
 - [ ] 11.15 Datalekprocedure (`docs/privacy/datalek.md`): herkennen, vastleggen, binnen 72 uur melden bij de Autoriteit Persoonsgegevens indien nodig, gebruikers informeren
 - [ ] 11.16 DSA: melden van illegale inhoud (notice-and-action), motivering bij verwijderen of beperken, een bezwaarroute, een contactpunt, en transparantie over moderatie en gesponsorde inhoud
 - [ ] 11.17 Rechten van betrokkenen: inzage, correctie, verwijderen, beperking, bezwaar en overdraagbaarheid in de app of via een gedocumenteerde supportroute; afhandeling binnen een maand
@@ -558,7 +605,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 Richtlijn, geen keurslijf: aanpassen mag, maar dan ook hier bijwerken.
 
 ```
-User            id, email, emailVerified, username (uniek), avatarUrl,
+User            id, email, emailVerified, username (uniek, kleine letters), displayUsername (eigen schrijfwijze), avatarUrl,
                 countryCode, regionCode?, birthDate? (alleen voor leeftijdsgroep en 18+-check), birthDateCorrectedAt?, gender?, votesPublicByDefault (default false),
                 locale, timezone, role (USER|MODERATOR|ADMIN), trustScore, xp, level,
                 winStreak, longestWinStreak, streakFreezes (0-2), lastStreakDate,
@@ -580,13 +627,13 @@ FraudSignal     id, userId, ipHash (gezouten), deviceHint, ipCountry, day, creat
 GroupMember     groupId + userId (PK), role (OWNER|ADMIN|MEMBER), points, joinedAt, consentAt, leftAt?
 GroupInvite     id, groupId, code, createdById, expiresAt, revokedAt?
 GroupStake      questionId + userId (PK), optionId?, amount, stakeNote?
-GroupResolution questionId (PK), proposedOptionId, proposedById, proposedAt, disputeUntil, status (PROPOSED|DISPUTED|FINAL|ANNULLED)
+GroupResolution questionId (PK), proposedOptionId, proposedById?, proposedAt, disputeUntil, status (PROPOSED|DISPUTED|FINAL|ANNULLED)
 GroupDisputeVote questionId + userId (PK), optionId?, createdAt
 Subscription    id, userId, provider, status (TRIAL|ACTIVE|CANCELED|PAST_DUE), plan, periodEnd, createdAt
 Partner         id, name, kind (MEDIA|BRAND), contactEmail, createdAt
 EmbedKey        id, partnerId, keyHash, allowedOrigins, revokedAt?
 Sponsor         id, partnerId, name, logoAssetId?
-MediaAsset      id, ownerId, url, kind (QUESTION|OPTION|AVATAR|GROUP_AVATAR|SPONSOR_LOGO), altText (json nl/en),
+MediaAsset      id, ownerId?, url, kind (QUESTION|OPTION|AVATAR|GROUP_AVATAR|SPONSOR_LOGO), altText (json nl/en),
                 status (PENDING|APPROVED|REJECTED), moderationLabels (json), hash, createdAt
 Account/Session/Verification   (tabellen van Better Auth)
 
@@ -595,14 +642,14 @@ Region          code (PK), countryCode, names (json)
 Category        id, slug, names (json), icon, sortOrder, sensitive (bool)
 Ambassador      id, userId, countryCode, regionCode?, status (APPLIED|PROBATION|ACTIVE|REJECTED|REVOKED),
                 motivation, appliedAt, decidedById?, decidedAt?, probationEndsAt?
-ElectionBlackout id, countryCode, startsAt, endsAt, note, createdById
+ElectionBlackout id, countryCode, startsAt, endsAt, note, createdById?
 
 Question        id, shortId, slug, type (POLL_SINGLE|POLL_MULTI|THIS_OR_THAT|
                 PREDICTION_BINARY|PREDICTION_CHOICE), status (DRAFT|PENDING_REVIEW|
                 OPEN|CLOSED|RESOLVED|ANNULLED|REJECTED|ARCHIVED),
                 scope (GLOBAL|COUNTRY|REGION|GROUP), countryCode?, regionCode?, groupId? (verplicht bij GROUP),
                 darkCorner (bool, default false), isDaily (bool, dagvoorspelling, 8.2c), sponsorId?,
-                defaultLocale, authorId, categoryId, maxChoices, allowVoteChange,
+                defaultLocale, authorId?, categoryId, maxChoices, allowVoteChange,
                 imageAssetId?, opensAt, closesAt, resolvesAt?, resolvedOptionId?,
                 resolutionSource?, resolutionNote?, resolvedAt?, resolvedById?,
                 proposedOptionId?, proposedSource?, proposedAt? (9.1c), draftExpiresAt? (concept, 7 dagen),
@@ -619,7 +666,7 @@ Vote            id, questionId, userId? (null na definitieve verwijdering, 11.2)
                 UNIQUE(questionId, userId)
 VoteChoice      voteId + optionId (PK)      1 rij bij POLL_SINGLE/THIS_OR_THAT, max. maxChoices bij POLL_MULTI
 QuestionSkip    questionId + userId (PK), createdAt
-Forecast        id, questionId, userId, optionId?, probability (1-99), isPublic (default false), updatedAt
+Forecast        id, questionId, userId? (null na definitieve verwijdering, 11.2), optionId?, probability (1-99), isPublic (default false), updatedAt
                 UNIQUE(questionId, userId)
 ForecastHistory id, forecastId, optionId?, probability, createdAt
 CrowdSnapshot   questionId, optionId?, probability, forecasterCount, takenAt
@@ -630,7 +677,7 @@ ResultAggregate questionId, optionId, dimension (ALL|COUNTRY|REGION|AGE|GENDER),
 
 Follow          followerId + followeeId (PK), createdAt
 Agreement       userAId + userBId (PK), sharedCount, agreeCount, updatedAt
-Comment         id, questionId, userId, parentId?, body, showChoice (bool, default false), status, createdAt, editedAt?, deletedAt?
+Comment         id, questionId, userId?, parentId?, body, showChoice (bool, default false), status, createdAt, editedAt?, deletedAt?
 Reaction        id, userId, targetType (QUESTION|COMMENT), targetId, emoji
 Notification    id, userId, type, payload (json), readAt?, createdAt
 PushSubscription id, userId, endpoint, keys (json), createdAt
@@ -639,13 +686,15 @@ Badge           id, slug, names (json), descriptions (json), icon, title (json n
 UserCustomization userId (PK), mascotLook (json)?, mascotName?, useOwnBee, useBeeAsAvatar, accent, startTab, hiddenCategoryIds,
                 textSize, compactCards, celebrations (json), featuredBadgeIds, titleBadgeId?, updatedAt
 MascotItem      id, slot (BODY|EYES|NOSE|EARS|HAIR|BEARD|OUTFIT|ACCESSORY|ACCENT), key, unlock (FREE|LEVEL|BADGE), unlockValue?, sortOrder
-SeasonalMascot  id, name, look (json), countryCode?, startsAt, endsAt, createdById, createdAt
+SeasonalMascot  id, name, look (json), countryCode?, startsAt, endsAt, createdById?, createdAt
 UserBadge       userId + badgeId (PK), awardedAt
 XpEvent         id, userId, type, amount, refId?, createdAt
 Invite          id, inviterId, code, usedById?, usedAt?
 
-Report          id, reporterId, targetType, targetId, reason, status, handledById?, createdAt
+Report          id, reporterId?, targetType, targetId, reason, status, handledById?, createdAt
 AuditLog        id, actorId, action, targetType, targetId, meta (json), createdAt
 ```
+
+Account definitief verwijderen (eigenaar, 20-11-2026): `authorId`, `userId` (Comment), `proposedById`, `reporterId`, `MediaAsset.ownerId` en `createdById` (ElectionBlackout, SeasonalMascot) worden leeg (`ON DELETE SET NULL`), net als `Vote.userId` en `Forecast.userId`. Taak 11.2 wist eerst de reactietekst (een CHECK dwingt dat af), verwijdert de eigen avatar-bestanden en zet elke groep (ook verwijderde) over naar het langstzittende lid (vroegste `joinedAt`, niet vertrokken en zelf niet in bedenktijd, rol `OWNER` in dezelfde transactie), of verwijdert de groep als er niemand meer is; `Group.ownerId` heeft geen ON DELETE-actie, dus een vergeten groep blokkeert het verwijderen. `username` is altijd `lower(displayUsername)`, en `displayUsername` bevat alleen `A–Z a–z 0–9 _ .` (beide CHECK in de migratie).
 
 Belangrijke indexen: `Question(status, scope, countryCode, opensAt)`, `Question(categoryId, status)`, `Question(groupId)`, `Question(darkCorner, status)`, `Question(isDaily, resolvesAt)`, `Vote(questionId)`, `Vote(userId)`, `Forecast(questionId)`, `Comment(questionId, createdAt)`, `Notification(userId, readAt)`, plus full-text index op `QuestionTranslation(title)` per taal.

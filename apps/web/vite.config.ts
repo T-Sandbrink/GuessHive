@@ -1,7 +1,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
-import adapter from '@sveltejs/adapter-node';
+import adapter from '@sveltejs/adapter-vercel';
 import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
@@ -13,7 +13,9 @@ export default defineConfig({
         runes: ({ filename }) =>
           filename.split(/[/\\]/).includes('node_modules') ? undefined : true,
       },
-      adapter: adapter(),
+      // Vercel, EU region Frankfurt (owner, 2026-11-20; ADR 0005). The api, database and Redis
+      // run at an EU host, not on Vercel.
+      adapter: adapter({ runtime: 'nodejs26.x', regions: ['fra1'] }),
     }),
   ],
   test: {

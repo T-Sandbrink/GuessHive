@@ -25,13 +25,13 @@ Product principles. Use them to decide when something is unclear:
 | Layer | Choice |
 |---|---|
 | Monorepo | pnpm workspaces + Turborepo |
-| Runtime | Node.js LTS (24.x), TypeScript 6.0 `strict` everywhere (TS 7 once svelte-check and typescript-eslint support it) |
-| Frontend | SvelteKit 3 + **Svelte 5 (runes)**, SSR on, `adapter-node` (or `adapter-vercel`, decided at launch) |
+| Runtime | Node.js LTS (26.x, owner decision 2026-11-19), TypeScript 6.0 `strict` everywhere (TS 7 once svelte-check and typescript-eslint support it) |
+| Frontend | SvelteKit 3 + **Svelte 5 (runes)**, SSR on, `adapter-vercel` on Vercel, region `fra1` (owner decision 2026-11-20; task 1.13). The api, Postgres and Redis run on an EU host, not on Vercel |
 | UI | Tailwind CSS v4 + shadcn-svelte (Bits UI), lucide-svelte icons, self-hosted fonts (Fredoka + Nunito via @fontsource, never a font CDN) |
 | i18n | Paraglide JS (via `sv add paraglide`), locale-prefixed routes `/nl/...`, `/en/...` |
 | Backend | NestJS (latest major), REST, OpenAPI via `@nestjs/swagger` |
-| Validation | zod schemas in `packages/shared`, used by both web and api (`nestjs-zod` in api) |
-| Database | PostgreSQL 16+ with Prisma ORM and Prisma Migrate |
+| Validation | zod schemas in `packages/shared`, used by both web and api (in the api through NestJS 12's built-in Standard Schema validation, ADR 0003) |
+| Database | PostgreSQL 18+ (ids default to its built-in `uuidv7()`) with Prisma ORM and Prisma Migrate |
 | Cache/jobs | Redis + BullMQ (rate limits, leaderboards, scheduled jobs, notifications) |
 | Auth | Better Auth in the api: Google, Apple, email magic link, email + password |
 | Email | Resend (prod), Mailpit (local) |
@@ -39,7 +39,7 @@ Product principles. Use them to decide when something is unclear:
 | Bot protection | Cloudflare Turnstile on sign-up and sensitive actions |
 | Tests | Vitest everywhere (web, shared, api), Playwright (e2e). The api is ESM-only, like NestJS 12 itself (ADR 0002) |
 | Quality | ESLint + Prettier, husky + lint-staged, GitHub Actions CI |
-| Observability | Sentry (errors), Umami or Plausible (cookieless analytics) |
+| Observability | Sentry (errors), Vercel Web Analytics (cookieless, only after opt-in consent, never on private pages; owner decisions 2026-11-20 and 2026-11-24) |
 
 Do **not** introduce React, Next.js, or another UI framework. Do not swap a core choice above without asking the owner first and recording the decision in `docs/decisions/`.
 
@@ -77,6 +77,8 @@ The browser only talks to the SvelteKit origin (e.g. `guesshive.com`):
 
 Use one module per domain: `auth`, `users`, `questions`, `votes`, `forecasts`, `results`, `scoring`, `social` (follows, comments, reactions), `groups`, `notifications`, `gamification`, `personalization` (own bee, seasonal mascots, display settings), `moderation`, `ambassadors`, `media` (uploads + image moderation), `flags`/`entitlements`, `billing` (phase 13), `admin`, `health`.
 
+Infrastructure modules (phase 1) already exist; reuse them instead of adding parallel ones: `config` (parsed env as `API_ENV`), `logging`, `prisma`, `redis` (shared ioredis connection, `redis-errors.ts` helpers), `queue` (BullMQ; register queues with `registerQueue()`, processors extend `SwitchableWorkerHost`), `rate-limit` (`@RateLimit()`), `settings` (`AppSetting` register) and `flags`.
+
 - Controllers stay thin: parse and validate input, call a service, map the output.
 - Services hold the logic. Prisma is accessed only through services (or repositories inside a module).
 - Use guards for auth and roles (`@Roles('ADMIN')`). Never check roles ad hoc inside controllers.
@@ -94,12 +96,13 @@ pnpm lint                 # prettier --check + eslint in every package
 pnpm typecheck            # tsc / svelte-check in every package
 pnpm test                 # Vitest in every package (web component tests run in Chromium)
 pnpm test:e2e             # Playwright (web) + supertest HTTP tests (api)
+pnpm test:integration     # api integration tests against postgres-test (:5441) + redis (needs docker compose up)
 pnpm build                # production build
 pnpm format               # prettier --write over the whole repo
 pnpm --filter web exec playwright install chromium   # one-time: browser for web tests
 ```
 
-Added in phase 1: `pnpm --filter api db:migrate` (create/apply a Prisma migration) and `pnpm --filter api db:seed` (seed local data).
+Database (Prisma 7, `apps/api`): `pnpm --filter api db:generate` (regenerate the client into `src/generated`, gitignored; turbo runs it before build/lint/typecheck/test), `pnpm --filter api db:migrate` (create/apply a migration; needs `apps/api/.env` with `DATABASE_URL`). Added in task 1.4: `pnpm --filter api db:seed` (local database only). Deployments: `pnpm --filter api db:deploy` (`prisma migrate deploy`, applies committed migrations only). API docs (task 1.6, only with `NODE_ENV=development`): http://localhost:3000/docs, JSON at `/docs-json`.
 
 On Windows, Turborepo needs `pnpm` resolvable on `PATH` without hitting a malformed entry first (see README "Troubleshooting").
 
@@ -348,8 +351,8 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Env vars are parsed once at startup with a zod schema. Fail fast on missing config. Keep `.env.example` up to date and never commit `.env`.
 - Dates are stored as UTC `timestamptz`. Display them in the user's locale and timezone.
 - Countries use ISO 3166-1 alpha-2 (`NL`, `BE`, `DE`). Regions use ISO 3166-2 (`NL-UT`). Locales use BCP 47 (`nl`, `en`).
-- IDs are UUIDv7 (native Postgres `uuid`, owner decision), plus a short public id for URLs. Never expose auto-increment ids.
-- Public URLs use slugs plus a short id: `/nl/q/beste-voetballer-ooit-k3x9`.
+- IDs are UUIDv7 (native Postgres `uuid`, generated by the database with `uuidv7()`, owner decision), plus a short public id for URLs. Never expose auto-increment ids.
+- Public URLs use slugs plus a short id: `/nl/q/beste-voetballer-ooit-k3x9ma`.
 
 ### Svelte / SvelteKit
 - Svelte 5 runes only. Components are `PascalCase.svelte`.
@@ -361,7 +364,7 @@ Security reviews in this project are **defensive** and limited to GuessHive's ow
 - Mobile-first. Most users vote on a phone.
 
 ### NestJS / Prisma
-- DTOs come from zod schemas in `packages/shared` (`createZodDto`). Do not define types twice.
+- Request bodies, params and queries are validated with zod schemas from `packages/shared` through NestJS 12's built-in Standard Schema validation (`@Body({ schema })`, `StandardSchemaValidationPipe`; ADR 0003). Do not define types twice. A validation error returns `{ code: "VALIDATION_FAILED", message, issues: [{ location, path, code }] }`: request part (`body`, `query`, `params`), field path and error kind only, never the submitted value.
 - Errors use Nest HTTP exceptions with a stable machine-readable `code` (e.g. `VOTE_ALREADY_CAST`) that the web app maps to translated messages.
 - Prisma migrations are generated with `prisma migrate dev`. **Never edit a migration that has been merged to `main`.** Add a new one instead.
 - Every query that lists data is paginated (cursor-based for feeds).

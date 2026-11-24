@@ -4,7 +4,8 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**", ".svelte-kit/output/**"]
+      "outputs": ["dist/**", "build/**", ".svelte-kit/output/**", ".vercel/output/**"],
+      "env": ["PUBLIC_ANALYTICS_ENABLED"]
     },
     "dev": {
       "dependsOn": ["^build"],
@@ -23,7 +24,13 @@
     },
     "test:e2e": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["TEST_REDIS_URL"]
+    },
+    "test:integration": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "passThroughEnv": ["TEST_DATABASE_URL", "TEST_REDIS_URL"]
     }
   }
 }

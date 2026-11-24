@@ -17,7 +17,7 @@ type-safe end to end, cheap to host in the EU, and boring enough to maintain for
 |---|---|---|
 | Monorepo | pnpm workspaces + Turborepo | One repo for web, api and shared code; fast, cached task runs |
 | Language | TypeScript (strict) everywhere | One language across web, api and shared schemas |
-| Web | SvelteKit 3 + Svelte 5 runes, SSR, `adapter-node` | Small bundles and fast phones; SSR for SEO and share cards; form actions give progressive enhancement. SvelteKit 3 is the current major since 2026-10-01 |
+| Web | SvelteKit 3 + Svelte 5 runes, SSR, `adapter-node` (superseded by `adapter-vercel`, ADR 0005) | Small bundles and fast phones; SSR for SEO and share cards; form actions give progressive enhancement. SvelteKit 3 is the current major since 2026-10-01 |
 | UI | Tailwind CSS v4 + shadcn-svelte, self-hosted fonts | Fast iteration on a custom, playful look without a heavy component framework |
 | i18n | Paraglide JS, locale-prefixed routes | Type-safe, tree-shaken messages; NL + EN at launch |
 | API | NestJS, REST + OpenAPI | Clear module boundaries per domain, guards for default-deny authorization, mature ecosystem (throttler, BullMQ, swagger) |
