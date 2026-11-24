@@ -16,6 +16,7 @@ describe('test database URL guard (task 1.10)', () => {
     expect(assertTestDatabaseUrl(DEFAULT_TEST_DATABASE_URL)).toBe(DEFAULT_TEST_DATABASE_URL);
     expect(assertTestDatabaseUrl('postgres://u:p@127.0.0.1:5432/other_test')).toBeTruthy();
     expect(assertTestDatabaseUrl('postgresql://u:p@[::1]:5432/x_test')).toBeTruthy();
+    expect(assertTestDatabaseUrl('postgresql://u:p@localhost/x_test?sslmode=disable')).toBeTruthy();
   });
 
   it.each([
@@ -23,6 +24,9 @@ describe('test database URL guard (task 1.10)', () => {
     ['a remote host', 'postgresql://u:secret@db.example.com:5432/guesshive_test'],
     ['a ?host= override', 'postgresql://u:secret@localhost/guesshive_test?host=10.0.0.5'],
     ['a ?hostaddr= override', 'postgresql://u:secret@localhost/guesshive_test?hostaddr=10.0.0.5'],
+    ['a ?port= override', 'postgresql://u:secret@localhost:5441/guesshive_test?port=5440'],
+    ['a ?user= override', 'postgresql://u:secret@localhost/guesshive_test?user=postgres'],
+    ['a malformed escape', 'postgresql://u:secret@localhost/%E0_test'],
     ['a name that only contains _test', 'postgresql://u:secret@localhost/guesshive_test_prod'],
     ['another protocol', 'mysql://u:secret@localhost/guesshive_test'],
     ['an invalid URL', 'not a url secret'],

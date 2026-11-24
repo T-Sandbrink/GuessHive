@@ -69,6 +69,8 @@ pnpm test:integration  # api tests against the postgres-test container and Redis
 pnpm build             # production build
 ```
 
+The integration tests empty every table of the test database. They use `postgresql://guesshive:guesshive@localhost:5441/guesshive_test` and Redis db 15; override with `TEST_DATABASE_URL` / `TEST_REDIS_URL` in your shell (not `.env`). The database URL must point to localhost and its name must end in `_test`, otherwise the suite refuses to run.
+
 ## Troubleshooting
 
 - **Turborepo telemetry.** Turborepo sends anonymous usage data by default. CI turns it off;
