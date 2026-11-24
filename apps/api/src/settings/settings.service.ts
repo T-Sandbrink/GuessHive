@@ -177,7 +177,7 @@ export class SettingsService {
           .exec(),
       { force: true },
     );
-    if (results === undefined || results?.some(([error]) => error !== null)) {
+    if (!results || results.some(([error]) => error !== null)) {
       this.logger.warn(`Could not clear the cached value of setting ${key}`);
     }
   }

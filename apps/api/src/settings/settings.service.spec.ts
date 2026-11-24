@@ -221,6 +221,18 @@ describe('SettingsService', () => {
     expect(store.has(CACHE_KEY)).toBe(false);
   });
 
+  it('warns when a command in the invalidation fails', async () => {
+    const { service, redis } = setup({ stored: 14 });
+    const failing = {
+      incr: () => failing,
+      del: () => failing,
+      exec: () => Promise.resolve([[new Error('WRONGTYPE'), null] as const, [null, 1] as const]),
+    };
+    redis.multi.mockReturnValueOnce(failing as unknown as ReturnType<typeof redis.multi>);
+    await service.update(KEY, 16, ADMIN);
+    expect(warn).toHaveBeenCalledWith(`Could not clear the cached value of setting ${KEY}`);
+  });
+
   it('still completes an update when Redis fails afterwards', async () => {
     const { service, state, tx } = setup({ stored: 14 });
     state.redisDown = true;
