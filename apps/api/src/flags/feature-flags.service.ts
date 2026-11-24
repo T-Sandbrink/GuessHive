@@ -107,7 +107,8 @@ export class FeatureFlagsService {
       // Serialises concurrent updates of the same flag, so each audit entry's "from" is right.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`feature_flag:${key}`}))`;
       const previous = await tx.featureFlag.findUnique({ where: { key } });
-      const before = previous ? this.storedUserIds(previous.rules) : [];
+      const stored = previous ? featureFlagRulesSchema.safeParse(previous.rules) : undefined;
+      const before = stored?.success ? [...new Set(stored.data.userIds)] : [];
       await tx.featureFlag.upsert({ where: { key }, update: next, create: { key, ...next } });
       await tx.auditLog.create({
         data: {
@@ -119,6 +120,8 @@ export class FeatureFlagsService {
             enabled: { from: previous?.enabled ?? null, to: next.enabled },
             usersAdded: userIds.filter((id) => !before.includes(id)),
             usersRemoved: before.filter((id) => !userIds.includes(id)),
+            // The old rules were unreadable (edited by hand), so usersRemoved may be incomplete.
+            ...(stored && !stored.success ? { previousRulesInvalid: true } : {}),
           },
         },
       });
@@ -137,12 +140,6 @@ export class FeatureFlagsService {
       return featureFlagDefault(key, this.env.NODE_ENV);
     }
     return flag.enabled || (context.userId !== undefined && flag.userIds.has(context.userId));
-  }
-
-  /** User ids of a stored rules value; an invalid value counts as none. */
-  private storedUserIds(rules: unknown): string[] {
-    const parsed = featureFlagRulesSchema.safeParse(rules);
-    return parsed.success ? parsed.data.userIds : [];
   }
 
   private load(): Promise<FlagMap> {
@@ -176,11 +173,14 @@ export class FeatureFlagsService {
       const usable = last !== undefined && now - last.loadedAt < FEATURE_FLAG_MAX_STALE_MS;
       const flags: FlagMap = usable ? last.flags : new Map();
       if (generation === this.generation) {
-        this.cached = {
-          flags,
-          at: now + FEATURE_FLAG_RETRY_MS,
-          loadedAt: usable ? last.loadedAt : 0,
-        };
+        this.cached = usable
+          ? {
+              flags,
+              // Never serve the last known values past their maximum age.
+              at: Math.min(now + FEATURE_FLAG_RETRY_MS, last.loadedAt + FEATURE_FLAG_MAX_STALE_MS),
+              loadedAt: last.loadedAt,
+            }
+          : { flags, at: now + FEATURE_FLAG_RETRY_MS, loadedAt: 0 };
       }
       return flags;
     }
