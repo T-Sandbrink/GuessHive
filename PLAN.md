@@ -14,12 +14,12 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** 1.8 (Redis-module + BullMQ-basis; bouwt voort op `RedisService` uit 1.7). Daarna 1.9–1.12, 1.13 (Vercel; koppelen alleen samen met de eigenaar) en de fase-1-gate. De `effect`-kwetsbaarheid is op 20-11 opgelost met een pnpm-override in `pnpm-workspace.yaml` (weghalen zodra Prisma een gefixte versie meelevert).
-- **Klaar:** fase 0 (tag `phase-0-done`), taken 1.1–1.7 (alle gemerged in `phase/1-database` en gepusht, review gates PASS). Op 20-11 ook: `pnpm install` op Node 26.13.1 en de nieuwe gebruikersnaamregel (begint met letter of cijfer).
-- **Waarom gestopt:** weeklimiet op 74% (drempel 75%); een nieuwe taak met review gate zou daar midden in overheen gaan. Werktree schoon op `phase/1-database`.
-- **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored). De dev-db is gemigreerd en geseed.
-- **Open punten:** geen eigenaarsacties (Node 26 en het systeem-PATH zijn op 20-11 gefixt; turbo werkt zonder workaround). Nieuw geparkeerd, blokkeren niets nu: Belgische regio's, categorie-slugs, seed op staging, `NODE_ENV` zonder waarde, Redis zonder TLS. Eerder: gebruikersnamen extra regels, betaalgegevens, groepspunten.
-- **Hervat op:** 24-11-2026 01:05 via `guesshive-resume` (5 minuten na de reset van de weeklimiet).
+- **Huidige taak:** 1.13 (Vercel, alleen de code-kant; koppelen aan het account gebeurt samen met de eigenaar). 1.8 (BullMQ) en 1.9 (rate limiting) wachten op eigenaarsvragen in "Open vragen". Daarna de fase-1-gate.
+- **Klaar:** fase 0 (tag `phase-0-done`), taken 1.1–1.7 en (24-11, watchdog-run) 1.10 integratietests, 1.11 feature flags en 1.12 instellingenregister; alle gemerged in `phase/1-database` en gepusht, review gates PASS.
+- **Waarom deze run:** de resume-keten was gebroken (`guesshive-resume` stond nog op 20-11); de watchdog heeft het werk op 24-11 08:45 hervat.
+- **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored).
+- **Open punten (eigenaar):** nieuw op 24-11: BullMQ-workers en jobbewaring (blokkeren 1.8), rate-limit-opslag en standaardlimiet (blokkeren 1.9), bewaartermijn audit log (blokkeert niets nu). Eerder geparkeerd: Belgische regio's, categorie-slugs, seed op staging, `NODE_ENV` zonder waarde, Redis zonder TLS, gebruikersnamen, betaalgegevens, groepspunten.
+- **Hervat op:** —
 
 ---
 
