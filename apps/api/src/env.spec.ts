@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadEnv } from './env.js';
 
 const DATABASE_URL = 'postgresql://user:pass@localhost:5440/guesshive';
+const IP_HASH_SECRET = 'a-production-secret-of-at-least-32-chars';
 
 describe('loadEnv (api)', () => {
   it('uses safe defaults for local development', () => {
@@ -12,6 +13,7 @@ describe('loadEnv (api)', () => {
       DATABASE_URL,
       REDIS_URL: 'redis://127.0.0.1:6379',
       WORKERS_ENABLED: true,
+      IP_HASH_SECRET: 'development-only-ip-hash-secret-not-for-production',
     });
   });
 
@@ -23,14 +25,23 @@ describe('loadEnv (api)', () => {
   });
 
   it('requires REDIS_URL in production', () => {
-    expect(() => loadEnv({ NODE_ENV: 'production', DATABASE_URL })).toThrow(/REDIS_URL/);
-    expect(() => loadEnv({ NODE_ENV: 'production', DATABASE_URL, REDIS_URL: ' ' })).toThrow(
-      /REDIS_URL/,
+    const prod = { NODE_ENV: 'production', DATABASE_URL, IP_HASH_SECRET };
+    expect(() => loadEnv(prod)).toThrow(/REDIS_URL/);
+    expect(() => loadEnv({ ...prod, REDIS_URL: ' ' })).toThrow(/REDIS_URL/);
+    expect(loadEnv({ ...prod, REDIS_URL: 'rediss://cache.example' }).REDIS_URL).toBe(
+      'rediss://cache.example',
     );
-    expect(
-      loadEnv({ NODE_ENV: 'production', DATABASE_URL, REDIS_URL: 'rediss://cache.example' })
-        .REDIS_URL,
-    ).toBe('rediss://cache.example');
+  });
+
+  it('requires an IP_HASH_SECRET of at least 32 characters in production', () => {
+    const prod = { NODE_ENV: 'production', DATABASE_URL, REDIS_URL: 'rediss://cache.example' };
+    expect(() => loadEnv(prod)).toThrow(/IP_HASH_SECRET: required in production/);
+    expect(() => loadEnv({ ...prod, IP_HASH_SECRET: 'too-short' })).toThrow(/IP_HASH_SECRET/);
+    expect(() => loadEnv({ ...prod, IP_HASH_SECRET: 'too-short' })).not.toThrow(/too-short/);
+    expect(() =>
+      loadEnv({ ...prod, IP_HASH_SECRET: ' development-only-ip-hash-secret-not-for-production ' }),
+    ).toThrow(/IP_HASH_SECRET: must not be the development default/);
+    expect(loadEnv({ ...prod, IP_HASH_SECRET }).IP_HASH_SECRET).toBe(IP_HASH_SECRET);
   });
 
   it('accepts redis and rediss URLs and rejects other schemes', () => {
@@ -48,6 +59,7 @@ describe('loadEnv (api)', () => {
         PORT: '8080',
         DATABASE_URL,
         REDIS_URL: 'rediss://cache.example',
+        IP_HASH_SECRET,
       }),
     ).toMatchObject({ NODE_ENV: 'production', HOST: '0.0.0.0', PORT: 8080 });
   });

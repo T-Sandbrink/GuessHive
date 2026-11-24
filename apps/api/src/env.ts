@@ -1,6 +1,9 @@
 import { nodeEnvSchema, parseEnv } from '@guesshive/shared';
 import { z } from 'zod';
 
+/** Local development and test only; rejected in production (see loadEnv). */
+const DEV_IP_HASH_SECRET = 'development-only-ip-hash-secret-not-for-production';
+
 /** Every environment variable the api reads. Keep apps/api/.env.example in sync. */
 export const apiEnvSchema = z.object({
   NODE_ENV: nodeEnvSchema,
@@ -29,6 +32,13 @@ export const apiEnvSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((value) => value === 'true'),
+  /**
+   * Secret key for hashing client IP addresses (HMAC-SHA256), so raw IPs are never stored, not
+   * even in short-lived rate-limit keys (AGENTS.md §9). At least 32 characters; required in
+   * production. Changing it only resets the rate-limit counters, so it is for rate limits only:
+   * fraud signals (task 9.9) get their own key.
+   */
+  IP_HASH_SECRET: z.string().min(32).default(DEV_IP_HASH_SECRET),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
@@ -36,9 +46,19 @@ export type ApiEnv = z.infer<typeof apiEnvSchema>;
 /** Validates the api environment; throws (and so stops startup) when it is invalid. */
 export function loadEnv(source: Record<string, string | undefined> = process.env): ApiEnv {
   const env = parseEnv(apiEnvSchema, source);
-  // The REDIS_URL default is for local development only; production must set it (fail fast).
-  if (env.NODE_ENV === 'production' && !source['REDIS_URL']?.trim()) {
-    throw new Error('Invalid environment variables:\n- REDIS_URL: required in production');
+  // The REDIS_URL and IP_HASH_SECRET defaults are for local development only; production must
+  // set both (fail fast).
+  if (env.NODE_ENV === 'production') {
+    const problems = ['REDIS_URL', 'IP_HASH_SECRET']
+      .filter((key) => !source[key]?.trim())
+      .map((key) => `- ${key}: required in production`);
+    // The published development secret is as good as none.
+    if (source['IP_HASH_SECRET']?.trim() === DEV_IP_HASH_SECRET) {
+      problems.push('- IP_HASH_SECRET: must not be the development default');
+    }
+    if (problems.length > 0) {
+      throw new Error(`Invalid environment variables:\n${problems.join('\n')}`);
+    }
   }
   return env;
 }
