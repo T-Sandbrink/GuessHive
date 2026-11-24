@@ -41,6 +41,9 @@ export function isFeatureFlagKey(key: string): key is FeatureFlagKey {
 
 /** The registry default of a flag in this runtime mode (off unless the registry says on). */
 export function featureFlagDefault(key: FeatureFlagKey, nodeEnv: NodeEnv): boolean {
+  if (!isFeatureFlagKey(key)) {
+    return false;
+  }
   const definition: FeatureFlagDefinition = FEATURE_FLAGS[key];
   return definition.defaults[nodeEnv] ?? false;
 }
@@ -53,7 +56,11 @@ export const FEATURE_FLAG_MAX_USERS = 1_000;
  * testing a feature in production with a few accounts first.
  */
 export const featureFlagRulesSchema = z.strictObject({
-  userIds: z.array(z.uuid()).max(FEATURE_FLAG_MAX_USERS).default([]),
+  // Lower-cased like the uuids Postgres returns, so a pasted upper-case id still matches.
+  userIds: z
+    .array(z.uuid().transform((id) => id.toLowerCase()))
+    .max(FEATURE_FLAG_MAX_USERS)
+    .default([]),
 });
 
 export type FeatureFlagRules = z.infer<typeof featureFlagRulesSchema>;

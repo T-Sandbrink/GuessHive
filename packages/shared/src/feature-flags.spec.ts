@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   FEATURE_FLAG_KEYS,
+  type FeatureFlagKey,
   FEATURE_FLAG_MAX_USERS,
   featureFlagDefault,
   featureFlagRulesSchema,
@@ -38,8 +39,15 @@ describe('featureFlagRulesSchema', () => {
     expect(featureFlagRulesSchema.parse({})).toEqual({ userIds: [] });
   });
 
-  it('accepts uuid user ids', () => {
-    expect(featureFlagRulesSchema.parse({ userIds: [USER] })).toEqual({ userIds: [USER] });
+  it('accepts uuid user ids, lower-cased', () => {
+    expect(featureFlagRulesSchema.parse({ userIds: [USER.toUpperCase()] })).toEqual({
+      userIds: [USER],
+    });
+  });
+
+  it('gives no default for keys outside the registry', () => {
+    expect(featureFlagDefault('constructor' as FeatureFlagKey, 'production')).toBe(false);
+    expect(featureFlagDefault('__proto__' as FeatureFlagKey, 'production')).toBe(false);
   });
 
   it.each([

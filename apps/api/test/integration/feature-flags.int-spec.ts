@@ -39,11 +39,8 @@ describe('feature flags against the test database (task 1.11)', () => {
       orderBy: { createdAt: 'asc' },
     });
     expect(audit.map((entry) => entry.meta)).toEqual([
-      { from: null, to: { enabled: false, rules: { userIds: [admin.id] } } },
-      {
-        from: { enabled: false, rules: { userIds: [admin.id] } },
-        to: { enabled: true, rules: { userIds: [] } },
-      },
+      { enabled: { from: null, to: false }, usersAdded: [admin.id], usersRemoved: [] },
+      { enabled: { from: false, to: true }, usersAdded: [], usersRemoved: [admin.id] },
     ]);
     expect(audit.every((entry) => entry.actorId === admin.id)).toBe(true);
     expect(audit.every((entry) => entry.action === 'feature_flag.update')).toBe(true);
@@ -52,7 +49,7 @@ describe('feature flags against the test database (task 1.11)', () => {
   it('rejects invalid rules without writing anything', async () => {
     await expect(
       service().update('billing.premium', { enabled: true, rules: { userIds: ['sam'] } }, null),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
     await expect(prisma.featureFlag.count({ where: { key: 'billing.premium' } })).resolves.toBe(0);
   });
 });
