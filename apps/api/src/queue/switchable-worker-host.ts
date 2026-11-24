@@ -1,13 +1,16 @@
 import { Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { WorkerHost } from '@nestjs/bullmq';
 import type { ApiEnv } from '../env.js';
-import { redisErrorCode, throttled } from './redis-error-code.js';
+import { redisErrorCode } from '../redis/redis-errors.js';
 
 /**
  * Base class for every BullMQ processor in the api. Decorate subclasses with
- * `@Processor(name, { autorun: false })`: the worker then starts here, only when
- * `WORKERS_ENABLED` is on (owner decision 2026-11-24). When it is off, the worker is closed at
- * startup, so this process only adds jobs and another process can run the workers later.
+ * `@Processor(name, { autorun: false })` (checked at startup): the worker then starts here,
+ * only when `WORKERS_ENABLED` is on (owner decision 2026-11-24). When it is off, the worker is
+ * closed at startup, so this process only adds jobs and another process can run the workers.
+ *
+ * Job data and job errors are stored in Redis (failed jobs for 7 days): put ids in job data,
+ * never emails, IPs or other personal data, and throw errors with codes or ids only.
  */
 export abstract class SwitchableWorkerHost extends WorkerHost implements OnApplicationBootstrap {
   private readonly hostLogger = new Logger(this.constructor.name);
@@ -18,21 +21,13 @@ export abstract class SwitchableWorkerHost extends WorkerHost implements OnAppli
 
   async onApplicationBootstrap(): Promise<void> {
     const worker = this.worker;
-    // Without a listener an `error` event would be unhandled. Log the code only: messages can
-    // contain the Redis host, and job errors can contain job data.
-    const warn = throttled((message) => {
-      this.hostLogger.warn(message);
-    });
-    worker.on('error', (error: Error) => {
-      warn(`Worker error (${redisErrorCode(error)})`);
-    });
-    worker.on('failed', (job, error) => {
-      this.hostLogger.warn(
-        `Job ${job?.name ?? 'unknown'} failed (attempt ${String(job?.attemptsMade ?? 0)}, ${redisErrorCode(error)})`,
+    if (worker.opts.autorun !== false) {
+      throw new Error(
+        `${this.constructor.name}: use @Processor(name, { autorun: false }) so WORKERS_ENABLED can switch it off`,
       );
-    });
-
+    }
     if (!this.workersEnv.WORKERS_ENABLED) {
+      this.hostLogger.log(`Worker for queue ${worker.name} disabled (WORKERS_ENABLED=false)`);
       await worker.close();
       return;
     }

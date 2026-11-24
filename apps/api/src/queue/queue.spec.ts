@@ -2,10 +2,11 @@ import { EventEmitter } from 'node:events';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { redisErrorCode, throttled } from './redis-error-code.js';
 import { SYSTEM_JOBS, SystemProcessor } from './system.processor.js';
 
 class FakeWorker extends EventEmitter {
+  name = 'system';
+  opts: { autorun?: boolean } = { autorun: false };
   run = vi.fn(() => new Promise<void>(() => undefined));
   close = vi.fn(() => Promise.resolve());
 }
@@ -23,33 +24,6 @@ function processorWith(workersEnabled: boolean): {
 function jobNamed(name: string): Job {
   return { name } as unknown as Job;
 }
-
-describe('redisErrorCode', () => {
-  it('returns the error code, never the message', () => {
-    const error = Object.assign(new Error('connect ECONNREFUSED 10.0.0.5:6379 pw=hunter2'), {
-      code: 'ECONNREFUSED',
-    });
-    expect(redisErrorCode(error)).toBe('ECONNREFUSED');
-  });
-
-  it('falls back to the error class name', () => {
-    expect(redisErrorCode(new TypeError('job data: jan@example.com'))).toBe('TypeError');
-  });
-});
-
-describe('throttled', () => {
-  it('logs at most once per interval', () => {
-    let now = 0;
-    const log = vi.fn();
-    const warn = throttled(log, 1_000, () => now);
-    warn('a');
-    now = 999;
-    warn('b');
-    now = 1_000;
-    warn('c');
-    expect(log.mock.calls).toEqual([['a'], ['c']]);
-  });
-});
 
 describe('SystemProcessor (task 1.8)', () => {
   afterEach(() => {
@@ -76,35 +50,25 @@ describe('SystemProcessor (task 1.8)', () => {
   });
 
   it('closes the worker without running it when WORKERS_ENABLED is off', async () => {
+    vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
     const { processor, worker } = processorWith(false);
     await processor.onApplicationBootstrap();
     expect(worker.run).not.toHaveBeenCalled();
     expect(worker.close).toHaveBeenCalledOnce();
   });
 
-  it('handles worker errors and logs only the code, throttled', async () => {
-    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
-    const { processor, worker } = processorWith(true);
+  it('logs one line when workers are disabled', async () => {
+    const log = vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+    const { processor } = processorWith(false);
     await processor.onApplicationBootstrap();
-    const error = Object.assign(new Error('connect ECONNREFUSED 10.0.0.5:6379'), {
-      code: 'ECONNREFUSED',
-    });
-    expect(() => worker.emit('error', error)).not.toThrow();
-    worker.emit('error', error);
-    expect(warn).toHaveBeenCalledOnce();
-    expect(warn).toHaveBeenCalledWith('Worker error (ECONNREFUSED)');
+    expect(log).toHaveBeenCalledWith('Worker for queue system disabled (WORKERS_ENABLED=false)');
   });
 
-  it('logs a failed job by name and error class only', async () => {
-    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  it('refuses a processor without autorun: false', async () => {
     const { processor, worker } = processorWith(true);
-    await processor.onApplicationBootstrap();
-    worker.emit(
-      'failed',
-      { name: 'ping', attemptsMade: 1 },
-      new Error('user jan@example.com not found'),
-    );
-    expect(warn).toHaveBeenCalledWith('Job ping failed (attempt 1, Error)');
+    worker.opts = {};
+    await expect(processor.onApplicationBootstrap()).rejects.toThrow(/autorun: false/);
+    expect(worker.run).not.toHaveBeenCalled();
   });
 
   it('logs when the running worker stops with an error', async () => {

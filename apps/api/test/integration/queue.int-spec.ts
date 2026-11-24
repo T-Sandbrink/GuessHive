@@ -4,6 +4,8 @@ import { getQueueToken } from '@nestjs/bullmq';
 import { type Queue, QueueEvents } from 'bullmq';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../../src/app.module.js';
+import { API_ENV } from '../../src/config/config.module.js';
+import type { ApiEnv } from '../../src/env.js';
 import { DEFAULT_JOB_OPTIONS, QUEUE_NAMES, QUEUE_PREFIX } from '../../src/queue/queue.constants.js';
 import { SystemQueueService } from '../../src/queue/system-queue.service.js';
 import { testRedisUrl } from './test-db-url.js';
@@ -19,6 +21,8 @@ async function startApp(): Promise<INestApplication> {
 
 /** Empties the system queue in the test Redis (db 15, guarded by testRedisUrl). */
 async function emptySystemQueue(app: INestApplication): Promise<void> {
+  // Defence in depth: only ever obliterate on the guarded test Redis.
+  expect(app.get<ApiEnv>(API_ENV).REDIS_URL).toBe(testRedisUrl());
   const queue = app.get<Queue>(getQueueToken(QUEUE_NAMES.system));
   await queue.obliterate({ force: true });
 }

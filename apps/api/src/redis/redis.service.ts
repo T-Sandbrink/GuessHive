@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, type OnApplicationShutdown } from '@nestjs/
 import { Redis } from 'ioredis';
 import { API_ENV } from '../config/config.module.js';
 import type { ApiEnv } from '../env.js';
+import { redisErrorCode } from './redis-errors.js';
 
 /** How long to wait for a new Redis connection before the attempt fails. */
 export const REDIS_CONNECT_TIMEOUT_MS = 5_000;
@@ -28,8 +29,7 @@ export class RedisService extends Redis implements OnApplicationShutdown {
     this.on('error', (error: Error) => {
       if (!failing) {
         failing = true;
-        const code = 'code' in error && typeof error.code === 'string' ? error.code : 'unknown';
-        logger.warn(`Redis connection error (${code})`);
+        logger.warn(`Redis connection error (${redisErrorCode(error)})`);
       }
     });
     this.on('ready', () => {

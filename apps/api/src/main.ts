@@ -12,7 +12,8 @@ async function bootstrap() {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
-  // SIGTERM/SIGINT close the HTTP server, then run onApplicationShutdown hooks (closing the database pool).
+  // SIGTERM/SIGINT close the HTTP server, then the BullMQ workers (after their running jobs
+  // finish), then the onApplicationShutdown hooks: queues, Redis and the database pool.
   app.enableShutdownHooks();
   const env = app.get<ApiEnv>(API_ENV);
   // OpenAPI + Swagger UI on /docs, development only (task 1.6).
