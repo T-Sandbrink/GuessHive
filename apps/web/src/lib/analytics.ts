@@ -5,6 +5,9 @@ import { type BeforeSendEvent, inject, pageview } from '@vercel/analytics';
  * private pages, never question text or ids of private content, never personal data.
  *
  * Fail-closed by design:
+ * - Nothing loads or is sent without the visitor's opt-in consent (owner decision 2026-11-24).
+ *   The consent banner comes in phase 3; until it calls `setAnalyticsConsent(true)`, analytics
+ *   stays off even where PUBLIC_ANALYTICS_ENABLED is set.
  * - Only routes listed in PUBLIC_ROUTES are ever tracked. A new page is not tracked until its
  *   task adds it here, deliberately.
  * - A page can still opt out through its load data (`analytics: false`), e.g. a question page
@@ -39,6 +42,19 @@ export interface AnalyticsPageData {
 const pending: { pathname: string; sendAs: string }[] = [];
 const MAX_PENDING = 20;
 let started = false;
+let consented = false;
+
+/**
+ * Records the visitor's analytics choice (phase 3 consent banner, from the stored choice). Only
+ * `true` lets `startAnalytics` load the script, so after granting consent the banner must call
+ * `startAnalytics()` too. Withdrawing stops further page views and drops queued ones.
+ */
+export function setAnalyticsConsent(granted: boolean): void {
+  consented = granted;
+  if (!granted) {
+    pending.length = 0;
+  }
+}
 
 /** Whether a page view for this route and page data may be sent, and with which path. */
 export function pageviewPath(
@@ -85,7 +101,7 @@ export function beforeSend(event: BeforeSendEvent): BeforeSendEvent | null {
 
 /** Loads the analytics script once. Call only in the browser, when analytics is enabled. */
 export function startAnalytics(): void {
-  if (started) {
+  if (started || !consented) {
     return;
   }
   started = true;
@@ -102,7 +118,7 @@ export function trackPageview(
   pathname: string,
   data: AnalyticsPageData | undefined,
 ): void {
-  if (!started) {
+  if (!started || !consented) {
     return;
   }
   const sendAs = pageviewPath(routeId, pathname, data);
@@ -120,4 +136,5 @@ export function trackPageview(
 export function resetAnalyticsForTests(): void {
   pending.length = 0;
   started = false;
+  consented = false;
 }

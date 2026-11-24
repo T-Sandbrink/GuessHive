@@ -14,12 +14,12 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** 1.8 (BullMQ-basis), nu niet meer geblokkeerd: de eigenaar beantwoordde op 24-11 alle open vragen (zie "Vastgelegde beslissingen": Achtergrondtaken, Rate limiting, `NODE_ENV`, Audit log, Vercel-productie, Analytics en meer). Daarna 1.9 (rate limiting), dan de kleine fix `NODE_ENV` standaard `production` in het env-schema van de api, en de fase-1-gate. Vercel koppelen (1.13) gebeurt samen met de eigenaar; de productie-branch wordt `production`.
-- **Klaar:** fase 0 (tag `phase-0-done`), taken 1.1–1.7 en 1.10–1.13 (code-kant), alle gemerged in `phase/1-database` en gepusht.
-- **Waarom gestopt:** 5-uursvenster op 74% na het beantwoorden van de vragen (24-11 09:30). Werktree schoon op `phase/1-database`.
+- **Huidige taak:** fase 1 is klaar (gate gedaan, zie "Phase review" onder fase 1). Volgende: fase 2, taak 2.1 (Better Auth in NestJS; eerst de docs en de NestJS-integratie controleren).
+- **Klaar:** fase 0 (tag `phase-0-done`) en fase 1 (taken 1.1–1.13, `NODE_ENV`-standaard `production`, fase-gate), gemerged in `main` met tag `phase-1-done`.
+- **Waarom gestopt:** — (geen pauze; dit blok is bijgewerkt bij het afronden van fase 1, 24-11).
 - **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored)
-- **Open punten:** geen blokkerende. Eigenaar: Vercel-connector inloggen via `/mcp` vóór het koppelen.
-- **Hervat op:** 24-11-2026 13:05 via `guesshive-resume`.
+- **Open punten:** open vraag "Echt IP van gasten achter de SvelteKit-proxy" (blokkeert 3.4). Eigenaar: Vercel koppelen (1.13) samen doen; Vercel-connector inloggen via `/mcp`.
+- **Hervat op:** —
 
 ---
 
@@ -266,6 +266,8 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
   - *Notitie (24-11, code-kant):* `adapter-vercel` 7 (`nodejs26.x`, `fra1`; Kit 3-config in `vite.config.ts`), ADR 0005, `docs/privacy/processing-register.md` gestart. Vercel Web Analytics via de kern-API (de SvelteKit-helper gebruikt nog `$app/stores`, weg in Kit 3), fail-closed: **standaard uit** (`PUBLIC_ANALYTICS_ENABLED`, alleen in Vercel-productie na de juridische check), alleen routes op de allow-list `PUBLIC_ROUTES` (nu `/` en `/[locale]`; latere taken voegen hun pagina's bewust toe), opt-out per pagina via `analytics: false` in de load-data (voor Dark Corner- en groepsvragen op de gewone vraag-URL), `beforeSend` laat alleen eigen page views door zonder query/fragment, referrer `strict-origin`. Review gate: code-reviewer PASS (3 🟡), security-reviewer eerst CHANGES REQUIRED (4 🟡: denylist, profielnamen, referrer, register), ux-reviewer PASS; alles opgelost, re-reviews security en ux PASS. **Nog te doen met de eigenaar:** het project koppelen (Root Directory `apps/web`, build `turbo run build`, previews met Deployment Protection, keuze productie-branch: zie Open vragen) en bij de eerste deploy de referrer en eerste page view in het netwerkverkeer controleren.
 
 **Acceptatie:** migraties draaien schoon op een lege db, de seed vult data, `/health` geeft 200, `/docs` toont de API en een integratietest leest seed-data uit.
+
+**Phase review (24-11-2026):** security-reviewer PASS (0 blockers, 0 🟡, 7 🔵; `pnpm audit` en `pnpm audit --prod`: 0 kwetsbaarheden), code-reviewer PASS (0 blockers, 3 🟡 opgelost: analytics-toestemming afgedwongen in code (`setAnalyticsConsent`, tot de banner in fase 3 blijft alles uit) plus register-regel 2 en ADR 0005, register-regels 4 (AuditLog) en 5 (FeatureFlag-gebruikers), "Laatste stand" bijgewerkt; 10 🔵). Alle acceptatiecriteria zijn gedekt door tests (lint, typecheck, unit, e2e en integratie groen). Verwerkt: `X-Powered-By` uit, `db:deploy`-script, waarschuwing bij een flag-storing max. 1× per minuut, infrastructuurmodules in AGENTS.md §3. **Doorgeschoven 🔵's** (staan bij de taken of hier): guard-volgorde t.o.v. de AuthGuard en Better Auth-routes via Nest (2.1/2.8/2.10), echt client-IP achter de proxy (3.4, open vraag), TLS/wachtwoord voor Redis en Postgres in productie (hosting-ADR), snapshot-velden van geanonimiseerde stemmen in de DPIA (11.2/11.14, juridische check), één `withTimeout`-helper (health + rate-limit), één loopback/URL-guard voor seed en tests (allowlist), één strikt boolean-env-schema in `packages/shared` (api en web verschillen nu), CI-stap tegen drift tussen `schema.prisma` en migraties (`prisma migrate diff --exit-code`), test voor `enableShutdownHooks`, een `createTestApp()`-helper voor de e2e-tests, en de short-id-generator plus zod-schema uit ADR 0004 (fase 4).
 
 ---
 
@@ -519,6 +521,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 - [ ] 11.1 Data-export (`/me/export` → JSON-download met al je gegevens)
 - [ ] 11.2 Account verwijderen: account direct onzichtbaar, **14 dagen bedenktijd** (opnieuw inloggen = terugzetten), daarna persoonsgegevens hard verwijderen en stemmen geanonimiseerd bewaren voor aggregaten. Duidelijk uitgelegd in de verwijderflow
+  - *Notitie (fase-1-gate):* bij definitief verwijderen ook het gebruikers-id uit `AuditLog`-regels halen (pseudonimiseren, eigenaarsbesluit) en uit alle `FeatureFlag.rules.userIds` (register-regels 4 en 5).
 - [ ] 11.3 Privacyverklaring, gebruiksvoorwaarden en community-richtlijnen (NL+EN). **Eigenaar laat juridisch checken**
 - [ ] 11.4 Cookieloze analytics (Vercel Web Analytics (al gekoppeld in 1.13)) + overzicht van welke cookies er zijn (alleen functioneel, geen cookiebanner nodig)
 - [ ] 11.5 Security headers + CSP afstemmen (ook voor OG-afbeeldingen en analytics)
@@ -534,6 +537,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 - [ ] 11.12 DPIA (`docs/privacy/dpia.md`) voor bijzondere persoonsgegevens, Dark Corner, minderjarigen (16–17), demografische uitsplitsingen, fraudesignalen en AI-moderatie. **Eigenaar laat toetsen**
 - [ ] 11.13 Overzicht van verwerkers (hosting, Resend, Cloudflare/R2, Sentry, analytics, Mollie, Anthropic) met de status van de verwerkersovereenkomst en de doorgifte buiten de EU. **Eigenaar sluit de overeenkomsten af**
 - [ ] 11.14 Bewaartermijnen per tabel met persoonsgegevens + automatische opschoon- en anonimiseringsjobs (BullMQ), met tests
+  - *Notitie (fase-1-gate):* `AuditLog`-regels na **2 jaar** verwijderen (eigenaarsbesluit, register-regel 4). Stemmen houden na anonimiseren `snap*`-velden en `createdAt`; in kleine groepen kan dat herleidbaar zijn: in de DPIA behandelen (bijv. `createdAt` afronden op de dag, stem-id's nooit tonen) en door de eigenaar juridisch laten checken.
   - *Notitie (db-review 1.3, 20-11):* ook een job voor geüploade bestanden zonder eigenaar waar geen `Question`, `Option` of `Sponsor` meer naar verwijst (verlaten concepten, afgewezen vragen), inclusief het bestand in de opslag. `Group.avatarUrl` is een losse URL, dus groepsavatars matchen op `url`.
 - [ ] 11.15 Datalekprocedure (`docs/privacy/datalek.md`): herkennen, vastleggen, binnen 72 uur melden bij de Autoriteit Persoonsgegevens indien nodig, gebruikers informeren
 - [ ] 11.16 DSA: melden van illegale inhoud (notice-and-action), motivering bij verwijderen of beperken, een bezwaarroute, een contactpunt, en transparantie over moderatie en gesponsorde inhoud

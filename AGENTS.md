@@ -77,6 +77,8 @@ The browser only talks to the SvelteKit origin (e.g. `guesshive.com`):
 
 Use one module per domain: `auth`, `users`, `questions`, `votes`, `forecasts`, `results`, `scoring`, `social` (follows, comments, reactions), `groups`, `notifications`, `gamification`, `personalization` (own bee, seasonal mascots, display settings), `moderation`, `ambassadors`, `media` (uploads + image moderation), `flags`/`entitlements`, `billing` (phase 13), `admin`, `health`.
 
+Infrastructure modules (phase 1) already exist; reuse them instead of adding parallel ones: `config` (parsed env as `API_ENV`), `logging`, `prisma`, `redis` (shared ioredis connection, `redis-errors.ts` helpers), `queue` (BullMQ; register queues with `registerQueue()`, processors extend `SwitchableWorkerHost`), `rate-limit` (`@RateLimit()`), `settings` (`AppSetting` register) and `flags`.
+
 - Controllers stay thin: parse and validate input, call a service, map the output.
 - Services hold the logic. Prisma is accessed only through services (or repositories inside a module).
 - Use guards for auth and roles (`@Roles('ADMIN')`). Never check roles ad hoc inside controllers.
@@ -100,7 +102,7 @@ pnpm format               # prettier --write over the whole repo
 pnpm --filter web exec playwright install chromium   # one-time: browser for web tests
 ```
 
-Database (Prisma 7, `apps/api`): `pnpm --filter api db:generate` (regenerate the client into `src/generated`, gitignored; turbo runs it before build/lint/typecheck/test), `pnpm --filter api db:migrate` (create/apply a migration; needs `apps/api/.env` with `DATABASE_URL`). Added in task 1.4: `pnpm --filter api db:seed` (local database only). API docs (task 1.6, only with `NODE_ENV=development`): http://localhost:3000/docs, JSON at `/docs-json`.
+Database (Prisma 7, `apps/api`): `pnpm --filter api db:generate` (regenerate the client into `src/generated`, gitignored; turbo runs it before build/lint/typecheck/test), `pnpm --filter api db:migrate` (create/apply a migration; needs `apps/api/.env` with `DATABASE_URL`). Added in task 1.4: `pnpm --filter api db:seed` (local database only). Deployments: `pnpm --filter api db:deploy` (`prisma migrate deploy`, applies committed migrations only). API docs (task 1.6, only with `NODE_ENV=development`): http://localhost:3000/docs, JSON at `/docs-json`.
 
 On Windows, Turborepo needs `pnpm` resolvable on `PATH` without hitting a malformed entry first (see README "Troubleshooting").
 

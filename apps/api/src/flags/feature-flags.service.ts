@@ -10,6 +10,7 @@ import { ApiException } from '../common/api.exception.js';
 import { API_ENV } from '../config/config.module.js';
 import type { ApiEnv } from '../env.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { throttled } from '../redis/redis-errors.js';
 
 /**
  * How long a loaded set of flags is reused. A change made on another api instance shows up
@@ -56,6 +57,9 @@ export interface FeatureFlagUpdate {
 @Injectable()
 export class FeatureFlagsService {
   private readonly logger = new Logger(FeatureFlagsService.name);
+  private readonly warnLoadFailed = throttled((message) => {
+    this.logger.warn(message);
+  });
   /** `at`: when to read again; `loadedAt`: when the flags were last read successfully. */
   private cached: { flags: FlagMap; at: number; loadedAt: number } | undefined;
   private inFlight: Promise<FlagMap> | undefined;
@@ -165,9 +169,8 @@ export class FeatureFlagsService {
         select: { key: true, enabled: true, rules: true },
       });
     } catch {
-      // No error details: they can contain connection information. Logged once per retry
-      // window, not per check.
-      this.logger.warn('Could not load feature flags; using the last known values');
+      // No error details: they can contain connection information. At most once a minute.
+      this.warnLoadFailed('Could not load feature flags; using the last known values');
       const now = Date.now();
       const last = this.cached;
       const usable = last !== undefined && now - last.loadedAt < FEATURE_FLAG_MAX_STALE_MS;
