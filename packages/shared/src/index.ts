@@ -7,3 +7,4 @@ export * from './countries.js';
 export * from './regions.js';
 export * from './slugs.js';
 export * from './feature-flags.js';
+export * from './settings.js';

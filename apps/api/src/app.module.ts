@@ -8,10 +8,19 @@ import { HealthModule } from './health/health.module.js';
 import { LoggerModule } from './logging/logger.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
+import { SettingsModule } from './settings/settings.module.js';
 
-/** Root module: infrastructure (config, logging, Prisma, Redis, flags) plus the domain modules. */
+/** Root module: infrastructure (config, logging, Prisma, Redis, flags, settings) plus the domain modules. */
 @Module({
-  imports: [ConfigModule, LoggerModule, PrismaModule, RedisModule, FlagsModule, HealthModule],
+  imports: [
+    ConfigModule,
+    LoggerModule,
+    PrismaModule,
+    RedisModule,
+    FlagsModule,
+    SettingsModule,
+    HealthModule,
+  ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     { provide: APP_PIPE, useFactory: createValidationPipe },
