@@ -8,6 +8,7 @@ const {
   pageviewPath,
   PUBLIC_ROUTES,
   resetAnalyticsForTests,
+  setAnalyticsConsent,
   startAnalytics,
   trackPageview,
 } = await import('./analytics.js');
@@ -48,12 +49,28 @@ describe('pageviewPath (task 1.13)', () => {
 describe('trackPageview and beforeSend', () => {
   beforeEach(() => {
     resetAnalyticsForTests();
+    setAnalyticsConsent(true);
     inject.mockClear();
     pageview.mockClear();
   });
 
   afterEach(() => {
     resetAnalyticsForTests();
+  });
+
+  it('loads nothing and sends nothing without consent', () => {
+    setAnalyticsConsent(false);
+    startAnalytics();
+    trackPageview('/[locale]', '/nl', undefined);
+    expect(inject).not.toHaveBeenCalled();
+    expect(pageview).not.toHaveBeenCalled();
+  });
+
+  it('stops sending page views once consent is withdrawn', () => {
+    startAnalytics();
+    setAnalyticsConsent(false);
+    trackPageview('/[locale]', '/nl', undefined);
+    expect(pageview).not.toHaveBeenCalled();
   });
 
   it('injects the script once, without automatic tracking', () => {

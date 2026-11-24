@@ -35,6 +35,9 @@ Analytics over Umami/Plausible (2026-11-20).
     `PUBLIC_ANALYTICS_ENABLED=true` is set, which happens only in Vercel's Production environment
     and only after the owner's legal check, the Vercel DPA and the transfer check. Builds without
     it contain no analytics code. Previews and local builds never send data.
+  - **Opt-in consent** (owner decision 2026-11-24). Even where it is enabled, the script loads
+    and page views are sent only after the visitor opted in (`setAnalyticsConsent(true)`, called
+    by the consent banner from phase 3); withdrawing stops further page views.
   - **Allow-list of routes.** Only routes listed in `PUBLIC_ROUTES` are tracked; each new public
     page's task adds it deliberately. Routes whose params identify a person (e.g. a public
     profile) report the route id, not the path. A page can opt out through its load data

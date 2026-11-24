@@ -10,7 +10,8 @@
 
   let { children }: LayoutProps = $props();
 
-  // Cookieless Vercel Web Analytics, only where explicitly enabled (Production; ADR 0005).
+  // Cookieless Vercel Web Analytics, only where explicitly enabled (Production; ADR 0005) and
+  // only after opt-in consent (startAnalytics does nothing until the phase 3 banner grants it).
   if (PUBLIC_ANALYTICS_ENABLED) {
     onMount(() => {
       startAnalytics();
