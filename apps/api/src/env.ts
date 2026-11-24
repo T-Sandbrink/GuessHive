@@ -29,6 +29,12 @@ export const apiEnvSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((value) => value === 'true'),
+  /**
+   * Secret key for hashing client IP addresses (HMAC-SHA256), so raw IPs are never stored, not
+   * even in short-lived rate-limit keys (AGENTS.md §9). At least 32 characters; required in
+   * production. Changing it only resets the rate-limit counters.
+   */
+  IP_HASH_SECRET: z.string().min(32).default('development-only-ip-hash-secret-not-for-production'),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
@@ -36,9 +42,15 @@ export type ApiEnv = z.infer<typeof apiEnvSchema>;
 /** Validates the api environment; throws (and so stops startup) when it is invalid. */
 export function loadEnv(source: Record<string, string | undefined> = process.env): ApiEnv {
   const env = parseEnv(apiEnvSchema, source);
-  // The REDIS_URL default is for local development only; production must set it (fail fast).
-  if (env.NODE_ENV === 'production' && !source['REDIS_URL']?.trim()) {
-    throw new Error('Invalid environment variables:\n- REDIS_URL: required in production');
+  // The REDIS_URL and IP_HASH_SECRET defaults are for local development only; production must
+  // set both (fail fast).
+  if (env.NODE_ENV === 'production') {
+    const missing = ['REDIS_URL', 'IP_HASH_SECRET'].filter((key) => !source[key]?.trim());
+    if (missing.length > 0) {
+      throw new Error(
+        `Invalid environment variables:\n${missing.map((key) => `- ${key}: required in production`).join('\n')}`,
+      );
+    }
   }
   return env;
 }

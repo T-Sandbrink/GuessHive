@@ -8,10 +8,11 @@ import { HealthModule } from './health/health.module.js';
 import { LoggerModule } from './logging/logger.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { QueueModule } from './queue/queue.module.js';
+import { RateLimitModule } from './rate-limit/rate-limit.module.js';
 import { RedisModule } from './redis/redis.module.js';
 import { SettingsModule } from './settings/settings.module.js';
 
-/** Root module: infrastructure (config, logging, Prisma, Redis, flags, settings, queues) plus the domain modules. */
+/** Root module: infrastructure (config, logging, Prisma, Redis, flags, settings, queues, rate limits) plus the domain modules. */
 @Module({
   imports: [
     ConfigModule,
@@ -21,6 +22,7 @@ import { SettingsModule } from './settings/settings.module.js';
     FlagsModule,
     SettingsModule,
     QueueModule,
+    RateLimitModule,
     HealthModule,
   ],
   providers: [
