@@ -9,6 +9,7 @@ export const ignores = {
     '**/node_modules/**',
     '**/dist/**',
     '**/build/**',
+    '**/.vercel/**',
     '**/.svelte-kit/**',
     '**/.turbo/**',
     '**/coverage/**',

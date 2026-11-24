@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**", ".svelte-kit/output/**"]
+      "outputs": ["dist/**", "build/**", ".svelte-kit/output/**", ".vercel/output/**"]
     },
     "dev": {
       "dependsOn": ["^build"],
