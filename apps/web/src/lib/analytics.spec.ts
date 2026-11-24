@@ -66,6 +66,13 @@ describe('trackPageview and beforeSend', () => {
     expect(pageview).not.toHaveBeenCalled();
   });
 
+  it('drops queued page views when consent is withdrawn', () => {
+    startAnalytics();
+    trackPageview('/[locale]', '/nl', undefined);
+    setAnalyticsConsent(false);
+    expect(beforeSend({ type: 'pageview', url: `${ORIGIN}/nl` })).toBeNull();
+  });
+
   it('stops sending page views once consent is withdrawn', () => {
     startAnalytics();
     setAnalyticsConsent(false);

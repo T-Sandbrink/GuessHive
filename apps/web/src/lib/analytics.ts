@@ -46,10 +46,14 @@ let consented = false;
 
 /**
  * Records the visitor's analytics choice (phase 3 consent banner, from the stored choice). Only
- * `true` lets `startAnalytics` load the script; withdrawing stops further page views.
+ * `true` lets `startAnalytics` load the script, so after granting consent the banner must call
+ * `startAnalytics()` too. Withdrawing stops further page views and drops queued ones.
  */
 export function setAnalyticsConsent(granted: boolean): void {
   consented = granted;
+  if (!granted) {
+    pending.length = 0;
+  }
 }
 
 /** Whether a page view for this route and page data may be sent, and with which path. */
