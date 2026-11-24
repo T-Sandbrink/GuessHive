@@ -20,6 +20,18 @@ export const SETTINGS_CACHE_TTL_SECONDS = 60;
 /** After a Redis failure, how long to skip the cache and read the database directly. */
 export const SETTINGS_REDIS_RETRY_MS = 5_000;
 
+/**
+ * KEYS[1] generation, KEYS[2] cache entry; ARGV[1] generation seen before the database read
+ * ('' = none), ARGV[2] entry, ARGV[3] TTL in seconds. Sets the entry only if no change
+ * happened since.
+ */
+const CACHE_SET_IF_GENERATION = `
+if (redis.call('GET', KEYS[1]) or '') == ARGV[1] then
+  redis.call('SET', KEYS[2], ARGV[2], 'EX', tonumber(ARGV[3]))
+  return 1
+end
+return 0`;
+
 type PrismaTx = Parameters<Parameters<PrismaService['$transaction']>[0]>[0];
 
 /** What the cache holds: the validated value, or that the registry default applies. */
@@ -31,9 +43,6 @@ export interface SettingState<K extends SettingKey = SettingKey> {
   /** True when no admin has set a value, or the stored one is no longer valid. */
   isDefault: boolean;
 }
-
-/** A setting state per key, with key and value types linked (for the admin panel). */
-export type AnySettingState = { [K in SettingKey]: SettingState<K> }[SettingKey];
 
 /**
  * App settings (task 1.12). Values come from the `AppSetting` table, are validated against the
@@ -59,8 +68,8 @@ export class SettingsService {
   }
 
   /** Every registered setting with its current value (admin panel). */
-  getAll(): Promise<AnySettingState[]> {
-    return Promise.all(SETTING_KEYS.map((key) => this.state<typeof key>(key)));
+  getAll(): Promise<SettingState[]> {
+    return Promise.all(SETTING_KEYS.map((key) => this.state(key)));
   }
 
   /** A setting's value and whether it is the default. */
@@ -157,13 +166,20 @@ export class SettingsService {
         },
       });
     });
-    await this.redisCall(async () => {
-      await this.redis
-        .multi()
-        .incr(SETTINGS_GENERATION_PREFIX + key)
-        .del(SETTINGS_CACHE_PREFIX + key)
-        .exec();
-    });
+    // Always attempted, even inside the skip window: a reachable Redis must not keep serving
+    // the old value. If it fails, cached values expire within SETTINGS_CACHE_TTL_SECONDS.
+    const results = await this.redisCall(
+      () =>
+        this.redis
+          .multi()
+          .incr(SETTINGS_GENERATION_PREFIX + key)
+          .del(SETTINGS_CACHE_PREFIX + key)
+          .exec(),
+      { force: true },
+    );
+    if (results === undefined || results?.some(([error]) => error !== null)) {
+      this.logger.warn(`Could not clear the cached value of setting ${key}`);
+    }
   }
 
   private fromEntry<K extends SettingKey>(key: K, entry: CacheEntry): SettingState<K> | undefined {
@@ -215,17 +231,18 @@ export class SettingsService {
     if (generation === undefined) {
       return;
     }
-    await this.redisCall(async () => {
-      const current = await this.redis.get(SETTINGS_GENERATION_PREFIX + key);
-      if (current === generation) {
-        await this.redis.set(
-          SETTINGS_CACHE_PREFIX + key,
-          JSON.stringify(entry),
-          'EX',
-          SETTINGS_CACHE_TTL_SECONDS,
-        );
-      }
-    });
+    // Compare-and-set in one atomic step, so a change cannot land between the check and SET.
+    await this.redisCall(() =>
+      this.redis.eval(
+        CACHE_SET_IF_GENERATION,
+        2,
+        SETTINGS_GENERATION_PREFIX + key,
+        SETTINGS_CACHE_PREFIX + key,
+        generation ?? '',
+        JSON.stringify(entry),
+        String(SETTINGS_CACHE_TTL_SECONDS),
+      ),
+    );
   }
 
   /**
@@ -233,13 +250,19 @@ export class SettingsService {
    * connection info) and skips Redis for SETTINGS_REDIS_RETRY_MS, so an unreachable Redis does
    * not add its timeout to every read.
    */
-  private async redisCall<T>(call: () => Promise<T>): Promise<T | undefined> {
-    if (this.redisRetryAt !== undefined && Date.now() < this.redisRetryAt) {
+  private async redisCall<T>(
+    call: () => Promise<T>,
+    options: { force?: boolean } = {},
+  ): Promise<T | undefined> {
+    if (!options.force && this.redisRetryAt !== undefined && Date.now() < this.redisRetryAt) {
       return undefined;
     }
     try {
       const result = await call();
-      this.redisRetryAt = undefined;
+      if (this.redisRetryAt !== undefined) {
+        this.redisRetryAt = undefined;
+        this.logger.log('Settings cache available again');
+      }
       return result;
     } catch {
       if (this.redisRetryAt === undefined) {

@@ -20,13 +20,25 @@ function setup(options: { stored?: unknown; redisDown?: boolean; dbDown?: boolea
   const down = () => Promise.reject(new Error('connect ECONNREFUSED 10.1.2.3 password=hunter2'));
   const redis = {
     get: vi.fn((k: string) => (state.redisDown ? down() : Promise.resolve(store.get(k) ?? null))),
-    set: vi.fn((k: string, v: string) => {
-      if (state.redisDown) {
-        return down();
-      }
-      store.set(k, v);
-      return Promise.resolve('OK');
-    }),
+    eval: vi.fn(
+      (
+        _script: string,
+        _n: number,
+        genKey: string,
+        cacheKey: string,
+        gen: string,
+        entry: string,
+      ) => {
+        if (state.redisDown) {
+          return down();
+        }
+        if ((store.get(genKey) ?? '') !== gen) {
+          return Promise.resolve(0);
+        }
+        store.set(cacheKey, entry);
+        return Promise.resolve(1);
+      },
+    ),
     multi: vi.fn(() => {
       const ops: (() => void)[] = [];
       const chain = {
@@ -45,7 +57,7 @@ function setup(options: { stored?: unknown; redisDown?: boolean; dbDown?: boolea
           ops.forEach((op) => {
             op();
           });
-          return Promise.resolve([]);
+          return Promise.resolve(ops.map(() => [null, 1]));
         },
       };
       return chain;
@@ -98,11 +110,14 @@ describe('SettingsService', () => {
     await expect(service.state(KEY)).resolves.toEqual({ key: KEY, value: 12, isDefault: true });
     await expect(service.get(KEY)).resolves.toBe(12);
     expect(findUnique).toHaveBeenCalledTimes(1);
-    expect(redis.set).toHaveBeenCalledWith(
+    expect(redis.eval).toHaveBeenCalledWith(
+      expect.any(String),
+      2,
+      SETTINGS_GENERATION_PREFIX + KEY,
       CACHE_KEY,
+      '',
       '{"default":true}',
-      'EX',
-      SETTINGS_CACHE_TTL_SECONDS,
+      String(SETTINGS_CACHE_TTL_SECONDS),
     );
   });
 
@@ -192,6 +207,17 @@ describe('SettingsService', () => {
       return Promise.resolve({ value: 14 });
     });
     await expect(service.get(KEY)).resolves.toBe(14);
+    expect(store.has(CACHE_KEY)).toBe(false);
+  });
+
+  it('clears the cache on a change even inside the Redis skip window', async () => {
+    const { service, state, redis, store } = setup({ stored: 14 });
+    state.redisDown = true;
+    await service.get(KEY);
+    state.redisDown = false;
+    store.set(CACHE_KEY, '{"value":14}');
+    await service.update(KEY, 16, ADMIN);
+    expect(redis.multi).toHaveBeenCalledTimes(1);
     expect(store.has(CACHE_KEY)).toBe(false);
   });
 
