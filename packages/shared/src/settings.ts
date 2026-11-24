@@ -47,9 +47,18 @@ function integerSetting(
   };
 }
 
+function booleanSetting(
+  options: Omit<BooleanSetting, 'type' | 'schema'>,
+): BooleanSetting & { schema: z.ZodType<boolean> } {
+  return { type: 'boolean', ...options, schema: z.boolean() };
+}
+
+/** Factories for registering settings: one per value type. */
+export const defineSetting = { integer: integerSetting, boolean: booleanSetting } as const;
+
 /** Every setting the code knows. Later tasks register their own settings here. */
 export const APP_SETTINGS = {
-  'auth.passwordMinLength': integerSetting({
+  'auth.passwordMinLength': defineSetting.integer({
     category: 'auth',
     description: {
       nl: 'Minimaal aantal tekens van een wachtwoord bij registreren en wijzigen.',
@@ -63,10 +72,17 @@ export const APP_SETTINGS = {
 
 export type SettingKey = keyof typeof APP_SETTINGS;
 
-/** The value type of a setting (number for integer settings, boolean for boolean ones). */
-export type SettingValue<K extends SettingKey> = (typeof APP_SETTINGS)[K]['default'] extends number
+/** The value type of a setting definition: number for integer, boolean for boolean. */
+export type ValueOfSetting<D> = D extends IntegerSetting
   ? number
-  : boolean;
+  : D extends BooleanSetting
+    ? boolean
+    : never;
+
+/** The value type of a setting; distributes over a union of keys. */
+export type SettingValue<K extends SettingKey> = K extends SettingKey
+  ? ValueOfSetting<(typeof APP_SETTINGS)[K]>
+  : never;
 
 export const SETTING_KEYS = Object.keys(APP_SETTINGS) as SettingKey[];
 

@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { PrismaService } from '../../src/prisma/prisma.service.js';
 import type { RedisService } from '../../src/redis/redis.service.js';
 import { SETTINGS_CACHE_PREFIX, SettingsService } from '../../src/settings/settings.service.js';
@@ -19,6 +19,10 @@ describe('app settings against Postgres and Redis (task 1.12)', () => {
   beforeAll(async () => {
     await seedTestDatabase(prisma);
     adminId = (await prisma.user.findUniqueOrThrow({ where: { email: TEST_ADMIN_EMAIL } })).id;
+  });
+
+  beforeEach(async () => {
+    await prisma.appSetting.deleteMany();
     await redis.del(SETTINGS_CACHE_PREFIX + KEY);
   });
 
@@ -46,11 +50,11 @@ describe('app settings against Postgres and Redis (task 1.12)', () => {
 
     const audit = await prisma.auditLog.findMany({
       where: { targetType: 'AppSetting', targetId: KEY },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
     expect(audit.map((entry) => [entry.action, entry.actorId, entry.meta])).toEqual([
       ['app_setting.update', adminId, { from: null, to: 16 }],
-      ['app_setting.update', adminId, { from: 16, to: null }],
+      ['app_setting.reset', adminId, { from: 16, to: null }],
     ]);
   });
 

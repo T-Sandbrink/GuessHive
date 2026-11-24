@@ -13,14 +13,17 @@ import { RedisService } from '../redis/redis.service.js';
 
 /** Redis key prefix for cached setting values. */
 export const SETTINGS_CACHE_PREFIX = 'settings:v1:';
-/**
- * How long a cached value lives. A change deletes the cached value at once; this bound only
- * limits how long a rare race (a read that started before the change) can serve the old value.
- */
+/** Redis key prefix for the per-setting change counter (see `write`). */
+export const SETTINGS_GENERATION_PREFIX = 'settings:v1:gen:';
+/** How long a cached value lives; a change drops it at once. */
 export const SETTINGS_CACHE_TTL_SECONDS = 60;
+/** After a Redis failure, how long to skip the cache and read the database directly. */
+export const SETTINGS_REDIS_RETRY_MS = 5_000;
 
-/** Marker for "no row in the database": the registry default applies. */
-const DEFAULT_MARKER = '{"default":true}';
+type PrismaTx = Parameters<Parameters<PrismaService['$transaction']>[0]>[0];
+
+/** What the cache holds: the validated value, or that the registry default applies. */
+type CacheEntry = { value: number | boolean } | { default: true };
 
 export interface SettingState<K extends SettingKey = SettingKey> {
   key: K;
@@ -29,17 +32,21 @@ export interface SettingState<K extends SettingKey = SettingKey> {
   isDefault: boolean;
 }
 
+/** A setting state per key, with key and value types linked (for the admin panel). */
+export type AnySettingState = { [K in SettingKey]: SettingState<K> }[SettingKey];
+
 /**
  * App settings (task 1.12). Values come from the `AppSetting` table, are validated against the
  * hard bounds in the `@guesshive/shared` registry, and are cached in Redis so all api instances
  * share them. Without a valid stored value, the registry default applies. When Redis is down,
- * values are read from the database directly; when both fail, the error is thrown (callers
- * should not silently guess a security-relevant value such as the password length).
+ * values are read from the database directly; when the database fails too, the error is thrown
+ * (a security-relevant value such as the password length is never guessed).
  */
 @Injectable()
 export class SettingsService {
   private readonly logger = new Logger(SettingsService.name);
-  private redisFailing = false;
+  /** While set and in the future, Redis is skipped (it just failed). */
+  private redisRetryAt: number | undefined;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -52,38 +59,54 @@ export class SettingsService {
   }
 
   /** Every registered setting with its current value (admin panel). */
-  getAll(): Promise<SettingState[]> {
-    return Promise.all(SETTING_KEYS.map((key) => this.state(key)));
+  getAll(): Promise<AnySettingState[]> {
+    return Promise.all(SETTING_KEYS.map((key) => this.state<typeof key>(key)));
   }
 
   /** A setting's value and whether it is the default. */
   async state<K extends SettingKey>(key: K): Promise<SettingState<K>> {
-    if (!isSettingKey(key)) {
-      throw new ApiException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Unknown setting');
-    }
+    this.assertKey(key);
     const cached = await this.cacheGet(key);
-    if (cached !== undefined) {
-      const state = this.resolve(key, cached);
+    if (cached) {
+      // Cached entries are validated again, so a value written to Redis by hand cannot
+      // bypass the bounds; an invalid one is treated as a miss.
+      const state = this.fromEntry(key, cached);
       if (state) {
         return state;
       }
     }
+    const generation = await this.cacheGeneration(key);
     const row = await this.prisma.appSetting.findUnique({
       where: { key },
       select: { value: true },
     });
-    const raw = row ? JSON.stringify(row.value) : DEFAULT_MARKER;
-    await this.cacheSet(key, raw);
-    return this.resolve(key, raw) ?? this.defaultState(key);
+    let entry: CacheEntry = { default: true };
+    if (row) {
+      const value = parseSettingValue(key, row.value);
+      if (value === undefined) {
+        // Stored value outside today's bounds (bounds tightened, or edited by hand). Logged
+        // once per cache window, since the default is cached for it.
+        this.logger.warn(`Ignoring invalid stored value of setting ${key}`);
+      } else {
+        entry = { value };
+      }
+    }
+    await this.cacheSet(key, entry, generation);
+    return this.fromEntry(key, entry) ?? this.defaultState(key);
   }
 
   /**
    * Changes a setting (admin panel, task 4.15b). The value must pass the registry's type and
-   * hard bounds; old and new value go to the audit log in the same transaction.
+   * hard bounds; old and new value go to the audit log in the same transaction. `actorId` is
+   * the signed-in admin from the session, never from the request body.
    */
   async update(key: SettingKey, value: unknown, actorId: string): Promise<void> {
-    const parsed = this.parseOrThrow(key, value);
-    await this.write(key, actorId, async (tx) => {
+    this.assertKey(key);
+    const parsed = parseSettingValue(key, value);
+    if (parsed === undefined) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, 'VALIDATION_FAILED', 'Invalid setting value');
+    }
+    await this.write(key, actorId, 'app_setting.update', async (tx) => {
       await tx.appSetting.upsert({
         where: { key },
         update: { value: parsed, updatedById: actorId },
@@ -95,115 +118,135 @@ export class SettingsService {
 
   /** Back to the registry default ("terug naar standaard"): removes the stored value. */
   async reset(key: SettingKey, actorId: string): Promise<void> {
-    if (!isSettingKey(key)) {
-      throw new ApiException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Unknown setting');
-    }
-    await this.write(key, actorId, async (tx) => {
+    this.assertKey(key);
+    await this.write(key, actorId, 'app_setting.reset', async (tx) => {
       await tx.appSetting.deleteMany({ where: { key } });
       return null;
     });
   }
 
-  private parseOrThrow(key: SettingKey, value: unknown): number | boolean {
+  private assertKey(key: string): asserts key is SettingKey {
     if (!isSettingKey(key)) {
       throw new ApiException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Unknown setting');
     }
-    const parsed = parseSettingValue(key, value);
-    if (parsed === undefined) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, 'VALIDATION_FAILED', 'Invalid setting value');
-    }
-    return parsed;
   }
 
   /**
    * Runs a change in a transaction with a per-key advisory lock (so each audit entry's "from"
-   * is right), audits old → new (`null` = default), then drops the cached value.
+   * is right) and audits old → new (`null` = default). Afterwards it bumps the key's change
+   * counter, so a read that started before the change does not cache the old value, and drops
+   * the cached value.
    */
   private async write(
     key: SettingKey,
     actorId: string,
-    change: (
-      tx: Parameters<Parameters<PrismaService['$transaction']>[0]>[0],
-    ) => Promise<number | boolean | null>,
+    action: 'app_setting.update' | 'app_setting.reset',
+    change: (tx: PrismaTx) => Promise<number | boolean | null>,
   ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`app_setting:${key}`}))`;
       const previous = await tx.appSetting.findUnique({ where: { key }, select: { value: true } });
       const to = await change(tx);
-      const from = previous ? previous.value : null;
       await tx.auditLog.create({
         data: {
           actorId,
-          action: 'app_setting.update',
+          action,
           targetType: 'AppSetting',
           targetId: key,
-          meta: { from, to },
+          meta: { from: previous ? previous.value : null, to },
         },
       });
     });
-    await this.cacheDelete(key);
+    await this.redisCall(async () => {
+      await this.redis
+        .multi()
+        .incr(SETTINGS_GENERATION_PREFIX + key)
+        .del(SETTINGS_CACHE_PREFIX + key)
+        .exec();
+    });
   }
 
-  private resolve<K extends SettingKey>(key: K, raw: string): SettingState<K> | undefined {
-    if (raw === DEFAULT_MARKER) {
+  private fromEntry<K extends SettingKey>(key: K, entry: CacheEntry): SettingState<K> | undefined {
+    if ('default' in entry) {
       return this.defaultState(key);
     }
-    let stored: unknown;
-    try {
-      stored = JSON.parse(raw);
-    } catch {
-      return undefined;
-    }
-    const value = parseSettingValue(key, stored);
-    if (value === undefined) {
-      // A stored value outside today's bounds (bounds tightened, or edited by hand).
-      this.logger.warn(`Ignoring invalid stored value of setting ${key}`);
-      return this.defaultState(key);
-    }
-    return { key, value, isDefault: false };
+    const value = parseSettingValue(key, entry.value);
+    return value === undefined ? undefined : { key, value, isDefault: false };
   }
 
   private defaultState<K extends SettingKey>(key: K): SettingState<K> {
     return { key, value: settingDefinition(key).default as SettingValue<K>, isDefault: true };
   }
 
-  private async cacheGet(key: SettingKey): Promise<string | undefined> {
-    try {
-      const value = await this.redis.get(SETTINGS_CACHE_PREFIX + key);
-      this.redisRecovered();
-      return value ?? undefined;
-    } catch {
-      this.redisFailed();
+  private async cacheGet(key: SettingKey): Promise<CacheEntry | undefined> {
+    const raw = await this.redisCall(() => this.redis.get(SETTINGS_CACHE_PREFIX + key));
+    if (!raw) {
       return undefined;
     }
-  }
-
-  private async cacheSet(key: SettingKey, raw: string): Promise<void> {
     try {
-      await this.redis.set(SETTINGS_CACHE_PREFIX + key, raw, 'EX', SETTINGS_CACHE_TTL_SECONDS);
+      const parsed: unknown = JSON.parse(raw);
+      if (typeof parsed === 'object' && parsed !== null) {
+        if ('default' in parsed && parsed.default === true) {
+          return { default: true };
+        }
+        if (
+          'value' in parsed &&
+          (typeof parsed.value === 'number' || typeof parsed.value === 'boolean')
+        ) {
+          return { value: parsed.value };
+        }
+      }
     } catch {
-      this.redisFailed();
+      // Unreadable entry: treated as a miss and overwritten.
     }
+    return undefined;
   }
 
-  private async cacheDelete(key: SettingKey): Promise<void> {
+  private async cacheGeneration(key: SettingKey): Promise<string | null | undefined> {
+    return this.redisCall(() => this.redis.get(SETTINGS_GENERATION_PREFIX + key));
+  }
+
+  /** Caches an entry, unless a change happened since `generation` was read. */
+  private async cacheSet(
+    key: SettingKey,
+    entry: CacheEntry,
+    generation: string | null | undefined,
+  ): Promise<void> {
+    if (generation === undefined) {
+      return;
+    }
+    await this.redisCall(async () => {
+      const current = await this.redis.get(SETTINGS_GENERATION_PREFIX + key);
+      if (current === generation) {
+        await this.redis.set(
+          SETTINGS_CACHE_PREFIX + key,
+          JSON.stringify(entry),
+          'EX',
+          SETTINGS_CACHE_TTL_SECONDS,
+        );
+      }
+    });
+  }
+
+  /**
+   * Runs a Redis call; on failure returns `undefined`, logs once (no details: they can hold
+   * connection info) and skips Redis for SETTINGS_REDIS_RETRY_MS, so an unreachable Redis does
+   * not add its timeout to every read.
+   */
+  private async redisCall<T>(call: () => Promise<T>): Promise<T | undefined> {
+    if (this.redisRetryAt !== undefined && Date.now() < this.redisRetryAt) {
+      return undefined;
+    }
     try {
-      await this.redis.del(SETTINGS_CACHE_PREFIX + key);
+      const result = await call();
+      this.redisRetryAt = undefined;
+      return result;
     } catch {
-      // The cached value then expires within SETTINGS_CACHE_TTL_SECONDS.
-      this.redisFailed();
+      if (this.redisRetryAt === undefined) {
+        this.logger.warn('Settings cache unavailable; reading settings from the database');
+      }
+      this.redisRetryAt = Date.now() + SETTINGS_REDIS_RETRY_MS;
+      return undefined;
     }
-  }
-
-  /** Logs once per Redis outage, without error details (they can hold connection info). */
-  private redisFailed(): void {
-    if (!this.redisFailing) {
-      this.redisFailing = true;
-      this.logger.warn('Settings cache unavailable; reading settings from the database');
-    }
-  }
-
-  private redisRecovered(): void {
-    this.redisFailing = false;
   }
 }

@@ -1,12 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   APP_SETTINGS,
+  type BooleanSetting,
+  defineSetting,
+  type IntegerSetting,
   isSettingKey,
   parseSettingValue,
   SETTING_CATEGORIES,
   SETTING_KEYS,
   type SettingKey,
   settingDefinition,
+  type SettingValue,
+  type ValueOfSetting,
 } from './settings.js';
 
 describe('settings registry', () => {
@@ -62,5 +67,27 @@ describe('parseSettingValue', () => {
 
   it('rejects unknown keys', () => {
     expect(parseSettingValue('constructor' as SettingKey, 12)).toBeUndefined();
+  });
+});
+
+describe('setting value types', () => {
+  it('maps each definition type to its value type, also in a mixed union', () => {
+    expectTypeOf<ValueOfSetting<IntegerSetting>>().toEqualTypeOf<number>();
+    expectTypeOf<ValueOfSetting<BooleanSetting>>().toEqualTypeOf<boolean>();
+    expectTypeOf<ValueOfSetting<IntegerSetting | BooleanSetting>>().toEqualTypeOf<
+      number | boolean
+    >();
+    expectTypeOf<SettingValue<'auth.passwordMinLength'>>().toEqualTypeOf<number>();
+  });
+
+  it('builds boolean settings with a strict boolean schema', () => {
+    const setting = defineSetting.boolean({
+      category: 'auth',
+      description: { nl: 'x', en: 'x' },
+      default: false,
+    });
+    expect(setting.type).toBe('boolean');
+    expect(setting.schema.safeParse(true).success).toBe(true);
+    expect(setting.schema.safeParse('true').success).toBe(false);
   });
 });
