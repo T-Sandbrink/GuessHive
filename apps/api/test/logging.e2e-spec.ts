@@ -64,7 +64,7 @@ describe('request logging', () => {
   beforeEach(async () => {
     lines.length = 0;
     const { pinoHttp } = pinoParams({
-      ...loadEnv({ DATABASE_URL: 'postgresql://u:p@localhost/db' }),
+      ...loadEnv({ NODE_ENV: 'test', DATABASE_URL: 'postgresql://u:p@localhost/db' }),
       NODE_ENV: 'production',
       LOG_LEVEL: 'info',
     });

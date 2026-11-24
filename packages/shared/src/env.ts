@@ -21,5 +21,8 @@ export function parseEnv<TSchema extends z.ZodType>(
   throw new Error(`Invalid environment variables:\n${problems.join('\n')}`);
 }
 
-/** Runtime mode shared by web and api. */
-export const nodeEnvSchema = z.enum(['development', 'test', 'production']).default('development');
+/**
+ * Runtime mode shared by web and api. Unset means `production` (owner decision 2026-11-24):
+ * a host that forgets NODE_ENV gets the strict settings; local `.env` files set `development`.
+ */
+export const nodeEnvSchema = z.enum(['development', 'test', 'production']).default('production');

@@ -43,10 +43,9 @@ export function createOpenApiDocument(app: INestApplication): OpenAPIObject {
 }
 
 /**
- * Serves Swagger UI on `/docs` in development only (task 1.6). Takes the raw NODE_ENV, because the
- * env schema defaults an unset value to development: a host that forgot NODE_ENV must not expose
- * the route map, so only an explicit `development` mounts the docs. These routes bypass Nest
- * guards, so this check is their only protection. Returns whether the docs were mounted.
+ * Serves Swagger UI on `/docs` in development only (task 1.6). Takes the raw NODE_ENV, so only an
+ * explicit `development` mounts the docs (an unset value parses as production anyway). These
+ * routes bypass Nest guards, so this check is their only protection. Returns whether the docs were mounted.
  */
 export function setupOpenApi(app: INestApplication, rawNodeEnv: string | undefined): boolean {
   if (rawNodeEnv?.trim() !== 'development') {

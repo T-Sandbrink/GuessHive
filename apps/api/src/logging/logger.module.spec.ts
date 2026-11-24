@@ -5,7 +5,7 @@ import { type ApiEnv, loadEnv } from '../env.js';
 import { pinoParams, REQUEST_ID_HEADER } from './logger.module.js';
 import { rememberRouteTemplate, routeTemplate } from './route-template.js';
 
-const baseEnv = loadEnv({ DATABASE_URL: 'postgresql://u:p@localhost/db' });
+const baseEnv = loadEnv({ NODE_ENV: 'development', DATABASE_URL: 'postgresql://u:p@localhost/db' });
 
 function options(overrides: Partial<ApiEnv> = {}): Options {
   return pinoParams({ ...baseEnv, ...overrides }).pinoHttp as Options;

@@ -12,7 +12,8 @@ describe('parseEnv', () => {
   it('returns typed values and applies defaults', () => {
     const env = parseEnv(schema, { SECRET: 'long-enough' });
 
-    expect(env).toEqual({ NODE_ENV: 'development', PORT: 3000, SECRET: 'long-enough' });
+    // An unset NODE_ENV is production: fail safe (owner decision 2026-11-24).
+    expect(env).toEqual({ NODE_ENV: 'production', PORT: 3000, SECRET: 'long-enough' });
   });
 
   it('coerces strings from the environment', () => {

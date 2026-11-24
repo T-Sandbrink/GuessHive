@@ -8,12 +8,16 @@ import { SEED_ADMIN } from './seed-data.js';
 import { seed } from './seed.js';
 
 loadDotEnvFile();
+// Before loadEnv: an unset NODE_ENV parses as production, whose errors would hide this hint.
+if (!process.env['NODE_ENV']?.trim()) {
+  throw new Error('Refusing to seed: set NODE_ENV explicitly (development or test).');
+}
 const env = loadEnv();
 const adminEmail = z
   .email()
   .default(SEED_ADMIN.defaultEmail)
   .parse(process.env['SEED_ADMIN_EMAIL']?.trim() || undefined);
-// Raw NODE_ENV on purpose: the env schema defaults an unset value to development.
+// Raw NODE_ENV on purpose: only an explicitly set, non-production value may seed.
 assertSeedAllowed(env, process.env['NODE_ENV'], adminEmail);
 
 const prisma = new PrismaClient({
