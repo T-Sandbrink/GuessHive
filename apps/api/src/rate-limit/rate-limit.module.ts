@@ -1,20 +1,19 @@
 import { type ExecutionContext, Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { GLOBAL_RATE_LIMIT, THROTTLERS } from './rate-limit.constants.js';
 import { ROUTE_RATE_LIMIT, type RouteRateLimit } from './rate-limit.decorator.js';
 import { RateLimitGuard } from './rate-limit.guard.js';
 import { RedisThrottlerStorage } from './redis-throttler.storage.js';
 
+const reflector = new Reflector();
+
 /** The `@RateLimit()` options of the route (method first, then controller), if any. */
 function routeLimit(context: ExecutionContext): RouteRateLimit | undefined {
-  for (const target of [context.getHandler(), context.getClass()]) {
-    const options: unknown = Reflect.getMetadata(ROUTE_RATE_LIMIT, target);
-    if (options !== undefined) {
-      return options as RouteRateLimit;
-    }
-  }
-  return undefined;
+  return reflector.getAllAndOverride<RouteRateLimit | undefined>(ROUTE_RATE_LIMIT, [
+    context.getHandler(),
+    context.getClass(),
+  ]);
 }
 
 /** Holds the storage so ThrottlerModule.forRootAsync can inject it. */

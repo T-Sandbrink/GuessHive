@@ -45,10 +45,29 @@ export class RateLimitStorageUnavailableError extends Error {
 
 const toSeconds = (ms: number): number => Math.ceil(ms / 1000);
 
+/** Longest a request waits for the rate-limit check before it counts as unavailable. */
+export const STORAGE_TIMEOUT_MS = 300;
+
+/** Connection states in which a command cannot get through soon. */
+const UNAVAILABLE_STATUSES = new Set(['reconnecting', 'close', 'end']);
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new RateLimitStorageUnavailableError('ETIMEDOUT'));
+    }, ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
 /**
  * `@nestjs/throttler` storage on the api's shared ioredis connection (owner decision
- * 2026-11-24: own Lua script, no extra package). While Redis is reconnecting it fails at once
- * instead of making every request wait for the reconnect.
+ * 2026-11-24: own Lua script, no extra package). It never makes a request wait long for Redis:
+ * while Redis is reconnecting it fails at once, and a command that gets no answer within
+ * STORAGE_TIMEOUT_MS fails too (a stalled Redis must not hang the whole api).
  */
 @Injectable()
 export class RedisThrottlerStorage implements ThrottlerStorage {
@@ -61,23 +80,30 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
     blockDuration: number,
     throttlerName: string,
   ): Promise<StorageRecord> {
-    // `wait` = never connected yet (lazyConnect): the command below opens the connection.
-    if (this.redis.status !== 'ready' && this.redis.status !== 'wait') {
+    // `wait`/`connecting`/`connect` (first lazy connect) go through, bounded by the timeout.
+    if (UNAVAILABLE_STATUSES.has(this.redis.status)) {
       throw new RateLimitStorageUnavailableError(this.redis.status);
     }
-    const base = `${RATE_LIMIT_KEY_PREFIX}:${throttlerName}:${key}`;
+    // The hash tag keeps both keys in one slot, should Redis ever run as a cluster.
+    const base = `${RATE_LIMIT_KEY_PREFIX}:{${throttlerName}:${key}}`;
     let reply: unknown;
     try {
-      reply = await this.redis.eval(
-        RATE_LIMIT_SCRIPT,
-        2,
-        base,
-        `${base}:block`,
-        String(ttl),
-        String(limit),
-        String(blockDuration),
+      reply = await withTimeout(
+        this.redis.eval(
+          RATE_LIMIT_SCRIPT,
+          2,
+          base,
+          `${base}:block`,
+          String(ttl),
+          String(limit),
+          String(blockDuration),
+        ),
+        STORAGE_TIMEOUT_MS,
       );
     } catch (error) {
+      if (error instanceof RateLimitStorageUnavailableError) {
+        throw error;
+      }
       throw new RateLimitStorageUnavailableError(
         error instanceof Error ? redisErrorCode(error) : 'unknown',
       );

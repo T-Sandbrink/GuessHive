@@ -1,6 +1,9 @@
 import { nodeEnvSchema, parseEnv } from '@guesshive/shared';
 import { z } from 'zod';
 
+/** Local development and test only; rejected in production (see loadEnv). */
+const DEV_IP_HASH_SECRET = 'development-only-ip-hash-secret-not-for-production';
+
 /** Every environment variable the api reads. Keep apps/api/.env.example in sync. */
 export const apiEnvSchema = z.object({
   NODE_ENV: nodeEnvSchema,
@@ -32,9 +35,10 @@ export const apiEnvSchema = z.object({
   /**
    * Secret key for hashing client IP addresses (HMAC-SHA256), so raw IPs are never stored, not
    * even in short-lived rate-limit keys (AGENTS.md §9). At least 32 characters; required in
-   * production. Changing it only resets the rate-limit counters.
+   * production. Changing it only resets the rate-limit counters, so it is for rate limits only:
+   * fraud signals (task 9.9) get their own key.
    */
-  IP_HASH_SECRET: z.string().min(32).default('development-only-ip-hash-secret-not-for-production'),
+  IP_HASH_SECRET: z.string().min(32).default(DEV_IP_HASH_SECRET),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
@@ -46,6 +50,10 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   // set both (fail fast).
   if (env.NODE_ENV === 'production') {
     const missing = ['REDIS_URL', 'IP_HASH_SECRET'].filter((key) => !source[key]?.trim());
+    // The published development secret is as good as none.
+    if (source['IP_HASH_SECRET'] === DEV_IP_HASH_SECRET) {
+      missing.push('IP_HASH_SECRET');
+    }
     if (missing.length > 0) {
       throw new Error(
         `Invalid environment variables:\n${missing.map((key) => `- ${key}: required in production`).join('\n')}`,

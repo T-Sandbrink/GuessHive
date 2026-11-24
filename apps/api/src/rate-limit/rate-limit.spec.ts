@@ -14,6 +14,7 @@ import { RateLimitModule } from './rate-limit.module.js';
 import {
   RateLimitStorageUnavailableError,
   RedisThrottlerStorage,
+  STORAGE_TIMEOUT_MS,
 } from './redis-throttler.storage.js';
 
 const SECRET = 'unit-test-secret-of-at-least-32-characters';
@@ -52,6 +53,34 @@ describe('RedisThrottlerStorage', () => {
       RateLimitStorageUnavailableError,
     );
     expect(evalFn).not.toHaveBeenCalled();
+  });
+
+  it('fails with ETIMEDOUT when Redis does not answer in time', async () => {
+    vi.useFakeTimers();
+    try {
+      const storage = storageWith({
+        status: 'ready',
+        eval: vi.fn(() => new Promise(() => undefined)),
+      } as never);
+      const pending = storage.increment('k', 1_000, 5, 1_000, 'global');
+      const assertion = expect(pending).rejects.toMatchObject({ code: 'ETIMEDOUT' });
+      await vi.advanceTimersByTimeAsync(STORAGE_TIMEOUT_MS);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('lets the first lazy connect through', async () => {
+    const evalFn = vi.fn().mockResolvedValue([1, 1_000, 0, 0]);
+    await storageWith({ status: 'connecting', eval: evalFn } as never).increment(
+      'k',
+      1_000,
+      5,
+      1_000,
+      'global',
+    );
+    expect(evalFn).toHaveBeenCalledOnce();
   });
 
   it('converts the script reply to seconds', async () => {
@@ -197,6 +226,7 @@ describe('RateLimitGuard (task 1.9)', () => {
     const res = await request(server).get('/rl/login').expect(429);
     expect(res.body).toEqual({ code: 'RATE_LIMITED', message: 'Too many requests' });
     expect(res.headers['retry-after-route']).toBe('60');
+    expect(res.headers['retry-after']).toBe('60');
   });
 
   it('lets requests through when Redis is down, and logs once', async () => {

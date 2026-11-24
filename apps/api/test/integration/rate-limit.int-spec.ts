@@ -39,7 +39,7 @@ describe('RedisThrottlerStorage against real Redis (task 1.9)', () => {
     const third = await storage.increment('client', 60_000, 3, 60_000, 'global');
     expect(third.totalHits).toBe(3);
     expect(third.isBlocked).toBe(false);
-    const pttl = await redis.pttl(`${RATE_LIMIT_KEY_PREFIX}:global:client`);
+    const pttl = await redis.pttl(`${RATE_LIMIT_KEY_PREFIX}:{global:client}`);
     expect(pttl).toBeGreaterThan(0);
     expect(pttl).toBeLessThanOrEqual(60_000);
   });
