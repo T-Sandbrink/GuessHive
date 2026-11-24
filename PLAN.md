@@ -14,12 +14,12 @@ Legenda: `[ ]` open · `[x]` klaar · `[~]` bezig · `[-]` geschrapt (met reden)
 Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten eerst dit lezen (zie AGENTS.md §5).
 
 - **Status:** ▶ **Bouwen staat AAN** (eigenaar, 18-11-2026). Autonoom bouwen volgens AGENTS.md §5; de watchdog `guesshive-watchdog` staat aan.
-- **Huidige taak:** fase 1 is klaar (gate gedaan, zie "Phase review" onder fase 1). Volgende: fase 2, taak 2.1 (Better Auth in NestJS; eerst de docs en de NestJS-integratie controleren).
-- **Klaar:** fase 0 (tag `phase-0-done`) en fase 1 (taken 1.1–1.13, `NODE_ENV`-standaard `production`, fase-gate), gemerged in `main` met tag `phase-1-done`.
-- **Waarom gestopt:** — (geen pauze; dit blok is bijgewerkt bij het afronden van fase 1, 24-11).
+- **Huidige taak:** 2.1 (Better Auth) `[~]`: onderzoek klaar (notitie bij 2.1), bouwen wacht op drie eigenaarsvragen (Open vragen: gebruikersrij vóór de onboarding, profielfoto van Google/Apple, sessies in Redis of Postgres). Daarna: eigen dunne Nest-koppeling, Prisma-modellen `Account`/`Session`/`Verification` + migratie (db-reviewer), ADR, review gate.
+- **Klaar:** fase 0 (`phase-0-done`) en fase 1 (`phase-1-done`, 24-11: taken 1.8, 1.9, `NODE_ENV`-standaard `production` en de fase-gate in deze sessie), gemerged in `main` en gepusht. Branch `phase/2-auth` staat klaar; werk aan 2.1 op `task/2.1-better-auth` (alleen PLAN-notities tot nu toe).
+- **Waarom gestopt:** 2.1 hangt aan eigenaarsbeslissingen en het 5-uursvenster stond op 65% (24-11 ±12:50 UTC). Status `waiting_for_owner`; geen automatische hervatting gepland.
 - **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored)
-- **Open punten:** open vraag "Echt IP van gasten achter de SvelteKit-proxy" (blokkeert 3.4). Eigenaar: Vercel koppelen (1.13) samen doen; Vercel-connector inloggen via `/mcp`.
-- **Hervat op:** —
+- **Open punten:** vier open vragen (drie voor 2.1, één over het gast-IP achter de proxy voor 3.4). Eigenaar: Vercel koppelen (1.13) samen doen; Vercel-connector inloggen via `/mcp`.
+- **Hervat op:** zodra de eigenaar de vragen over 2.1 beantwoordt (in chat).
 
 ---
 
@@ -276,7 +276,7 @@ Beslissingen die nog genomen moeten worden. De eigenaar beslist; de agent zet ze
 
 ## Fase 2 — Accounts & login
 
-- [ ] 2.1 Better Auth integreren in NestJS. **Eerst de huidige docs en de NestJS-integratie controleren.** Werkt dat niet goed: stoppen en de eigenaar een alternatief voorleggen (bijv. Passport) met voor- en nadelen; na akkoord een ADR (AGENTS.md §2)
+- [~] 2.1 Better Auth integreren in NestJS. **Eerst de huidige docs en de NestJS-integratie controleren.** Werkt dat niet goed: stoppen en de eigenaar een alternatief voorleggen (bijv. Passport) met voor- en nadelen; na akkoord een ADR (AGENTS.md §2)
   - *Notitie (24-11, onderzoek):* Better Auth 1.7 werkt met NestJS 12 (ESM), Prisma 7 en onze eigen client; ids kan Postgres zelf maken (`generateId: false`), `name`/`image` worden gekoppeld aan `displayUsername`/`avatarUrl`. De community-koppeling `@thallesp/nestjs-better-auth` hangt Better Auth als losse Express-middleware op, dus buiten onze guards (geen rate limits, geen Turnstile op de auth-routes); daarom een **eigen dunne koppeling** (Nest-controller op `/api/auth/*` die naar Better Auth doorgeeft, plus middleware die de sessie vóór alle guards op `req.user` zet), zonder extra pakket; ADR bij het bouwen. Wacht op drie eigenaarsvragen (zie Open vragen: gebruikersrij vóór de onboarding, profielfoto, sessies in Redis of Postgres).
 - [ ] 2.2 E-mail + wachtwoord: registreren, inloggen, e-mailverificatie, wachtwoord vergeten/resetten. Minimale wachtwoordlengte uit `AppSetting` (`auth.passwordMinLength`, standaard 12, grenzen 8–64), afgedwongen in de api
 - [ ] 2.3 Magic link via e-mail (Mailpit lokaal, Resend in prod)
