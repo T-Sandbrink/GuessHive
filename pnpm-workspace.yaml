@@ -34,3 +34,6 @@ catalog:
   vite: ^8.3.8
   vitest: ^5.1.1
   zod: ^4.6.7
+minimumReleaseAgeExclude:
+  # Renovate security update: pnpm@10.34.5
+  - pnpm@10.34.5
