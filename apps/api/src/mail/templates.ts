@@ -64,6 +64,35 @@ const RESET_PASSWORD: Record<Locale, MailCopy> = {
   },
 };
 
+/**
+ * How long a magic sign-in link works (task 2.3); magic-link.ts configures Better Auth with it.
+ * DRAFT value, part of the open question on the email texts.
+ */
+export const MAGIC_LINK_TTL_SECONDS = 15 * 60;
+
+// The copy promises fifteen minutes and one use; MAGIC_LINK_TTL_SECONDS keeps the config in step.
+const MAGIC_LINK: Record<Locale, MailCopy> = {
+  nl: {
+    subject: 'Je inloglink voor GuessHive',
+    greeting: 'Hoi!',
+    body: 'Met de knop hieronder ben je meteen binnen, zonder wachtwoord. De link werkt één keer en is 15 minuten geldig.',
+    button: 'Inloggen bij GuessHive',
+    fallback: 'Werkt de knop niet? Kopieer dan deze link in je browser:',
+    ignore:
+      'Heb je dit niet gevraagd? Dan kun je deze mail negeren: zonder de link komt niemand binnen.',
+    signature: 'Zoemende groet, GuessHive',
+  },
+  en: {
+    subject: 'Your GuessHive sign-in link',
+    greeting: 'Hi!',
+    body: "Use the button below and you're in, no password needed. The link works once, for 15 minutes.",
+    button: 'Sign in to GuessHive',
+    fallback: 'Button not working? Copy this link into your browser:',
+    ignore: "Didn't ask for this? You can ignore this email. Nobody gets in without the link.",
+    signature: 'Cheers from the hive, GuessHive',
+  },
+};
+
 /** Escapes text for HTML element content and attribute values. */
 export function escapeHtml(value: string): string {
   return value
@@ -121,6 +150,11 @@ function render(to: string, locale: Locale, copy: MailCopy, url: string): MailMe
 /** The email that confirms an address after sign-up. */
 export function verifyEmailMessage(to: string, locale: Locale, url: string): MailMessage {
   return render(to, locale, VERIFY_EMAIL[locale], url);
+}
+
+/** The email with a one-time sign-in link (task 2.3). */
+export function magicLinkMessage(to: string, locale: Locale, url: string): MailMessage {
+  return render(to, locale, MAGIC_LINK[locale], url);
 }
 
 /** The email with a link to choose a new password. */

@@ -36,7 +36,7 @@ would not apply to the sign-in routes (review note 1.9).
   `BETTER_AUTH_TRUSTED_ORIGINS` is refused at startup.
 - **Database.** Prisma adapter on our own `PrismaService`. `Session`, `Account` and
   `Verification` follow Better Auth's field names; ids come from Postgres `uuidv7()`
-  (`advanced.database.generateId: false`, ADR 0004). `User.name`/`image` map to
+  (`advanced.database.generateId: 'uuid'`, which with the Postgres adapter leaves ids to the database default, ADR 0004, except Better Auth's own single-use lock rows in `Verification`, which deliberately get a deterministic UUIDv5-shaped id; changed from `false` in task 2.3 because Better Auth's own single-use lock rows then got non-uuid ids). `User.name`/`image` map to
   `displayUsername`/`avatarUrl`. Sessions and verification values live **only in Postgres**
   (owner, 2026-11-27): no `secondaryStorage`, no cookie cache, so revocation is immediate and a
   Redis outage never breaks sign-in.

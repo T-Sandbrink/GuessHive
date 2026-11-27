@@ -140,8 +140,11 @@ export function authOptions(prisma: PrismaClient, env: ApiEnv, settings: Passwor
     // Magic-link and reset tokens are stored hashed, so a database read cannot use them.
     verification: { storeIdentifier: 'hashed' },
     advanced: {
-      // Postgres generates every id (uuidv7(), ADR 0004).
-      database: { generateId: false },
+      // Postgres generates every id (uuidv7(), ADR 0004): with 'uuid' and the Postgres adapter
+      // (supportsUUIDs) Better Auth leaves ids to the database default. Unlike `false`, it also
+      // gives the single-use lock rows it writes itself (reserveVerificationValue, e.g. when a
+      // magic link promotes an unverified account) a uuid-shaped id the uuid column accepts.
+      database: { generateId: 'uuid' },
       // Raw IP addresses are never stored (AGENTS.md §9); a CHECK keeps Session.ipAddress NULL.
       ipAddress: { disableIpTracking: true },
       cookiePrefix: AUTH_COOKIE_PREFIX,

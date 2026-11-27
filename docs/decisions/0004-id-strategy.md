@@ -16,6 +16,9 @@ PostgreSQL 18+ for the built-in `uuidv7()`.
 
 - Every entity with a surrogate key uses a **UUIDv7** primary key, stored as native Postgres
   `uuid`. In Prisma: `id String @id @default(dbgenerated("uuidv7()")) @db.Uuid`.
+  Exception (task 2.3): Better Auth's own short-lived single-use lock rows in `Verification`
+  get a deterministic UUIDv5-shaped id (ADR 0006), so code must never assume `Verification`
+  ids are v7 or time-ordered.
 - The **database generates** it, so rows inserted outside the api (seed, SQL, migrations) get the
   same kind of id. Production hosting must offer PostgreSQL 18 or newer.
 - UUIDv7 starts with a millisecond timestamp, so new rows land at the end of the B-tree index

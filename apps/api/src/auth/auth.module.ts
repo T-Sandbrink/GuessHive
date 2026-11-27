@@ -8,6 +8,7 @@ import { createAuth } from './auth.config.js';
 import { AUTH } from './auth.constants.js';
 import { AuthController } from './auth.controller.js';
 import { emailPasswordMethod } from './email-password.js';
+import { magicLinkPlugin } from './magic-link.js';
 import { SessionMiddleware } from './session.middleware.js';
 
 /**
@@ -25,7 +26,11 @@ import { SessionMiddleware } from './session.middleware.js';
         env: ApiEnv,
         settings: SettingsService,
         mail: MailService,
-      ) => createAuth(prisma, env, settings, emailPasswordMethod(mail)),
+      ) =>
+        createAuth(prisma, env, settings, {
+          ...emailPasswordMethod(mail),
+          plugins: [magicLinkPlugin(mail)],
+        }),
     },
   ],
   exports: [AUTH],

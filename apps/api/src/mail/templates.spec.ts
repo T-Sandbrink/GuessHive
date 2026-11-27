@@ -1,9 +1,11 @@
 import { SUPPORTED_LOCALES } from '@guesshive/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  MAGIC_LINK_TTL_SECONDS,
   RESET_LINK_TTL_SECONDS,
   VERIFY_LINK_TTL_SECONDS,
   escapeHtml,
+  magicLinkMessage,
   resetPasswordMessage,
   verifyEmailMessage,
 } from './templates.js';
@@ -16,6 +18,7 @@ const URL_NASTY = `https://guesshive.test/x?a="1"&b=<script>alert('x')</script>`
 const TEMPLATES = [
   ['verifyEmailMessage', verifyEmailMessage],
   ['resetPasswordMessage', resetPasswordMessage],
+  ['magicLinkMessage', magicLinkMessage],
 ] as const;
 
 describe('escapeHtml (task 2.2)', () => {
@@ -140,5 +143,75 @@ describe('mail templates (task 2.2)', () => {
     expect(VERIFY_LINK_TTL_SECONDS).toBe(3600);
     expect(resetPasswordMessage(TO, 'nl', URL_PLAIN).text).toContain('een uur');
     expect(resetPasswordMessage(TO, 'en', URL_PLAIN).text).toContain('one hour');
+  });
+
+  it.each([
+    ['nl', 'Je inloglink voor GuessHive', 'Inloggen bij GuessHive'],
+    ['en', 'Your GuessHive sign-in link', 'Sign in to GuessHive'],
+  ] as const)('magicLinkMessage in %s (task 2.3)', (locale, subject, button) => {
+    const message = magicLinkMessage(TO, locale, URL_PLAIN);
+    expect(message.to).toBe(TO);
+    expect(message.subject).toBe(subject);
+    expect(message.text).toContain(`${button}: ${URL_PLAIN}`);
+    expect(message.html).toContain(escapeHtml(button));
+    expect(message.html).toContain(`<html lang="${locale}">`);
+  });
+
+  it('promises fifteen minutes and one use in the magic link copy, matching its lifetime (task 2.3)', () => {
+    expect(MAGIC_LINK_TTL_SECONDS).toBe(15 * 60);
+    const minutes = String(MAGIC_LINK_TTL_SECONDS / 60);
+    const nl = magicLinkMessage(TO, 'nl', URL_PLAIN).text;
+    const en = magicLinkMessage(TO, 'en', URL_PLAIN).text;
+    expect(nl).toContain(`${minutes} minuten`);
+    expect(nl).toContain('één keer');
+    expect(en).toContain(`${minutes} minutes`);
+    expect(en).toContain('works once');
+  });
+
+  it('says no password is needed in the magic link copy (task 2.3)', () => {
+    expect(magicLinkMessage(TO, 'nl', URL_PLAIN).text).toContain('zonder wachtwoord');
+    expect(magicLinkMessage(TO, 'en', URL_PLAIN).text).toContain('no password needed');
+  });
+
+  /** Every link lifetime the copy promises, in seconds ("15 minuten", "een uur", "2 hours"). */
+  function promisedSeconds(text: string): number[] {
+    const found: number[] = [];
+    for (const m of text.matchAll(/(\d+)\s*(minuten|minutes|minuut|minute)\b/gi)) {
+      found.push(Number(m[1]) * 60);
+    }
+    for (const m of text.matchAll(/(\d+|een|one|an)\s*(uur|hours?)\b/gi)) {
+      const n = /^\d+$/.test(m[1] ?? '') ? Number(m[1]) : 1;
+      found.push(n * 3600);
+    }
+    return found;
+  }
+
+  it.each([
+    ['magicLinkMessage', magicLinkMessage, MAGIC_LINK_TTL_SECONDS],
+    ['resetPasswordMessage', resetPasswordMessage, RESET_LINK_TTL_SECONDS],
+  ] as const)(
+    '%s promises exactly its configured lifetime in both locales',
+    (_name, template, ttl) => {
+      for (const locale of SUPPORTED_LOCALES) {
+        const promised = promisedSeconds(template(TO, locale, URL_PLAIN).text);
+        expect(promised, locale).toEqual([ttl]);
+      }
+    },
+  );
+
+  it('verifyEmailMessage promises no lifetime other than VERIFY_LINK_TTL_SECONDS', () => {
+    // The verification copy does not mention a lifetime today; if it ever does, it must match.
+    for (const locale of SUPPORTED_LOCALES) {
+      for (const seconds of promisedSeconds(verifyEmailMessage(TO, locale, URL_PLAIN).text)) {
+        expect(seconds, locale).toBe(VERIFY_LINK_TTL_SECONDS);
+      }
+    }
+  });
+
+  it('finds the lifetimes the copy is written in', () => {
+    expect(promisedSeconds('De link is 15 minuten geldig.')).toEqual([900]);
+    expect(promisedSeconds('The link works for one hour.')).toEqual([3600]);
+    expect(promisedSeconds('Valid for 2 hours.')).toEqual([7200]);
+    expect(promisedSeconds('No lifetime here.')).toEqual([]);
   });
 });

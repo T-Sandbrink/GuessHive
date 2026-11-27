@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-import { type Locale, SUPPORTED_LOCALES, normalizeUsername } from '@guesshive/shared';
+import { type Locale, SUPPORTED_LOCALES, localeSchema, normalizeUsername } from '@guesshive/shared';
 
 /** Prefix of the temporary username every new account gets until onboarding (owner, 2026-11-27). */
 export const PLACEHOLDER_USERNAME_PREFIX = 'bij_';
@@ -45,6 +45,12 @@ export function localeFromAcceptLanguage(header: string | null | undefined): Loc
     (SUPPORTED_LOCALES as readonly string[]).includes(entry.language),
   );
   return (match?.language as Locale | undefined) ?? PLACEHOLDER_LOCALE;
+}
+
+/** A user's UI language from their profile (the mail language), else the fallback. */
+export function localeOf(user: Record<string, unknown>): Locale {
+  const parsed = localeSchema.safeParse(user['locale']);
+  return parsed.success ? parsed.data : PLACEHOLDER_LOCALE;
 }
 
 /** Profile columns a new account starts with, in Better Auth field names (`name` = displayUsername). */
