@@ -4,6 +4,8 @@ import type { DefaultJobOptions } from 'bullmq';
 export const QUEUE_NAMES = {
   /** Infrastructure jobs (task 1.8): the `ping` job proves queue and worker work end to end. */
   system: 'system',
+  /** Auth housekeeping (task 2.7): removes expired sessions and verification values. */
+  auth: 'auth',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];

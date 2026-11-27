@@ -3,6 +3,12 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import type { ApiEnv } from '../env.js';
 import type { PrismaClient } from '../generated/prisma/client.js';
 import { placeholderProfile } from './placeholder-profile.js';
+import {
+  SESSION_COOKIE_ATTRIBUTES,
+  SESSION_FRESH_AGE_SECONDS,
+  SESSION_REFRESH_SECONDS,
+  SESSION_TTL_SECONDS,
+} from './session-policy.js';
 
 /**
  * Where Better Auth lives, on the api and (through the SvelteKit proxy, which forwards this path
@@ -25,6 +31,10 @@ export const DISABLED_AUTH_PATHS = [
   '/update-user',
   '/list-sessions',
   '/update-session',
+  // Revoking one session needs its token, which the browser never gets for other sessions
+  // (list-sessions is off); signing out (`/sign-out`), "sign out everywhere" (`/revoke-sessions`)
+  // and "sign out other devices" (`/revoke-other-sessions`) stay on (task 2.7).
+  '/revoke-session',
   '/link-social',
   '/unlink-account',
   '/get-access-token',
@@ -60,7 +70,14 @@ export function authOptions(prisma: PrismaClient, env: ApiEnv) {
     rateLimit: { enabled: false },
     // Sessions live only in Postgres (owner, 2026-11-27): no secondaryStorage, no cookie cache,
     // so signing out or revoking a session takes effect at once.
-    session: { cookieCache: { enabled: false } },
+    session: {
+      cookieCache: { enabled: false },
+      // Sliding expiry (task 2.7): every sign-in gets a new random token, and a get-session call
+      // pushes the expiry out at most once per SESSION_REFRESH_SECONDS.
+      expiresIn: SESSION_TTL_SECONDS,
+      updateAge: SESSION_REFRESH_SECONDS,
+      freshAge: SESSION_FRESH_AGE_SECONDS,
+    },
     user: {
       fields: { name: 'displayUsername', image: 'avatarUrl' },
       additionalFields: {
@@ -124,7 +141,10 @@ export function authOptions(prisma: PrismaClient, env: ApiEnv) {
       // Explicit, because Better Auth skips both checks when NODE_ENV=test or TEST is set.
       disableOriginCheck: false,
       disableCSRFCheck: false,
-      useSecureCookies: env.NODE_ENV === 'production',
+      // Secure cookies in production and on any https origin (e.g. a staging deploy).
+      useSecureCookies:
+        env.NODE_ENV === 'production' || new URL(env.BETTER_AUTH_URL).protocol === 'https:',
+      defaultCookieAttributes: SESSION_COOKIE_ATTRIBUTES,
     },
     telemetry: { enabled: false },
   } satisfies BetterAuthOptions;
