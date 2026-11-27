@@ -21,10 +21,15 @@ Analytics over Umami/Plausible (2026-11-20).
 - **Plan:** Vercel **Hobby** for now. Hobby is for non-commercial use only, so the project moves
   to **Pro before launch with premium** (phase 12/13), and in any case before anything
   commercial (sponsored questions, partner embeds, premium) goes live.
-- **Deployments:** a preview deployment per branch. `main` is **not** promoted to production
-  before launch (phase 12). How that is enforced (production branch tracking pointing at a
-  branch that does not exist yet, and/or `git.deploymentEnabled` in `apps/web/vercel.json`) is
-  an open question for the owner, settled when the project is linked.
+- **Deployments:** a preview deployment per branch. Until launch, `main` is Vercel's production
+  branch (owner, 2026-11-27): it only receives finished, reviewed phases, deploys to `*.vercel.app`
+  behind Vercel Authentication, and lets the owner follow progress. Agents never start a deployment
+  themselves; the Git integration does after a phase merge. Before launch (phase 12) production is set
+  up properly: custom domain, production branch policy and the Pro plan.
+- **Project (linked 2026-11-27):** `guesshive` in the owner's Hobby account, region `fra1`, Node 26,
+  Root Directory `apps/web`, source files outside the root included, Vercel Authentication on all
+  deployments except custom domains. Production and previews get `API_URL=https://api.invalid` (a reserved, never
+  resolving host) until the api is hosted.
 - **Monorepo build on Vercel:** Root Directory `apps/web`, build command `turbo run build`
   (builds `@guesshive/shared` first), "include files outside the root directory" on. Turbo
   caches `.vercel/output/**`.
