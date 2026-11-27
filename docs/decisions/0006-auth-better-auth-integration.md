@@ -61,7 +61,7 @@ would not apply to the sign-in routes (review note 1.9).
 ## Consequences
 
 - One small adapter layer to maintain when Better Auth changes its handler or session API.
-- Better Auth answers `/api/auth/*` with its own error codes (e.g. `USER_ALREADY_EXISTS`), not
+- Better Auth answers `/api/auth/*` with its own error codes (e.g. `USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL`), not
   our `ApiErrorBody`; the web app (phase 3) maps those codes to Paraglide messages.
 - The Prisma adapter supports Prisma 5–7: do not upgrade Prisma to 8 before Better Auth supports
   it.

@@ -1,10 +1,13 @@
 import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { API_ENV } from '../config/config.module.js';
 import type { ApiEnv } from '../env.js';
+import { MailService } from '../mail/mail.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { SettingsService } from '../settings/settings.service.js';
 import { createAuth } from './auth.config.js';
 import { AUTH } from './auth.constants.js';
 import { AuthController } from './auth.controller.js';
+import { emailPasswordMethod } from './email-password.js';
 import { SessionMiddleware } from './session.middleware.js';
 
 /**
@@ -16,8 +19,13 @@ import { SessionMiddleware } from './session.middleware.js';
   providers: [
     {
       provide: AUTH,
-      inject: [PrismaService, API_ENV],
-      useFactory: (prisma: PrismaService, env: ApiEnv) => createAuth(prisma, env),
+      inject: [PrismaService, API_ENV, SettingsService, MailService],
+      useFactory: (
+        prisma: PrismaService,
+        env: ApiEnv,
+        settings: SettingsService,
+        mail: MailService,
+      ) => createAuth(prisma, env, settings, emailPasswordMethod(mail)),
     },
   ],
   exports: [AUTH],

@@ -1,7 +1,9 @@
+import { Logger } from '@nestjs/common';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import type { ApiEnv } from '../env.js';
 import type { PrismaClient } from '../generated/prisma/client.js';
+import { type PasswordSettings, passwordPolicyHook } from './password-policy.js';
 import { placeholderProfile } from './placeholder-profile.js';
 
 /**
@@ -32,6 +34,24 @@ export const DISABLED_AUTH_PATHS = [
   '/account-info',
 ];
 
+const authLogger = new Logger('BetterAuth');
+
+/**
+ * Better Auth's log lines go through the pino logger at `warn` and above, message only: its
+ * `info`/`debug` lines contain email addresses and URLs, and extra arguments can carry error
+ * details (AGENTS.md §8).
+ */
+const AUTH_LOGGER = {
+  level: 'warn',
+  log: (level: 'debug' | 'info' | 'warn' | 'error', message: string) => {
+    if (level === 'error') {
+      authLogger.error(message);
+    } else if (level === 'warn') {
+      authLogger.warn(message);
+    }
+  },
+} as const;
+
 /**
  * The parts of the configuration later tasks may add: sign-in methods (2.2–2.5) and plugins.
  * Everything else (cookies, hooks, privacy settings, disabled paths) is locked in authOptions,
@@ -46,7 +66,7 @@ export type AuthExtensions = Pick<
  * Better Auth options for GuessHive (task 2.1, ADR 0006). Sign-in methods are added by their own
  * tasks (2.2–2.5) through `AuthExtensions`.
  */
-export function authOptions(prisma: PrismaClient, env: ApiEnv) {
+export function authOptions(prisma: PrismaClient, env: ApiEnv, settings: PasswordSettings) {
   return {
     appName: 'GuessHive',
     secret: env.BETTER_AUTH_SECRET,
@@ -56,6 +76,8 @@ export function authOptions(prisma: PrismaClient, env: ApiEnv) {
     trustedOrigins: [env.BETTER_AUTH_URL],
     database: prismaAdapter(prisma, { provider: 'postgresql' }),
     disabledPaths: DISABLED_AUTH_PATHS,
+    // The admin-set minimum password length (auth.passwordMinLength, task 2.2).
+    hooks: { before: passwordPolicyHook(settings) },
     // Our own Redis rate limits (RateLimitGuard, task 2.10) run on the auth controller instead.
     rateLimit: { enabled: false },
     // Sessions live only in Postgres (owner, 2026-11-27): no secondaryStorage, no cookie cache,
@@ -76,7 +98,9 @@ export function authOptions(prisma: PrismaClient, env: ApiEnv) {
     },
     account: {
       // Linking another sign-in method never copies its name or photo onto the profile.
-      accountLinking: { updateUserInfoOnLink: false },
+      // Never link a Google/Apple sign-in to a local account whose address is unconfirmed
+      // (pre-registration takeover); explicit, not left to Better Auth's default.
+      accountLinking: { updateUserInfoOnLink: false, requireLocalEmailVerified: true },
     },
     databaseHooks: {
       user: {
@@ -126,12 +150,18 @@ export function authOptions(prisma: PrismaClient, env: ApiEnv) {
       disableCSRFCheck: false,
       useSecureCookies: env.NODE_ENV === 'production',
     },
+    logger: AUTH_LOGGER,
     telemetry: { enabled: false },
   } satisfies BetterAuthOptions;
 }
 
 /** Creates the Better Auth instance with the sign-in methods and plugins in `extensions`. */
-export function createAuth(prisma: PrismaClient, env: ApiEnv, extensions: AuthExtensions = {}) {
+export function createAuth(
+  prisma: PrismaClient,
+  env: ApiEnv,
+  settings: PasswordSettings,
+  extensions: AuthExtensions = {},
+) {
   // Only these four keys pass, even when the argument carries more at runtime.
   const { emailAndPassword, emailVerification, socialProviders, plugins } = extensions;
   return betterAuth({
@@ -139,7 +169,7 @@ export function createAuth(prisma: PrismaClient, env: ApiEnv, extensions: AuthEx
     emailVerification,
     socialProviders,
     plugins,
-    ...authOptions(prisma, env),
+    ...authOptions(prisma, env, settings),
   });
 }
 

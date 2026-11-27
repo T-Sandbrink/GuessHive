@@ -5,7 +5,7 @@ import { type RequestListener, createServer, request as httpRequest } from 'node
 import type { AddressInfo } from 'node:net';
 import { Redis } from 'ioredis';
 import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../../src/app.module.js';
 import { type Auth, createAuth } from '../../src/auth/auth.config.js';
 import { AUTH } from '../../src/auth/auth.constants.js';
@@ -13,8 +13,10 @@ import type { AuthenticatedRequest } from '../../src/auth/request-user.js';
 import { API_ENV } from '../../src/config/config.module.js';
 import type { ApiEnv } from '../../src/env.js';
 import type { PrismaClient } from '../../src/generated/prisma/client.js';
+import { MailService } from '../../src/mail/mail.service.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { RATE_LIMIT_KEY_PREFIX } from '../../src/rate-limit/rate-limit.constants.js';
+import { SettingsService } from '../../src/settings/settings.service.js';
 import { testRedisUrl } from './test-db-url.js';
 import { createTestPrisma, resetDatabase } from './test-db.js';
 
@@ -58,8 +60,8 @@ function uniqueEmail(): string {
 }
 
 // Better Auth (task 2.1) inside the full api (Nest's default body parsers, like main.ts), against
-// the test database.
-// email + password is switched on only here (production enables sign-in methods in 2.2-2.5).
+// the test database, with the production AuthModule wiring (email + password since task 2.2).
+// MailService is a no-op fake: the mail flows are covered in auth-email-password.int-spec.ts.
 describe('Better Auth integration (task 2.1)', () => {
   let app: NestExpressApplication;
   let prisma: PrismaClient;
@@ -90,12 +92,8 @@ describe('Better Auth integration (task 2.1)', () => {
       imports: [AppModule],
       controllers: [ProbeController],
     })
-      .overrideProvider(AUTH)
-      .useFactory({
-        inject: [PrismaService, API_ENV],
-        factory: (client: PrismaService, env: ApiEnv) =>
-          createAuth(client, env, { emailAndPassword: { enabled: true } }),
-      })
+      .overrideProvider(MailService)
+      .useValue({ sendInBackground: vi.fn(), send: vi.fn().mockResolvedValue(undefined) })
       .compile();
     app = moduleRef.createNestApplication<NestExpressApplication>();
     app.useLogger(false);
@@ -373,7 +371,7 @@ describe('Better Auth integration (task 2.1)', () => {
           },
         }),
       };
-      const auth = createAuth(app.get(PrismaService), env, {
+      const auth = createAuth(app.get(PrismaService), env, app.get(SettingsService), {
         emailAndPassword: { enabled: true },
         plugins: [testPlugin],
       });
@@ -586,7 +584,7 @@ describe('Better Auth origin check with the production options (task 2.1)', () =
       BETTER_AUTH_URL: TRUSTED_ORIGIN,
       NODE_ENV: 'test',
     } as ApiEnv;
-    const auth = createAuth(prisma, env);
+    const auth = createAuth(prisma, env, { get: () => Promise.resolve(12) } as never);
     const res = await auth.handler(
       new Request(`${TRUSTED_ORIGIN}/api/auth/sign-out`, {
         method: 'POST',

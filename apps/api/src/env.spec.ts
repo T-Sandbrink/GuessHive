@@ -9,13 +9,24 @@ const AUTH = {
   BETTER_AUTH_SECRET: 'another-production-secret-of-32-chars-or-more',
   BETTER_AUTH_URL: 'https://guesshive.example',
 };
+/** The email settings production requires (task 2.2). */
+const MAIL = {
+  MAIL_TRANSPORT: 'resend',
+  RESEND_API_KEY: 're_test_key_not_real',
+  MAIL_FROM: 'GuessHive <hallo@guesshive.example>',
+};
 
 describe('loadEnv (api)', () => {
   it('treats an unset NODE_ENV as production, so production settings are required', () => {
     expect(() => loadEnv({ DATABASE_URL })).toThrow(/REDIS_URL: required in production/);
     expect(
-      loadEnv({ DATABASE_URL, REDIS_URL: 'rediss://cache.example', IP_HASH_SECRET, ...AUTH })
-        .NODE_ENV,
+      loadEnv({
+        DATABASE_URL,
+        REDIS_URL: 'rediss://cache.example',
+        IP_HASH_SECRET,
+        ...AUTH,
+        ...MAIL,
+      }).NODE_ENV,
     ).toBe('production');
   });
 
@@ -30,6 +41,9 @@ describe('loadEnv (api)', () => {
       IP_HASH_SECRET: 'development-only-ip-hash-secret-not-for-production',
       BETTER_AUTH_SECRET: 'development-only-better-auth-secret-not-for-production',
       BETTER_AUTH_URL: 'http://localhost:5173',
+      MAIL_TRANSPORT: 'mailpit',
+      MAILPIT_URL: 'http://127.0.0.1:8025',
+      MAIL_FROM: 'GuessHive <noreply@guesshive.test>',
     });
   });
 
@@ -45,7 +59,7 @@ describe('loadEnv (api)', () => {
   });
 
   it('requires REDIS_URL in production', () => {
-    const prod = { NODE_ENV: 'production', DATABASE_URL, IP_HASH_SECRET, ...AUTH };
+    const prod = { NODE_ENV: 'production', DATABASE_URL, IP_HASH_SECRET, ...AUTH, ...MAIL };
     expect(() => loadEnv(prod)).toThrow(/REDIS_URL/);
     expect(() => loadEnv({ ...prod, REDIS_URL: ' ' })).toThrow(/REDIS_URL/);
     expect(loadEnv({ ...prod, REDIS_URL: 'rediss://cache.example' }).REDIS_URL).toBe(
@@ -59,6 +73,7 @@ describe('loadEnv (api)', () => {
       DATABASE_URL,
       REDIS_URL: 'rediss://cache.example',
       ...AUTH,
+      ...MAIL,
     };
     expect(() => loadEnv(prod)).toThrow(/IP_HASH_SECRET: required in production/);
     expect(() => loadEnv({ ...prod, IP_HASH_SECRET: 'too-short' })).toThrow(/IP_HASH_SECRET/);
@@ -88,6 +103,7 @@ describe('loadEnv (api)', () => {
         REDIS_URL: 'rediss://cache.example',
         IP_HASH_SECRET,
         ...AUTH,
+        ...MAIL,
       }),
     ).toMatchObject({ NODE_ENV: 'production', HOST: '0.0.0.0', PORT: 8080 });
   });
@@ -159,6 +175,7 @@ describe('loadEnv (api) Better Auth settings (task 2.1)', () => {
     REDIS_URL: 'rediss://cache.example',
     IP_HASH_SECRET,
     ...AUTH,
+    ...MAIL,
   };
 
   it('accepts a complete production configuration', () => {
@@ -283,6 +300,123 @@ describe('loadEnv (api) Better Auth settings (task 2.1)', () => {
   ])('rejects BETTER_AUTH_URL that is %s', (_label, value) => {
     expect(() => loadEnv({ ...DEV, DATABASE_URL, BETTER_AUTH_URL: value })).toThrow(
       /BETTER_AUTH_URL/,
+    );
+  });
+});
+
+describe('loadEnv (api) email settings (task 2.2)', () => {
+  const prod = {
+    NODE_ENV: 'production',
+    DATABASE_URL,
+    REDIS_URL: 'rediss://cache.example',
+    IP_HASH_SECRET,
+    ...AUTH,
+    ...MAIL,
+  };
+
+  it('accepts a complete production mail configuration', () => {
+    expect(loadEnv(prod)).toMatchObject({
+      MAIL_TRANSPORT: 'resend',
+      RESEND_API_KEY: MAIL.RESEND_API_KEY,
+      MAIL_FROM: MAIL.MAIL_FROM,
+    });
+  });
+
+  it('defaults to Mailpit locally and leaves RESEND_API_KEY unset', () => {
+    const env = loadEnv({ ...DEV, DATABASE_URL });
+    expect(env.MAIL_TRANSPORT).toBe('mailpit');
+    expect(env.MAILPIT_URL).toBe('http://127.0.0.1:8025');
+    expect(env.RESEND_API_KEY).toBeUndefined();
+    expect(env.MAIL_FROM).toBe('GuessHive <noreply@guesshive.test>');
+  });
+
+  it('requires MAIL_FROM in production, also when blank', () => {
+    expect(() => loadEnv({ ...prod, MAIL_FROM: undefined })).toThrow(
+      /MAIL_FROM: required in production/,
+    );
+    expect(() => loadEnv({ ...prod, MAIL_FROM: '   ' })).toThrow(/MAIL_FROM/);
+  });
+
+  it('requires MAIL_TRANSPORT=resend in production', () => {
+    expect(() => loadEnv({ ...prod, MAIL_TRANSPORT: undefined })).toThrow(
+      /MAIL_TRANSPORT: must be resend in production/,
+    );
+    expect(() => loadEnv({ ...prod, MAIL_TRANSPORT: 'mailpit' })).toThrow(
+      /MAIL_TRANSPORT: must be resend in production/,
+    );
+  });
+
+  it('requires RESEND_API_KEY with resend in production, without echoing a key', () => {
+    expect(() => loadEnv({ ...prod, RESEND_API_KEY: undefined })).toThrow(
+      /RESEND_API_KEY: required when MAIL_TRANSPORT is resend/,
+    );
+    expect(() => loadEnv({ ...prod, RESEND_API_KEY: '  ' })).toThrow(/RESEND_API_KEY/);
+    expect(() => loadEnv({ ...prod, MAIL_FROM: undefined })).not.toThrow(/re_test_key_not_real/);
+  });
+
+  it('reports all missing mail settings at once', () => {
+    const { MAIL_TRANSPORT: _t, RESEND_API_KEY: _k, MAIL_FROM: _f, ...rest } = prod;
+    expect(() => loadEnv(rest)).toThrow(
+      /MAIL_FROM: required in production[\s\S]*MAIL_TRANSPORT: must be resend in production/,
+    );
+  });
+
+  it('allows Mailpit without MAIL_FROM or RESEND_API_KEY outside production', () => {
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, MAIL_TRANSPORT: 'mailpit' })).not.toThrow();
+  });
+
+  it('requires RESEND_API_KEY with resend in every environment', () => {
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, MAIL_TRANSPORT: 'resend' })).toThrow(
+      /RESEND_API_KEY: required when MAIL_TRANSPORT is resend/,
+    );
+    expect(
+      loadEnv({ ...DEV, DATABASE_URL, MAIL_TRANSPORT: 'resend', RESEND_API_KEY: 're_dev_key' })
+        .MAIL_TRANSPORT,
+    ).toBe('resend');
+  });
+
+  it.each([
+    ['a bare address', 'hallo@guesshive.example'],
+    ['a named address', 'GuessHive <hallo@guesshive.example>'],
+    ['a name with spaces', 'De Bij van GuessHive <bij@guesshive.example>'],
+    ['angle brackets only', '<hallo@guesshive.example>'],
+  ])('accepts MAIL_FROM as %s', (_label, value) => {
+    expect(loadEnv({ ...DEV, DATABASE_URL, MAIL_FROM: value }).MAIL_FROM).toBe(value);
+  });
+
+  it.each([
+    ['no @', 'GuessHive'],
+    ['no domain dot', 'hallo@localhost'],
+    ['two addresses', 'a@b.example, c@d.example'],
+    ['a header injection (LF)', 'GuessHive <a@b.example>\nBcc: x@evil.example'],
+    ['a header injection (CRLF in the name)', 'Guess\r\nBcc: x@evil.example <a@b.example>'],
+    ['an unclosed bracket', 'GuessHive <a@b.example'],
+    ['a space in the address', 'GuessHive <a b@c.example>'],
+    ['nested brackets', 'Guess <Hive> <a@b.example>'],
+  ])('rejects MAIL_FROM with %s', (_label, value) => {
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, MAIL_FROM: value })).toThrow(/MAIL_FROM/);
+  });
+
+  it.each(['smtp', 'Resend', ''])('rejects MAIL_TRANSPORT=%j', (value) => {
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, MAIL_TRANSPORT: value })).toThrow(
+      /MAIL_TRANSPORT/,
+    );
+  });
+
+  it.each([
+    ['not a URL', 'mailpit:8025'],
+    ['an ftp URL', 'ftp://127.0.0.1:8025'],
+  ])('rejects MAILPIT_URL that is %s', (_label, value) => {
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, MAILPIT_URL: value })).toThrow(/MAILPIT_URL/);
+  });
+
+  it('trims MAIL_FROM and bounds its length', () => {
+    expect(loadEnv({ ...DEV, DATABASE_URL, MAIL_FROM: '  a@b.test  ' }).MAIL_FROM).toBe('a@b.test');
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, MAIL_FROM: 'ab' })).toThrow(/MAIL_FROM/);
+    const long = `${'x'.repeat(190)}@guesshive.example`;
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, MAIL_FROM: long })).toThrow(/MAIL_FROM/);
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, MAIL_FROM: 'x'.repeat(201) })).toThrow(
+      /MAIL_FROM/,
     );
   });
 });

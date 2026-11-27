@@ -7,6 +7,7 @@ import { ConfigModule } from './config/config.module.js';
 import { FlagsModule } from './flags/flags.module.js';
 import { HealthModule } from './health/health.module.js';
 import { LoggerModule } from './logging/logger.module.js';
+import { MailModule } from './mail/mail.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { QueueModule } from './queue/queue.module.js';
 import { RateLimitModule } from './rate-limit/rate-limit.module.js';
@@ -25,6 +26,7 @@ import { SettingsModule } from './settings/settings.module.js';
     QueueModule,
     RateLimitModule,
     HealthModule,
+    MailModule,
     AuthModule,
   ],
   providers: [

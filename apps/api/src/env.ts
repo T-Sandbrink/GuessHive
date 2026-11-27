@@ -10,6 +10,9 @@ const PRODUCTION_SECRETS = {
   IP_HASH_SECRET: DEV_IP_HASH_SECRET,
   BETTER_AUTH_SECRET: DEV_BETTER_AUTH_SECRET,
 } as const;
+/** `hallo@guesshive.com` or `GuessHive <hallo@guesshive.com>`: no line breaks, one address. */
+const MAIL_FROM_PATTERN =
+  /^(?:[^<>\r\n@]*<[^<>\s@]+@[^<>\s@]+\.[^<>\s@]+>|[^<>\s@]+@[^<>\s@]+\.[^<>\s@]+)$/;
 
 /** Every environment variable the api reads. Keep apps/api/.env.example in sync. */
 export const apiEnvSchema = z.object({
@@ -62,6 +65,26 @@ export const apiEnvSchema = z.object({
     .pipe(z.url({ protocol: /^https?$/ }))
     .transform((value) => new URL(value).origin)
     .default('http://localhost:5173'),
+  /**
+   * How email is sent (task 2.2): `mailpit` (local, docker compose) or `resend` (production,
+   * needs RESEND_API_KEY). Production must use `resend`.
+   */
+  MAIL_TRANSPORT: z.enum(['mailpit', 'resend']).default('mailpit'),
+  /** Mailpit's HTTP api (local default: docker compose on port 8025). */
+  MAILPIT_URL: z
+    .string()
+    .trim()
+    .pipe(z.url({ protocol: /^https?$/ }))
+    .default('http://127.0.0.1:8025'),
+  /** Resend api key (production). */
+  RESEND_API_KEY: z.string().trim().min(1).optional(),
+  /** Sender of every email, e.g. `GuessHive <hallo@guesshive.com>`. Required in production. */
+  MAIL_FROM: z
+    .string()
+    .trim()
+    .max(200)
+    .regex(MAIL_FROM_PATTERN, 'must be an address or "Name <address>"')
+    .default('GuessHive <noreply@guesshive.test>'),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
@@ -78,6 +101,12 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
       'Invalid environment variables:\n- BETTER_AUTH_TRUSTED_ORIGINS: not supported, use BETTER_AUTH_URL',
     );
   }
+  // Without a key every Resend call would fail silently, in any environment.
+  if (env.MAIL_TRANSPORT === 'resend' && env.RESEND_API_KEY === undefined) {
+    throw new Error(
+      'Invalid environment variables:\n- RESEND_API_KEY: required when MAIL_TRANSPORT is resend',
+    );
+  }
   if (env.NODE_ENV === 'production') {
     const problems = ['REDIS_URL', ...Object.keys(PRODUCTION_SECRETS), 'BETTER_AUTH_URL']
       .filter((key) => !source[key]?.trim())
@@ -87,6 +116,12 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
       if (source[key]?.trim() === devDefault) {
         problems.push(`- ${key}: must not be the development default`);
       }
+    }
+    if (!source['MAIL_FROM']?.trim()) {
+      problems.push('- MAIL_FROM: required in production');
+    }
+    if (env.MAIL_TRANSPORT !== 'resend') {
+      problems.push('- MAIL_TRANSPORT: must be resend in production');
     }
     // Keys stay separate, so one leak does not expose the other's purpose.
     if (env.BETTER_AUTH_SECRET === env.IP_HASH_SECRET) {
