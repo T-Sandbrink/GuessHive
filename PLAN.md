@@ -18,7 +18,7 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 - **Klaar:** fase 0 en 1 (in `main`). 2.1 Better Auth (27-11, gemerged in `phase/2-auth`, gepusht).
 - **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored)
 - **Open punten:** zie "Open vragen": nieuw zijn OAuth-tokens (blokkeert 2.4/2.5), Landen in een nieuwe database, en de drie 2.2-vragen hierboven. Volgende niet-geblokkeerde taak bij hervatten: 2.3 (magic link), met dezelfde mail-opzet.
-- **Hervat op:** na 27-11-2026 19:05 via de watchdog `guesshive-watchdog` (gebruikslimiet 5 uur bereikt: 79%; `guesshive-resume` opnieuw plannen lukte niet zonder goedkeuring in deze automatische run).
+- **Hervat op:** na 28-11-2026 00:10 via de watchdog `guesshive-watchdog`. De watchdog van 27-11 21:15 kon het verbruik niet uitlezen (`get_usage` gaf 3× "unavailable") en startte daarom geen nieuwe taak; `guesshive-resume` opnieuw plannen vraagt goedkeuring, dus de volgende watchdog-run probeert het opnieuw.
 
 ---
 
