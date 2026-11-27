@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
+import { AuthModule } from './auth/auth.module.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { createValidationPipe } from './common/validation.js';
 import { ConfigModule } from './config/config.module.js';
@@ -24,6 +25,7 @@ import { SettingsModule } from './settings/settings.module.js';
     QueueModule,
     RateLimitModule,
     HealthModule,
+    AuthModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

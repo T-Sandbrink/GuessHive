@@ -272,7 +272,7 @@ To make sure **only one session works on the repo at a time**, every session use
   - force-push, or push `main` outside a phase merge;
   - create external accounts or enter credentials;
   - register domains or buy anything;
-  - deploy to production;
+  - deploy to production (the Vercel Git integration deploying `main` after a phase merge is approved by the owner, 2026-11-27; agents never trigger a deployment themselves);
   - delete anything outside the repo;
   - change global system settings.
 - **Tasks that need the owner** (OAuth app credentials, hosting choice, legal texts, domains): build everything possible with env-var placeholders and mocks, add the required owner action to "Open vragen" in PLAN.md, and continue with the next task. Only if **no** unblocked task remains: write `blocked`, notify the owner, and do not schedule a resume.
