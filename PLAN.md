@@ -18,7 +18,7 @@ Wordt bijgewerkt bij elke pauze (gebruikslimiet, einde sessie). Bij hervatten ee
 - **Klaar:** fase 0 en 1 (in `main`). 2.1 Better Auth (27-11) en 2.8 AuthGuard (28-11), gemerged in `phase/2-auth` en gepusht.
 - **Niet-gecommitte bestanden:** — (lokaal `apps/api/.env` en root-`.env`, bewust gitignored)
 - **Open punten:** zie "Open vragen": OAuth-tokens (blokkeert 2.4/2.5), Landen in een nieuwe database, de vragen bij 2.2, 2.3, 2.7 en 2.8. Volgende niet-geblokkeerde taak: 2.9 (Turnstile, met placeholder-sleutels) of 2.10 (rate limits; raakt de auth-routes van 2.2/2.3, dus beter na die merges). Let op: PLAN.md verschilt per branch; de nieuwste stand staat op `phase/2-auth`.
-- **Hervat op:** gepauzeerd 28-11 ~01:00 bij ~65% van het 5-uurslimiet (geen nieuwe taak gestart); `guesshive-resume` gepland op 28-11 02:15 (5 min na de reset).
+- **Hervat op:** gepauzeerd 28-11 ~01:00 bij 65% van het 5-uurslimiet: de overgebleven taken (2.9 Turnstile, 2.10 rate limits) raken de sign-up- en magic-link-routes van de nog niet gemergde 2.2/2.3, dus antwoorden van de eigenaar maken die het eenvoudigst. `guesshive-resume` opnieuw plannen vroeg goedkeuring; de watchdog van 03:15 hervat (resumeAt 02:15).
 
 ---
 
