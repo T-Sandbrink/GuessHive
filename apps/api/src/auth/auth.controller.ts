@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 import { ApiException } from '../common/api.exception.js';
 import type { Auth } from './auth.config.js';
 import { AUTH } from './auth.constants.js';
+import { Public } from './auth.decorators.js';
 
 /** True when the request announces a body (a positive Content-Length or chunked encoding). */
 function announcesBody(req: Request): boolean {
@@ -27,6 +28,12 @@ export class AuthController {
     this.handler = toNodeHandler(auth);
   }
 
+  // Public: sign-in has no session yet, and Better Auth checks the session on the routes that
+  // need one (sign-out, revoke-sessions). Suspended or banned users can still sign out. On the
+  // handler, not the class, so a handler added here later is not public by accident.
+  // RolesGuard never protects Better Auth routes: a plugin endpoint that needs a role must be
+  // checked by Better Auth itself, or disabled.
+  @Public()
   @All('{*path}')
   async handle(@Req() req: Request, @Res() res: Response): Promise<void> {
     // Nest's JSON and urlencoded parsers (100 kb limit) have read every body Better Auth

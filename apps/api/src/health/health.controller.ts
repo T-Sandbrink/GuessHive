@@ -1,12 +1,14 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { ApiOkResponse, ApiServiceUnavailableResponse } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { Public } from '../auth/auth.decorators.js';
 import { type HealthReport, HealthService } from './health.service.js';
 
 /**
- * Liveness and readiness for uptime monitoring (task 1.7; 11.9). Public by design once the global
- * auth guard exists. Reports only up/down per dependency, never error details.
+ * Liveness and readiness for uptime monitoring (task 1.7; 11.9). Public (task 2.8): the uptime
+ * monitor has no session. Reports only up/down per dependency, never error details.
  */
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly health: HealthService) {}

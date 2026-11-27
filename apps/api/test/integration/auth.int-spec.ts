@@ -9,6 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { AppModule } from '../../src/app.module.js';
 import { type Auth, createAuth } from '../../src/auth/auth.config.js';
 import { AUTH } from '../../src/auth/auth.constants.js';
+import { Public } from '../../src/auth/auth.decorators.js';
 import type { AuthenticatedRequest } from '../../src/auth/request-user.js';
 import { API_ENV } from '../../src/config/config.module.js';
 import type { ApiEnv } from '../../src/env.js';
@@ -27,7 +28,12 @@ const PLACEHOLDER = /^bij_[abcdefghjkmnpqrstuvwxyz23456789]{10}$/;
 /** What a browser sends on a cross-site fetch; it makes Better Auth check the Origin. */
 const CROSS_SITE = { 'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Mode': 'cors' };
 
-/** Test-only routes outside /api/auth: what SessionMiddleware put on the request, and a body echo. */
+/**
+ * Test-only routes outside /api/auth: what SessionMiddleware put on the request, and a body echo.
+ * Public (task 2.8), so guests reach the probe too and the anonymous-vs-signed-in middleware
+ * result stays observable; the auth guard itself is covered in auth-guard.int-spec.ts.
+ */
+@Public()
 @Controller('test-auth')
 class ProbeController {
   @Get('whoami')
