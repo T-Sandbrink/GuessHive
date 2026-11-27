@@ -1,5 +1,5 @@
 import { Controller, Get, type INestApplication, Logger } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { getStorageToken } from '@nestjs/throttler';
 import request from 'supertest';
@@ -10,6 +10,7 @@ import { ConfigModule } from '../config/config.module.js';
 import { RedisService } from '../redis/redis.service.js';
 import { hashIp } from './ip-hash.js';
 import { RateLimit } from './rate-limit.decorator.js';
+import { RateLimitGuard } from './rate-limit.guard.js';
 import { RateLimitModule } from './rate-limit.module.js';
 import {
   RateLimitStorageUnavailableError,
@@ -164,6 +165,8 @@ describe('RateLimitGuard (task 1.9)', () => {
       controllers: [RateLimitedController],
       providers: [
         { provide: RedisService, useValue: {} },
+        // AppModule registers the guard globally (task 2.8); RateLimitModule only provides storage.
+        { provide: APP_GUARD, useClass: RateLimitGuard },
         { provide: APP_FILTER, useClass: AllExceptionsFilter },
       ],
     })

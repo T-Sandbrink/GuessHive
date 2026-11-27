@@ -1,9 +1,8 @@
 import { type ExecutionContext, Module } from '@nestjs/common';
-import { APP_GUARD, Reflector } from '@nestjs/core';
+import { Reflector } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { GLOBAL_RATE_LIMIT, THROTTLERS } from './rate-limit.constants.js';
 import { ROUTE_RATE_LIMIT, type RouteRateLimit } from './rate-limit.decorator.js';
-import { RateLimitGuard } from './rate-limit.guard.js';
 import { RedisThrottlerStorage } from './redis-throttler.storage.js';
 
 const reflector = new Reflector();
@@ -21,9 +20,10 @@ function routeLimit(context: ExecutionContext): RouteRateLimit | undefined {
 class RateLimitStorageModule {}
 
 /**
- * Rate limiting (task 1.9): `@nestjs/throttler` on Redis, applied to every route by a global
- * guard. Two throttlers: `global` (120 a minute per client, one counter across all routes) and
- * `route` (only on routes with `@RateLimit()`, counted per route).
+ * Rate limiting (task 1.9): `@nestjs/throttler` on Redis. RateLimitGuard is registered as a
+ * global guard in AppModule, before the auth guards (task 2.8). Two throttlers: `global` (120 a
+ * minute per client, one counter across all routes) and `route` (only on routes with
+ * `@RateLimit()`, counted per route).
  */
 @Module({
   imports: [
@@ -54,6 +54,5 @@ class RateLimitStorageModule {}
       }),
     }),
   ],
-  providers: [{ provide: APP_GUARD, useClass: RateLimitGuard }],
 })
 export class RateLimitModule {}

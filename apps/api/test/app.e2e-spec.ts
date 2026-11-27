@@ -20,6 +20,7 @@ import request from 'supertest';
 import { type App } from 'supertest/types.js';
 import { z } from 'zod';
 import { AppModule } from '../src/app.module.js';
+import { Public } from '../src/auth/auth.decorators.js';
 import { ApiException } from '../src/common/api.exception.js';
 import { REQUEST_ID_HEADER } from '../src/logging/logger.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -45,6 +46,8 @@ class UnauthenticatedGuard implements CanActivate {
   }
 }
 
+// Public: these routes test the exception filter, not the global auth guard (task 2.8).
+@Public()
 @Controller('test-errors')
 class ErrorsController {
   @Get('api')
@@ -84,6 +87,8 @@ class ErrorsController {
 const createSchema = z.object({ title: z.string().min(3), tags: z.array(z.string()).max(3) });
 const listSchema = z.object({ limit: z.coerce.number().int().min(1).max(50) });
 
+// Public: these routes test request validation, not the global auth guard (task 2.8).
+@Public()
 @Controller('test-validation')
 class ValidationController {
   @Post(':id')
