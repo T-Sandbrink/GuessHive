@@ -4,12 +4,18 @@ import { loadEnv } from './env.js';
 const DEV = { NODE_ENV: 'development' };
 const DATABASE_URL = 'postgresql://user:pass@localhost:5440/guesshive';
 const IP_HASH_SECRET = 'a-production-secret-of-at-least-32-chars';
+/** The Better Auth settings production requires (task 2.1). */
+const AUTH = {
+  BETTER_AUTH_SECRET: 'another-production-secret-of-32-chars-or-more',
+  BETTER_AUTH_URL: 'https://guesshive.example',
+};
 
 describe('loadEnv (api)', () => {
   it('treats an unset NODE_ENV as production, so production settings are required', () => {
     expect(() => loadEnv({ DATABASE_URL })).toThrow(/REDIS_URL: required in production/);
     expect(
-      loadEnv({ DATABASE_URL, REDIS_URL: 'rediss://cache.example', IP_HASH_SECRET }).NODE_ENV,
+      loadEnv({ DATABASE_URL, REDIS_URL: 'rediss://cache.example', IP_HASH_SECRET, ...AUTH })
+        .NODE_ENV,
     ).toBe('production');
   });
 
@@ -22,6 +28,8 @@ describe('loadEnv (api)', () => {
       REDIS_URL: 'redis://127.0.0.1:6379',
       WORKERS_ENABLED: true,
       IP_HASH_SECRET: 'development-only-ip-hash-secret-not-for-production',
+      BETTER_AUTH_SECRET: 'development-only-better-auth-secret-not-for-production',
+      BETTER_AUTH_URL: 'http://localhost:5173',
     });
   });
 
@@ -37,7 +45,7 @@ describe('loadEnv (api)', () => {
   });
 
   it('requires REDIS_URL in production', () => {
-    const prod = { NODE_ENV: 'production', DATABASE_URL, IP_HASH_SECRET };
+    const prod = { NODE_ENV: 'production', DATABASE_URL, IP_HASH_SECRET, ...AUTH };
     expect(() => loadEnv(prod)).toThrow(/REDIS_URL/);
     expect(() => loadEnv({ ...prod, REDIS_URL: ' ' })).toThrow(/REDIS_URL/);
     expect(loadEnv({ ...prod, REDIS_URL: 'rediss://cache.example' }).REDIS_URL).toBe(
@@ -46,7 +54,12 @@ describe('loadEnv (api)', () => {
   });
 
   it('requires an IP_HASH_SECRET of at least 32 characters in production', () => {
-    const prod = { NODE_ENV: 'production', DATABASE_URL, REDIS_URL: 'rediss://cache.example' };
+    const prod = {
+      NODE_ENV: 'production',
+      DATABASE_URL,
+      REDIS_URL: 'rediss://cache.example',
+      ...AUTH,
+    };
     expect(() => loadEnv(prod)).toThrow(/IP_HASH_SECRET: required in production/);
     expect(() => loadEnv({ ...prod, IP_HASH_SECRET: 'too-short' })).toThrow(/IP_HASH_SECRET/);
     expect(() => loadEnv({ ...prod, IP_HASH_SECRET: 'too-short' })).not.toThrow(/too-short/);
@@ -74,6 +87,7 @@ describe('loadEnv (api)', () => {
         DATABASE_URL,
         REDIS_URL: 'rediss://cache.example',
         IP_HASH_SECRET,
+        ...AUTH,
       }),
     ).toMatchObject({ NODE_ENV: 'production', HOST: '0.0.0.0', PORT: 8080 });
   });
@@ -135,5 +149,140 @@ describe('loadEnv (api)', () => {
     expect(() => loadEnv({ ...DEV, DATABASE_URL, PORT: '70000' })).toThrow(/PORT/);
     expect(() => loadEnv({ ...DEV, DATABASE_URL, NODE_ENV: 'staging' })).toThrow(/NODE_ENV/);
     expect(() => loadEnv({ ...DEV, DATABASE_URL, HOST: '' })).toThrow(/HOST/);
+  });
+});
+
+describe('loadEnv (api) Better Auth settings (task 2.1)', () => {
+  const prod = {
+    NODE_ENV: 'production',
+    DATABASE_URL,
+    REDIS_URL: 'rediss://cache.example',
+    IP_HASH_SECRET,
+    ...AUTH,
+  };
+
+  it('accepts a complete production configuration', () => {
+    expect(loadEnv(prod)).toMatchObject({
+      BETTER_AUTH_SECRET: AUTH.BETTER_AUTH_SECRET,
+      BETTER_AUTH_URL: 'https://guesshive.example',
+    });
+  });
+
+  it('requires BETTER_AUTH_SECRET in production', () => {
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_SECRET: undefined })).toThrow(
+      /BETTER_AUTH_SECRET: required in production/,
+    );
+    // A blank value already fails the schema (too short), so it can never fall back either.
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_SECRET: '  ' })).toThrow(/BETTER_AUTH_SECRET/);
+  });
+
+  it('requires BETTER_AUTH_URL in production', () => {
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_URL: undefined })).toThrow(
+      /BETTER_AUTH_URL: required in production/,
+    );
+    // A blank value already fails the schema (not a URL), so it can never fall back either.
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_URL: '  ' })).toThrow(/BETTER_AUTH_URL/);
+  });
+
+  it('reports both missing auth settings at once', () => {
+    const { BETTER_AUTH_SECRET: _secret, BETTER_AUTH_URL: _url, ...rest } = prod;
+    expect(() => loadEnv(rest)).toThrow(
+      /BETTER_AUTH_SECRET: required in production[\s\S]*BETTER_AUTH_URL: required in production/,
+    );
+  });
+
+  it('rejects the development BETTER_AUTH_SECRET in production, without echoing it', () => {
+    const devSecret = 'development-only-better-auth-secret-not-for-production';
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_SECRET: devSecret })).toThrow(
+      /BETTER_AUTH_SECRET: must not be the development default/,
+    );
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_SECRET: ` ${devSecret} ` })).toThrow(
+      /BETTER_AUTH_SECRET: must not be the development default/,
+    );
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_SECRET: devSecret })).not.toThrow(
+      /not-for-production/,
+    );
+  });
+
+  it('allows the development BETTER_AUTH_SECRET outside production', () => {
+    expect(loadEnv({ ...DEV, DATABASE_URL }).BETTER_AUTH_SECRET).toBe(
+      'development-only-better-auth-secret-not-for-production',
+    );
+  });
+
+  it('rejects a BETTER_AUTH_SECRET shorter than 32 characters, without echoing it', () => {
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, BETTER_AUTH_SECRET: 'short-secret' })).toThrow(
+      /BETTER_AUTH_SECRET/,
+    );
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_SECRET: 'short-secret' })).not.toThrow(
+      /short-secret/,
+    );
+    expect(loadEnv({ ...DEV, DATABASE_URL, BETTER_AUTH_SECRET: 'x'.repeat(32) })).toMatchObject({
+      BETTER_AUTH_SECRET: 'x'.repeat(32),
+    });
+  });
+
+  it('requires an https BETTER_AUTH_URL in production', () => {
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_URL: 'http://guesshive.example' })).toThrow(
+      /BETTER_AUTH_URL: must use https in production/,
+    );
+  });
+
+  it('allows an http BETTER_AUTH_URL outside production', () => {
+    expect(
+      loadEnv({ ...DEV, DATABASE_URL, BETTER_AUTH_URL: 'http://localhost:4173' }).BETTER_AUTH_URL,
+    ).toBe('http://localhost:4173');
+  });
+
+  it.each([
+    ['a path', 'https://guesshive.example/nl/home', 'https://guesshive.example'],
+    ['a trailing slash', 'https://guesshive.example/', 'https://guesshive.example'],
+    ['a query and hash', 'https://guesshive.example/?a=1#x', 'https://guesshive.example'],
+    ['upper case', 'HTTPS://GuessHive.Example', 'https://guesshive.example'],
+    ['a default port', 'https://guesshive.example:443', 'https://guesshive.example'],
+    ['a custom port', 'https://guesshive.example:8443/x', 'https://guesshive.example:8443'],
+    ['whitespace', '  https://guesshive.example \n', 'https://guesshive.example'],
+  ])('normalizes BETTER_AUTH_URL with %s to its origin', (_label, value, origin) => {
+    expect(loadEnv({ ...prod, BETTER_AUTH_URL: value }).BETTER_AUTH_URL).toBe(origin);
+  });
+
+  it.each([
+    ['development', { ...DEV, DATABASE_URL }],
+    ['production', prod],
+  ])('rejects BETTER_AUTH_TRUSTED_ORIGINS in %s', (_label, base) => {
+    expect(() => loadEnv({ ...base, BETTER_AUTH_TRUSTED_ORIGINS: 'https://evil.example' })).toThrow(
+      /BETTER_AUTH_TRUSTED_ORIGINS/,
+    );
+  });
+
+  it('ignores a blank BETTER_AUTH_TRUSTED_ORIGINS', () => {
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_TRUSTED_ORIGINS: ' ' })).not.toThrow();
+  });
+
+  it('requires BETTER_AUTH_SECRET to differ from IP_HASH_SECRET in production', () => {
+    const shared = 'one-secret-used-for-two-purposes-32-chars';
+    expect(() => loadEnv({ ...prod, BETTER_AUTH_SECRET: shared, IP_HASH_SECRET: shared })).toThrow(
+      /BETTER_AUTH_SECRET: must differ from IP_HASH_SECRET/,
+    );
+    expect(() =>
+      loadEnv({ ...prod, BETTER_AUTH_SECRET: shared, IP_HASH_SECRET: shared }),
+    ).not.toThrow(/one-secret-used/);
+  });
+
+  it('rejects TEST in production (it switches off Better Auth origin and CSRF checks)', () => {
+    expect(() => loadEnv({ ...prod, TEST: '1' })).toThrow(/TEST: must not be set in production/);
+    expect(() => loadEnv({ ...prod, TEST: 'false' })).toThrow(/TEST/);
+    expect(() => loadEnv({ ...prod, TEST: ' ' })).not.toThrow();
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, TEST: '1' })).not.toThrow();
+  });
+
+  it.each([
+    ['not a URL', 'guesshive.example'],
+    ['an ftp URL', 'ftp://guesshive.example'],
+    ['a javascript URL', 'javascript:alert(1)'],
+  ])('rejects BETTER_AUTH_URL that is %s', (_label, value) => {
+    expect(() => loadEnv({ ...DEV, DATABASE_URL, BETTER_AUTH_URL: value })).toThrow(
+      /BETTER_AUTH_URL/,
+    );
   });
 });

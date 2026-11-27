@@ -8,7 +8,8 @@
 // - Every foreign key and every feed filter/sort column has an index.
 // - CHECK constraints and the per-language full-text indexes live in the migration SQL, since
 //   Prisma cannot express them; they are listed above each model.
-// - Better Auth's Account/Session/Verification tables arrive with task 2.1.
+// - Better Auth's Session/Account/Verification tables (task 2.1, ADR 0006) follow the field names
+//   Better Auth expects; ids still come from uuidv7() (advanced.database.generateId: false).
 // - Revenue features (plan, premiumUntil, Subscription, Partner, EmbedKey, Sponsor) exist but are
 //   off by default (phase 13).
 
@@ -304,10 +305,74 @@ model User {
   reports                 Report[]                 @relation("Reporter")
   reportsHandled          Report[]                 @relation("ReportHandler")
   auditLogs               AuditLog[]
+  sessions                Session[]
+  accounts                Account[]
 
   @@index([countryCode])
   @@index([regionCode])
   @@index([deletedAt])
+}
+
+// ─── Auth (Better Auth, task 2.1, ADR 0006) ─────────────────────────────────────────────────
+// Sessions and verification values live only in Postgres (owner, 2026-11-27). Rows cascade with
+// the user. IP tracking is off, so Session.ipAddress stays NULL (a CHECK in the migration):
+// raw IPs are never stored (AGENTS.md §9).
+
+model Session {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @db.Uuid
+  /// Opaque random token; the signed cookie carries it.
+  token     String   @unique
+  expiresAt DateTime @db.Timestamptz(6)
+  /// Always NULL (IP tracking disabled); kept because Better Auth's schema has the field.
+  ipAddress String?
+  /// For a future "active sessions" list (task 2.7); deleted with the session.
+  userAgent String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// One row per sign-in method of a user: `credential` (email + password, hashed) or an OAuth
+/// provider. Provider names, photos and tokens never become profile data (owner, 2026-11-27).
+model Account {
+  id                    String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId                String    @db.Uuid
+  /// The user's id at the provider (for `credential`: our user id).
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(6)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(6)
+  scope                 String?
+  /// Password hash (scrypt, Better Auth default); never the password itself.
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+/// Short-lived values: email verification, magic links, password resets, OAuth state.
+model Verification {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([identifier])
+  @@index([expiresAt])
 }
 
 model UserInterest {
