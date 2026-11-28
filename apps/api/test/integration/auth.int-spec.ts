@@ -18,6 +18,7 @@ import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { RATE_LIMIT_KEY_PREFIX } from '../../src/rate-limit/rate-limit.constants.js';
 import { testRedisUrl } from './test-db-url.js';
 import { createTestPrisma, resetDatabase } from './test-db.js';
+import { PASS_TURNSTILE, TURNSTILE_OK } from './turnstile-fake.js';
 
 /** The web origin Better Auth trusts in tests (the BETTER_AUTH_URL default). */
 const TRUSTED_ORIGIN = 'http://localhost:5173';
@@ -78,7 +79,7 @@ describe('Better Auth integration (task 2.1)', () => {
     const email = uniqueEmail();
     const res = await request(app.getHttpServer())
       .post('/api/auth/sign-up/email')
-      .set({ Origin: TRUSTED_ORIGIN, ...headers })
+      .set({ Origin: TRUSTED_ORIGIN, ...TURNSTILE_OK, ...headers })
       .send({ email, password: PASSWORD, name: 'Jan Jansen', ...body });
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     return { res, cookie: sessionCookieOf(res.headers['set-cookie']), email };
@@ -100,7 +101,7 @@ describe('Better Auth integration (task 2.1)', () => {
       .useFactory({
         inject: [PrismaService, API_ENV],
         factory: (client: PrismaService, env: ApiEnv) =>
-          createAuth(client, env, { emailAndPassword: { enabled: true } }),
+          createAuth(client, env, { emailAndPassword: { enabled: true } }, PASS_TURNSTILE),
       })
       .compile();
     app = moduleRef.createNestApplication<NestExpressApplication>();
@@ -198,7 +199,7 @@ describe('Better Auth integration (task 2.1)', () => {
       const email = uniqueEmail();
       const res = await request(app.getHttpServer())
         .post('/api/auth/sign-up/email')
-        .set('Origin', TRUSTED_ORIGIN)
+        .set({ Origin: TRUSTED_ORIGIN, ...TURNSTILE_OK })
         .send({
           email,
           password: PASSWORD,
@@ -225,7 +226,7 @@ describe('Better Auth integration (task 2.1)', () => {
       const { email } = await signUp();
       const res = await request(app.getHttpServer())
         .post('/api/auth/sign-up/email')
-        .set('Origin', TRUSTED_ORIGIN)
+        .set({ Origin: TRUSTED_ORIGIN, ...TURNSTILE_OK })
         .send({ email, password: PASSWORD, name: 'Again' });
       expect(res.status).toBeGreaterThanOrEqual(400);
       expect(res.status).toBeLessThan(500);
@@ -236,7 +237,7 @@ describe('Better Auth integration (task 2.1)', () => {
       const email = uniqueEmail();
       const res = await request(app.getHttpServer())
         .post('/api/auth/sign-up/email')
-        .set({ Origin: EVIL_ORIGIN, ...CROSS_SITE })
+        .set({ Origin: EVIL_ORIGIN, ...CROSS_SITE, ...TURNSTILE_OK })
         .send({ email, password: PASSWORD, name: 'Eve' });
       expect(res.status).toBe(403);
       expect(await prisma.user.count({ where: { email } })).toBe(0);
@@ -421,7 +422,7 @@ describe('Better Auth integration (task 2.1)', () => {
       const email = uniqueEmail();
       const res = await request(app.getHttpServer())
         .post('/api/auth/sign-up/email')
-        .set('Origin', TRUSTED_ORIGIN)
+        .set({ Origin: TRUSTED_ORIGIN, ...TURNSTILE_OK })
         .send({ email, password: PASSWORD, name: 'Jan', callbackURL: 'https://evil.example/x' });
       expect(res.status).toBe(403);
       expect(await prisma.user.count({ where: { email } })).toBe(0);
@@ -438,7 +439,7 @@ describe('Better Auth integration (task 2.1)', () => {
       const email = uniqueEmail();
       const res = await request(app.getHttpServer())
         .post('/api/auth/sign-up/email')
-        .set({ Origin: TRUSTED_ORIGIN, 'Content-Type': 'text/plain' })
+        .set({ Origin: TRUSTED_ORIGIN, ...TURNSTILE_OK, 'Content-Type': 'text/plain' })
         .send(JSON.stringify({ email, password: PASSWORD, name: 'Jan' }));
       expect(res.status).toBe(415);
       expect(res.body).toEqual({

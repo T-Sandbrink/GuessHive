@@ -1,5 +1,6 @@
 import { nodeEnvSchema, parseEnv } from '@guesshive/shared';
 import { z } from 'zod';
+import { TURNSTILE_DEV_SECRET, TURNSTILE_TEST_SECRETS } from './auth/turnstile.constants.js';
 
 /** Local development and test only; rejected in production (see loadEnv). */
 const DEV_IP_HASH_SECRET = 'development-only-ip-hash-secret-not-for-production';
@@ -62,6 +63,12 @@ export const apiEnvSchema = z.object({
     .pipe(z.url({ protocol: /^https?$/ }))
     .transform((value) => new URL(value).origin)
     .default('http://localhost:5173'),
+  /**
+   * Cloudflare Turnstile secret key (task 2.9) for the server-side check on sign-up and the
+   * magic-link request. Defaults to Cloudflare's always-pass test secret locally; required in
+   * production, where Cloudflare's test secrets are refused.
+   */
+  TURNSTILE_SECRET_KEY: z.string().trim().min(1).max(256).default(TURNSTILE_DEV_SECRET),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
@@ -79,7 +86,12 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     );
   }
   if (env.NODE_ENV === 'production') {
-    const problems = ['REDIS_URL', ...Object.keys(PRODUCTION_SECRETS), 'BETTER_AUTH_URL']
+    const problems = [
+      'REDIS_URL',
+      ...Object.keys(PRODUCTION_SECRETS),
+      'BETTER_AUTH_URL',
+      'TURNSTILE_SECRET_KEY',
+    ]
       .filter((key) => !source[key]?.trim())
       .map((key) => `- ${key}: required in production`);
     // A published development secret is as good as none.
@@ -91,6 +103,10 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     // Keys stay separate, so one leak does not expose the other's purpose.
     if (env.BETTER_AUTH_SECRET === env.IP_HASH_SECRET) {
       problems.push('- BETTER_AUTH_SECRET: must differ from IP_HASH_SECRET');
+    }
+    // A test secret lets every bot through (or nobody).
+    if ((TURNSTILE_TEST_SECRETS as readonly string[]).includes(env.TURNSTILE_SECRET_KEY)) {
+      problems.push('- TURNSTILE_SECRET_KEY: must not be a Cloudflare test secret');
     }
     // Better Auth switches its origin and CSRF checks off when TEST is set.
     if (source['TEST']?.trim()) {
