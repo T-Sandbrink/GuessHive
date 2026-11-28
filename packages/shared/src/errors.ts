@@ -14,6 +14,10 @@ export const API_ERROR_CODES = [
   'ACCOUNT_SUSPENDED',
   /** Signed in, but the account is banned (task 2.8). */
   'ACCOUNT_BANNED',
+  /** Sign-up or magic-link request without a Turnstile token (task 2.9). */
+  'TURNSTILE_REQUIRED',
+  /** The Turnstile token was refused (invalid, expired, reused, wrong host or action; task 2.9). */
+  'TURNSTILE_FAILED',
   'NOT_FOUND',
   'METHOD_NOT_ALLOWED',
   'CONFLICT',

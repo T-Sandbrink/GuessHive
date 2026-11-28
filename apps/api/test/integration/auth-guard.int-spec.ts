@@ -20,6 +20,7 @@ import {
 import { RateLimit } from '../../src/rate-limit/rate-limit.decorator.js';
 import { testRedisUrl } from './test-db-url.js';
 import { createTestPrisma, resetDatabase } from './test-db.js';
+import { PASS_TURNSTILE, TURNSTILE_OK } from './turnstile-fake.js';
 
 /** The web origin Better Auth trusts in tests (the BETTER_AUTH_URL default). */
 const TRUSTED_ORIGIN = 'http://localhost:5173';
@@ -121,7 +122,7 @@ describe('global AuthGuard and RolesGuard (task 2.8)', () => {
     const email = `guard${String(counter)}@guesshive.test`;
     const res = await request(app.getHttpServer())
       .post('/api/auth/sign-up/email')
-      .set('Origin', TRUSTED_ORIGIN)
+      .set({ Origin: TRUSTED_ORIGIN, ...TURNSTILE_OK })
       .send({ email, password: PASSWORD, name: 'Test' });
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     await prisma.user.update({ where: { email }, data: { role, status } });
@@ -148,7 +149,7 @@ describe('global AuthGuard and RolesGuard (task 2.8)', () => {
       .useFactory({
         inject: [PrismaService, API_ENV],
         factory: (client: PrismaService, env: ApiEnv) =>
-          createAuth(client, env, { emailAndPassword: { enabled: true } }),
+          createAuth(client, env, { emailAndPassword: { enabled: true } }, PASS_TURNSTILE),
       })
       .compile();
     app = moduleRef.createNestApplication<NestExpressApplication>();

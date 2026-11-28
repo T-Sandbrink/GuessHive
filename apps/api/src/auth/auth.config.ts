@@ -3,6 +3,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import type { ApiEnv } from '../env.js';
 import type { PrismaClient } from '../generated/prisma/client.js';
 import { placeholderProfile } from './placeholder-profile.js';
+import { type TurnstileVerifier, createTurnstileVerifier, turnstilePlugin } from './turnstile.js';
 
 /**
  * Where Better Auth lives, on the api and (through the SvelteKit proxy, which forwards this path
@@ -130,16 +131,35 @@ export function authOptions(prisma: PrismaClient, env: ApiEnv) {
   } satisfies BetterAuthOptions;
 }
 
-/** Creates the Better Auth instance with the sign-in methods and plugins in `extensions`. */
-export function createAuth(prisma: PrismaClient, env: ApiEnv, extensions: AuthExtensions = {}) {
+/** The real Turnstile check against Cloudflare, for the web origin's hostname. */
+export function defaultTurnstileVerifier(env: ApiEnv, fetchFn?: typeof fetch): TurnstileVerifier {
+  return createTurnstileVerifier({
+    secretKey: env.TURNSTILE_SECRET_KEY,
+    // One host only: the widget must be served on the BETTER_AUTH_URL host (ADR 0006).
+    expectedHostname: new URL(env.BETTER_AUTH_URL).hostname,
+    fetchFn,
+  });
+}
+
+/**
+ * Creates the Better Auth instance with the sign-in methods and plugins in `extensions`. The
+ * Turnstile check (task 2.9) is always first and cannot be left out; tests pass a fake verifier.
+ */
+export function createAuth(
+  prisma: PrismaClient,
+  env: ApiEnv,
+  extensions: AuthExtensions = {},
+  turnstile: TurnstileVerifier = defaultTurnstileVerifier(env),
+) {
   // Only these four keys pass, even when the argument carries more at runtime.
   const { emailAndPassword, emailVerification, socialProviders, plugins } = extensions;
   return betterAuth({
     emailAndPassword,
     emailVerification,
     socialProviders,
-    plugins,
     ...authOptions(prisma, env),
+    // After the spread, so nothing in authOptions can replace the Turnstile plugin.
+    plugins: [turnstilePlugin(turnstile), ...(plugins ?? [])],
   });
 }
 

@@ -12,6 +12,15 @@ const env = {
 const prisma = {} as PrismaClient;
 
 describe('createAuth (task 2.1)', () => {
+  it('always puts the Turnstile check first, also when extensions bring plugins (task 2.9)', () => {
+    expect(createAuth(prisma, env).options.plugins.map((p) => p.id)).toEqual([
+      'guesshive-turnstile',
+    ]);
+    const extra = { id: 'extra' };
+    const ids = createAuth(prisma, env, { plugins: [extra] }).options.plugins.map((p) => p.id);
+    expect(ids).toEqual(['guesshive-turnstile', 'extra']);
+  });
+
   it('enables only the extensions it is given', () => {
     const auth = createAuth(prisma, env, { emailAndPassword: { enabled: true } });
     expect(auth.options.emailAndPassword?.enabled).toBe(true);

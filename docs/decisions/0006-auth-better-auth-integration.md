@@ -57,6 +57,14 @@ would not apply to the sign-in routes (review note 1.9).
 - **Rate limits.** Better Auth's own limiter is off; our Redis `RateLimitGuard` runs on the auth
   controller (stricter per-route limits in 2.10).
 - **Telemetry** of Better Auth is off.
+- **Turnstile** (task 2.9): our own small Better Auth plugin (`apps/api/src/auth/turnstile.ts`),
+  always first in `createAuth`, with a `hooks.before` matched on Better Auth's own endpoint path
+  (`/sign-up/email`, `/sign-in/magic-link`), so casing or `..` in the request path cannot skip it.
+  Not Better Auth's `captcha` plugin: that one matches the raw request path, can send the visitor's
+  IP to Cloudflare and does not use our error codes. The token comes in the `x-turnstile-token`
+  header; hostname and action are checked; Cloudflare unreachable fails closed (503). Only the
+  `BETTER_AUTH_URL` host is accepted, so the widget must be served there (not on a preview
+  domain or a second hostname).
 
 ## Consequences
 

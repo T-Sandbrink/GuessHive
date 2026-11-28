@@ -4,10 +4,11 @@ import { loadEnv } from './env.js';
 const DEV = { NODE_ENV: 'development' };
 const DATABASE_URL = 'postgresql://user:pass@localhost:5440/guesshive';
 const IP_HASH_SECRET = 'a-production-secret-of-at-least-32-chars';
-/** The Better Auth settings production requires (task 2.1). */
+/** The Better Auth (task 2.1) and Turnstile (task 2.9) settings production requires. */
 const AUTH = {
   BETTER_AUTH_SECRET: 'another-production-secret-of-32-chars-or-more',
   BETTER_AUTH_URL: 'https://guesshive.example',
+  TURNSTILE_SECRET_KEY: '0x4AAAAAAAproductionTurnstileSecret',
 };
 
 describe('loadEnv (api)', () => {
@@ -29,6 +30,7 @@ describe('loadEnv (api)', () => {
       WORKERS_ENABLED: true,
       IP_HASH_SECRET: 'development-only-ip-hash-secret-not-for-production',
       BETTER_AUTH_SECRET: 'development-only-better-auth-secret-not-for-production',
+      TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA',
       BETTER_AUTH_URL: 'http://localhost:5173',
     });
   });
@@ -283,6 +285,48 @@ describe('loadEnv (api) Better Auth settings (task 2.1)', () => {
   ])('rejects BETTER_AUTH_URL that is %s', (_label, value) => {
     expect(() => loadEnv({ ...DEV, DATABASE_URL, BETTER_AUTH_URL: value })).toThrow(
       /BETTER_AUTH_URL/,
+    );
+  });
+});
+
+describe('loadEnv: TURNSTILE_SECRET_KEY (task 2.9)', () => {
+  const prod = {
+    NODE_ENV: 'production',
+    DATABASE_URL,
+    REDIS_URL: 'rediss://cache.example',
+    IP_HASH_SECRET,
+    ...AUTH,
+  };
+
+  it('requires TURNSTILE_SECRET_KEY in production', () => {
+    const { TURNSTILE_SECRET_KEY: _omitted, ...withoutKey } = prod;
+    expect(() => loadEnv(withoutKey)).toThrow(/TURNSTILE_SECRET_KEY: required in production/);
+    expect(() => loadEnv({ ...withoutKey, TURNSTILE_SECRET_KEY: '  ' })).toThrow(
+      /TURNSTILE_SECRET_KEY/,
+    );
+  });
+
+  it.each([
+    '1x0000000000000000000000000000000AA',
+    '2x0000000000000000000000000000000AA',
+    '3x0000000000000000000000000000000AA',
+    ' 1x0000000000000000000000000000000AA ',
+  ])('refuses the Cloudflare test secret %j in production', (secret) => {
+    expect(() => loadEnv({ ...prod, TURNSTILE_SECRET_KEY: secret })).toThrow(
+      /TURNSTILE_SECRET_KEY: must not be a Cloudflare test secret/,
+    );
+  });
+
+  it('accepts a real secret in production and trims it', () => {
+    expect(
+      loadEnv({ ...prod, TURNSTILE_SECRET_KEY: ' 0x4AAAAAAAproductionTurnstileSecret ' })
+        .TURNSTILE_SECRET_KEY,
+    ).toBe('0x4AAAAAAAproductionTurnstileSecret');
+  });
+
+  it('defaults to the always-pass test secret outside production', () => {
+    expect(loadEnv({ ...DEV, DATABASE_URL }).TURNSTILE_SECRET_KEY).toBe(
+      '1x0000000000000000000000000000000AA',
     );
   });
 });
