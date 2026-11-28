@@ -1,3 +1,4 @@
+import type { ApiErrorCode } from '@guesshive/shared';
 import type { BetterAuthPlugin } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { TURNSTILE_TEST_SECRETS } from './turnstile.constants.js';
@@ -77,6 +78,8 @@ export function createTurnstileVerifier(options: TurnstileVerifierOptions): Turn
         redirect: 'error',
       });
       if (!response.ok) {
+        // Release the connection; the body is not needed.
+        await response.body?.cancel().catch(() => undefined);
         return { ok: false, reason: 'unavailable' };
       }
       const parsed: unknown = await response.json();
@@ -115,7 +118,8 @@ export function turnstileActionFor(path: string | undefined): TurnstileAction | 
 /**
  * Better Auth plugin (task 2.9): sign-up with email and password and the magic-link request need
  * a valid Cloudflare Turnstile token in the `x-turnstile-token` header, checked server-side
- * before Better Auth does anything else. No token: 400 `TURNSTILE_REQUIRED`. Refused by
+ * before the endpoint runs and before any other plugin's hooks (Better Auth runs a top-level
+ * `hooks.before` earlier still; see the merge note for 2.2 in PLAN.md). No token: 400 `TURNSTILE_REQUIRED`. Refused by
  * Cloudflare (invalid, expired, reused, wrong hostname or action): 403 `TURNSTILE_FAILED`.
  * Cloudflare unreachable: 503 `SERVICE_UNAVAILABLE` (fail closed, like the auth rate limits when
  * Redis is down).
@@ -135,30 +139,31 @@ export function turnstilePlugin(verify: TurnstileVerifier) {
             const token = ctx.headers?.get(TURNSTILE_HEADER)?.trim() ?? '';
             if (token === '') {
               throw new APIError('BAD_REQUEST', {
-                code: 'TURNSTILE_REQUIRED',
+                code: 'TURNSTILE_REQUIRED' satisfies ApiErrorCode,
                 message: 'Turnstile token required',
               });
             }
-            const result =
+            const result: TurnstileResult =
               token.length > TURNSTILE_TOKEN_MAX_LENGTH
-                ? ({ ok: false, reason: 'rejected' } as const)
-                : await verify(token, action);
+                ? { ok: false, reason: 'rejected' }
+                : await verify(token, action).catch((): TurnstileResult => ({
+                    ok: false,
+                    reason: 'unavailable',
+                  }));
             if (result.ok) {
               return;
             }
-            // The reason only, never the token.
-            ctx.context.logger.warn('Turnstile verification failed', {
-              action,
-              reason: result.reason,
-            });
+            // The action and reason only (in the message, as some loggers drop details), never
+            // the token.
+            ctx.context.logger.warn(`Turnstile verification failed (${action}: ${result.reason})`);
             if (result.reason === 'unavailable') {
               throw new APIError('SERVICE_UNAVAILABLE', {
-                code: 'SERVICE_UNAVAILABLE',
+                code: 'SERVICE_UNAVAILABLE' satisfies ApiErrorCode,
                 message: 'Bot check unavailable',
               });
             }
             throw new APIError('FORBIDDEN', {
-              code: 'TURNSTILE_FAILED',
+              code: 'TURNSTILE_FAILED' satisfies ApiErrorCode,
               message: 'Turnstile verification failed',
             });
           }),

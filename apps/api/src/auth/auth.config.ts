@@ -132,10 +132,12 @@ export function authOptions(prisma: PrismaClient, env: ApiEnv) {
 }
 
 /** The real Turnstile check against Cloudflare, for the web origin's hostname. */
-export function defaultTurnstileVerifier(env: ApiEnv): TurnstileVerifier {
+export function defaultTurnstileVerifier(env: ApiEnv, fetchFn?: typeof fetch): TurnstileVerifier {
   return createTurnstileVerifier({
     secretKey: env.TURNSTILE_SECRET_KEY,
+    // One host only: the widget must be served on the BETTER_AUTH_URL host (ADR 0006).
     expectedHostname: new URL(env.BETTER_AUTH_URL).hostname,
+    fetchFn,
   });
 }
 
@@ -155,8 +157,9 @@ export function createAuth(
     emailAndPassword,
     emailVerification,
     socialProviders,
-    plugins: [turnstilePlugin(turnstile), ...(plugins ?? [])],
     ...authOptions(prisma, env),
+    // After the spread, so nothing in authOptions can replace the Turnstile plugin.
+    plugins: [turnstilePlugin(turnstile), ...(plugins ?? [])],
   });
 }
 

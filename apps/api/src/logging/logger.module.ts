@@ -48,6 +48,7 @@ export function pinoParams(env: ApiEnv): Params {
         paths: [
           'req.headers.authorization',
           'req.headers.cookie',
+          'req.headers["x-turnstile-token"]',
           'res.headers["set-cookie"]',
           'req.remoteAddress',
           'req.remotePort',

@@ -16,7 +16,7 @@ export const API_ERROR_CODES = [
   'ACCOUNT_BANNED',
   /** Sign-up or magic-link request without a Turnstile token (task 2.9). */
   'TURNSTILE_REQUIRED',
-  /** Cloudflare refused the Turnstile token: invalid, expired or reused (task 2.9). */
+  /** The Turnstile token was refused (invalid, expired, reused, wrong host or action; task 2.9). */
   'TURNSTILE_FAILED',
   'NOT_FOUND',
   'METHOD_NOT_ALLOWED',
